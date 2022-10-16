@@ -10,15 +10,17 @@ window.addEventListener("load", () => {
 		output.innerHTML = ""
 		vars.innerHTML = ""
 
-		const syntaxReporter = (recognizer, offendingSymbol, line, column, mesage, error) => {
+		const syntaxReporter = (recognizer, offendingSymbol, line, column, message, error) => {
 			console.log({
 				recognizer,
 				offendingSymbol,
 				line,
 				column,
-				mesage,
+				message,
 				error
 			})
+
+			output.innerHTML += message + "\n";
 
 			button.className = "bad"
 		}

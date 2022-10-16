@@ -1,11 +1,11 @@
 grammar PseudoCode;
 
-program: statement+;
+program: WS? statement+;
 
-body: statement*;
+body: WS? (statement | NL)+;
 
 statement
-    : vars
+    : (vars
     | methodCallStatement
     | ifStatement 
     | whileStatement
@@ -17,54 +17,62 @@ statement
     | returnStatement
     | functionDeclarationStatement
     | debugPrintStatement
-    | debug
+    | debug) NL
     ;
 
 debug: 'debug';
 
-debugPrintStatement: 'kiir' expression;
+debugPrintStatement: 'kiir' WS expression;
 
 vars: 'változók';
 
 ifStatement
-    : HA expression AKKOR body ELVEGE #simpleIfStatement
-    | HA expression AKKOR body elseBranch ELVEGE #ifElseStatement
-    | HA expression AKKOR body elseIfBranch* elseBranch ELVEGE #ifElseIfStatement
-    ;
+    : HA WS expression WS AKKOR NL
+        body
+    ELVEGE #simpleIfStatement
+    | HA WS expression WS AKKOR NL
+        body
+    elseBranch
+    ELVEGE #ifElseStatement
+    | HA WS expression WS AKKOR NL
+        body
+    elseIfBranch+
+    elseBranch
+    ELVEGE #ifElseIfStatement;
 
-elseIfBranch: KULONBEN HA expression AKKOR body;
-elseBranch: KULONBEN body;
+elseIfBranch: KULONBEN WS HA WS expression WS AKKOR NL body;
+elseBranch: KULONBEN NL body;
 
 whileStatement:
-        CIKLUS AMIG expression
+        CIKLUS WS AMIG WS expression NL
             body
         CVEGE;
 
 doWhileStatement:
-        CIKLUS
+        CIKLUS NL
             body
-        AMIG expression;
+        AMIG WS expression;
 
 forStatement:
-        CIKLUS variable NYIL expression CSTART expression CEND
+        CIKLUS WS variable WS NYIL WS expression WS CSTART WS expression WS CEND NL
             body
-        CVEGE ;
+        CVEGE;
 
-returnStatement: VISSZA expression;
+returnStatement: VISSZA WS expression;
 
 methodCallStatement
     : functionName parameters;
 
 functionDeclarationStatement
-    : FUGGVENY functionName '(' parameterWithType (',' parameterWithType)* ')'
+    : FUGGVENY WS functionName '(' parameterWithType (',' WS? parameterWithType)* ')' NL
         body
       FVEGE #functionDeclarationWithParameters
-    | FUGGVENY functionName '()'
+    | FUGGVENY WS functionName '()' NL
         body
       FVEGE #functionDeclarationWithoutParameters
     ;
 
-parameterWithType: CIMSZERINT? variable ':' type;
+parameterWithType: (CIMSZERINT WS)? variable WS? ':' WS? type;
 
 type
     : 'egész'
@@ -75,24 +83,24 @@ type
     | 'szöveg tömb'
     ;
 
-arrayElementAssignmentStatement: variable '[' expression ']' NYIL expression;
-arrayAssignmentStatement: variable NYIL 'Létrehoz[' type '](' expression ')';
+arrayElementAssignmentStatement: variable '[' WS? expression WS? ']' ASSIGN expression;
+arrayAssignmentStatement: variable ASSIGN 'Létrehoz[' WS? type WS? '](' WS? expression WS? ')';
 
-assignmentStatement: variable NYIL expression;
+assignmentStatement: variable ASSIGN expression;
 
 /* EXPRESSIONS */
 expression
-    : expression OPERATOR expression #calculationExpression
-    | expression COMPARISON expression #comparisonExpression
+    : expression WS? OPERATOR WS? expression #calculationExpression
+    | expression WS? COMPARISON WS? expression #comparisonExpression
     | functionCall #functionCallExpression
     | NOT expression #notExpression
-    | expression ES expression #andExpression
-    | expression VAGY expression #orExpression
+    | expression WS? ES WS? expression #andExpression
+    | expression WS? VAGY WS? expression #orExpression
     | value #valueExpression
     ;
 
 functionCall: functionName parameters;
-parameters: '()' | '(' expression (',' expression)* ')';
+parameters: '()' | '(' expression (',' WS? expression)* ')';
 
 functionName: FUNCTION;
 
@@ -103,7 +111,7 @@ string: STRING;
 number: NUMBER;
 bool: BOOL;
 
-arrayShorthand: '(' expression (',' expression)+ ')';
+arrayShorthand: '(' expression (',' WS? expression)+ ')';
 arrayIndex: variable '[' expression ']';
 variable: VARIABLE;
 
@@ -137,6 +145,7 @@ ELVEGE: 'elágazás vége';
 FUGGVENY: 'függvény';
 FVEGE: 'függvény vége';
 
+ASSIGN: WS? NYIL WS?;
 NYIL: '<-';
 
 STRING: '"' ('\\' ["\\] | ~["\\\r\n])* '"';
@@ -153,4 +162,5 @@ VAGY: '\\/';
 FUNCTION: [A-Z] ([a-z]|[A-Z])*;
 VARIABLE: 'a'..'z'+;
 
-WS : [ \t\r\n]+ -> skip ;
+NL : (WS? [\r\n]+ WS?)+;
+WS : [ \t]+ ;

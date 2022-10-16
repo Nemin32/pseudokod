@@ -4,7 +4,7 @@ import { runText } from "./src/index.js"
 const mockOutput = jest.fn((input) => input)
 
 /** @param {string} input */
-const r = (input) => runText(input, mockOutput)
+const r = (input) => runText(input, (input) => {}, mockOutput)
 
 const generateTest = (testInstance) => test(testInstance.name, () => {
     r(testInstance.input)
@@ -65,7 +65,8 @@ const if_tests = {
                 kiir "OK"
             különben
                 kiir "HIBA"
-            elágazás vége` },
+            elágazás vége\n
+            ` },
         {
             name: "különben - hamis",
             input: `
@@ -93,14 +94,14 @@ const variable_tests = {
         {
             name: "Változó = értéke",
             input:
-                `x <- 5
+            `x <- 5
             ha x = 5 akkor
                 kiir "OK"
             elágazás vége` },
         {
             name: "Változó megváltoztatható",
             input:
-                `x <- 5
+            `x <- 5
             ha x =/= 5 akkor
                 kiir "HIBA"
             elágazás vége
@@ -113,7 +114,7 @@ const variable_tests = {
         {
             name: "Változó hivatkozhat önmagára",
             input:
-                `x <- 5
+            `x <- 5
             x <- x * 2
             
             ha x = 10 akkor
@@ -129,7 +130,7 @@ const function_tests = {
             name: "Explicit árnyékolás",
             input:
             `x<-3
-            függvény Teszt(x:egész)
+            függvény Teszt(x : egész)
                 x<-5
             függvény vége
             kiir x`,

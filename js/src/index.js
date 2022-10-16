@@ -119,7 +119,7 @@ kiir LNKO(15, 33)
 
 
 export function runText(input, errorFunc, outputFunc, varOutput) {
-  const chars = new antlr4.InputStream(input);
+  const chars = new antlr4.InputStream(input + "\n");
   const lexer = new PseudoCodeLexer(chars);
   
   lexer.removeErrorListeners();
@@ -135,6 +135,8 @@ export function runText(input, errorFunc, outputFunc, varOutput) {
   
   const visitor = new PseudoVisitor(outputFunc, varOutput);
   
+  //outputFunc(tree.toStringTree(parser.ruleNames))
+
   visitor.visit(tree);
 }
 
