@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+
+	<script src="main.js"></script>
+	<script type="module" src="glue.js"></script>
+
+	<style>
+		h1 {
+			text-align: center;
+		}
+
+		.gray {
+			background-color: #ddd;
+			border: 1px solid #aaa;
+			box-sizing: border-box;
+			width: 100%;
+			padding: 1rem;
+		}
+
+		.gray p {
+			margin: 0;
+		}
+
+		#controls {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1rem;
+			width: 80vw;
+			margin: 0 auto;
+		}
+
+		textarea {
+			width: 100%;
+		}
+
+		button {
+				display: block;
+				width: 100%;
+
+				background-color: aliceblue;
+		}
+
+		button.good {
+			background-color: greenyellow;
+		}
+
+		button.bad {
+			background-color: darksalmon;
+		}
+
+		span {
+			display: block;
+			border: 1px solid;
+		}
+	</style>
+</head>
+<body>
+	<h1>PszeudoKód Értelmező</h1>
+
+	<div id="controls">
+		<div>
+			<textarea id="input" cols="80" rows="24" spellcheck="false"></textarea>
+			<button id="send">Run</button>
+		</div>
+		<div class="gray">
+			<p id="output"></p>
+			<p id="vars"></p>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+ha igaz akkor
+   kiir "1. Elág jó"
+elágazás vége
+
+ha hamis akkor
+   dummy
+különben
+   kiir "2. Elág jó"
+elágazás vége
+
+ha hamis akkor
+   dummy
+különben ha hamis akkor
+   dummy
+különben
+   kiir "3. Elág jó"
+elágazás vége
+
+ha hamis akkor
+   dummy
+különben ha igaz akkor
+   kiir "4. Elág jó"
+különben
+   dummy
+elágazás vége
+
+ciklus i <- 1-től 5-ig
+   kiir i
+ciklus vége
+
+x <- 1
+ciklus amíg x < 5
+   x <- x + 1
+ciklus vége
+kiir x
+
+x <- 1
+ciklus
+   x <- x + 1
+amíg x < 5
+kiir x
+
+függvény Paramnelkul()
+    vissza 5
+függvény vége
+
+függvény Egyparameter(x : egész)
+    vissza x * 2
+függvény vége
+
+függvény Ketparameter(x : egész, y : logikai)
+    ha y akkor
+	vissza x + 3
+    különben
+	vissza x - 3
+    elágazás vége
+függvény vége
+
+kiir Paramnelkul()
+kiir Egyparameter(5)
+kiir Ketparameter(3, hamis)
