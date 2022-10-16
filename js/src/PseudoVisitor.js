@@ -1,6 +1,6 @@
 import PseudoCodeVisitor from "./libs/PseudoCodeVisitor.js";
 import { DebugPrompt } from "./DebugPrompt.js";
-import { Stack } from "./Stack.js";
+import { TYPES, Value, Stack } from "./Stack.js";
 
 export class PseudoVisitor extends PseudoCodeVisitor {
   constructor(outputFunc, varOutput) {
@@ -24,7 +24,13 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitDebugPrintStatement(ctx) {
-    this.outputFunc(this.visit(ctx.expression(0)));
+    let exp = this.visit(ctx.expression());
+
+    if (exp.type !== TYPES.array) {
+      this.outputFunc(exp.value);
+    } else {
+      this.outputFunc(exp.value.map((val) => val.value))
+    }
   }
 
   visitStatement(ctx) {
@@ -51,7 +57,11 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const exp = ctx.expression();
     const predicate = this.visit(exp);
 
-    if (predicate) {
+    if (predicate.type !== TYPES.boolean) {
+      throw new Error("Nem boolean if-ben!");
+    }
+
+    if (predicate.value) {
       return this.visit(ctx.body());
     }
   }
@@ -60,7 +70,11 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const exp = ctx.expression();
     const predicate = this.visit(exp);
 
-    if (predicate) {
+    if (predicate.type !== TYPES.boolean) {
+      throw new Error("Nem boolean if-ben!");
+    }
+
+    if (predicate.value) {
       return this.visit(ctx.body());
     }
     else {
@@ -72,7 +86,11 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const exp = ctx.expression();
     const predicate = this.visit(exp);
 
-    if (predicate) {
+    if (predicate.type !== TYPES.boolean) {
+      throw new Error("Nem boolean if-ben!");
+    }
+
+    if (predicate.value) {
       return this.visit(ctx.body());
     }
     else {
@@ -81,7 +99,11 @@ export class PseudoVisitor extends PseudoCodeVisitor {
       for (let elifBranch of elifBranches) {
         const altPred = this.visit(elifBranch.expression());
 
-        if (altPred) {
+        if (altPred.type !== TYPES.boolean) {
+          throw new Error("Nem boolean elif ágban!");
+        }
+
+        if (altPred.value) {
           return this.visit(elifBranch.body());
         }
       }
@@ -245,8 +267,8 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitArrayIndex(ctx) {
-    const variable = this.visit(ctx.variable())
-    const index = Number(this.visit(ctx.expression())) - 1
+    const variable = this.visit(ctx.variable()).safe_get(TYPES.array)
+    const index = this.visit(ctx.expression()).safe_get(TYPES.number) - 1
 
     return variable[index]
   }
@@ -260,28 +282,39 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitArrayShorthand(ctx) {
-    return [...ctx.expression()].map((exp) => this.visit(exp))
+    return new Value([...ctx.expression()].map((exp) => this.visit(exp)), TYPES.array)
   }
 
   visitBool(ctx) {
-    return ctx.getText() == "igaz";
+    return new Value(ctx.getText().toLowerCase() == "igaz", TYPES.boolean);
   }
 
   visitNumber(ctx) {
-    return Number(ctx.getText());
+    return new Value(Number(ctx.getText()), TYPES.number);
   }
 
   visitString(ctx) {
-    return String(ctx.getText().replaceAll("\"", ""));
+    return new Value(String(ctx.getText().replaceAll("\"", "")), TYPES.string);
   }
 
   visitComparisonExpression(ctx) {
     const comparer = ctx.COMPARISON().getText();
 
-    const exp1 = this.visit(ctx.expression(0));
-    const exp2 = this.visit(ctx.expression(1));
+    const exp1_raw = this.visit(ctx.expression(0));
+    const exp2_raw = this.visit(ctx.expression(1));
 
-    switch (comparer) {
+    if (exp1_raw.type !== TYPES.number) {
+      throw new Error("1. változó típusa nem szám!");
+    }
+
+    if (exp2_raw.type !== TYPES.number) {
+      throw new Error("2. változó típusa nem szám!");
+    }
+
+    const exp1 = exp1_raw.value;
+    const exp2 = exp2_raw.value;
+
+    const value = (() => {switch (comparer) {
       case "<":
         return exp1 < exp2;
       case ">":
@@ -296,16 +329,25 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         return exp1 !== exp2;
       default:
         throw new Error("Illegal operator found in comparison.");
-    }
+    }})()
+
+    return new Value(value, TYPES.boolean);
   }
 
   visitCalculationExpression(ctx) {
     const op = ctx.OPERATOR().getText();
 
-    const exp1 = this.visit(ctx.expression(0));
-    const exp2 = this.visit(ctx.expression(1));
+    const exp1_raw = this.visit(ctx.expression(0));
+    const exp2_raw = this.visit(ctx.expression(1));
 
-    switch (op) {
+    if (exp1_raw.type !== TYPES.number || exp2_raw.type !== TYPES.number) {
+      throw new Error("A változó típusa nem szám!");
+    }
+
+    const exp1 = exp1_raw.value;
+    const exp2 = exp2_raw.value;
+
+    const result = (() => {switch (op) {
       case "+":
         return exp1 + exp2;
       case "-":
@@ -318,7 +360,9 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         return exp1 % exp2;
       default:
         throw new Error("Illegal operator found in calculation.");
-    }
+    }})()
+
+    return new Value(result, TYPES.number);
   }
 
   visitTerminal(ctx) {

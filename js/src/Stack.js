@@ -1,25 +1,192 @@
-class StackValue {
-  storedValue = null;
+export const TYPES = Object.freeze({
+  number: "szám",
+  string: "szöveg",
+  boolean: "logikai",
+  array: "tömb",
+  reference: "referencia"
+})
 
-  constructor(key, val, next) {
-    this.key = key;
-    this.storedValue = val;
-    this.next = next;
+export class Value {
+  #_value = null;
+  #_type = null;
 
-    this.reference = typeof val == "object";
+  constructor(v, t) {
+    this.#_value = v;
+    this.#_type = t;
   }
 
-  set value(val) {
-    this.reference = typeof val == "object";
-    this.storedValue = val;
+  set(value, type) {
+    if (this.#_type === TYPES.reference) {
+      this.#_value.set(value, type)
+    } else {
+      this.#_value = value;
+      this.#_type = type;
+    }
   }
 
   get value() {
-    return this.storedValue;
+    if (this.#_type === TYPES.reference) {
+      return this.#_value.value
+    } else {
+      return this.#_value
+    }
+  }
+
+  get type() {
+    return this.#_type;
+  }
+
+  safe_get(expected_type) {
+    if (this.#_type !== expected_type) {
+      throw new Error("Expected type was " + expected_type + ", but variable was " + this.#_type);
+    }
+
+    return this.type
   }
 }
 
+/*
+
+get
+set
+
+create_reference
+
+enterBasicScope
+leaveBasicScope
+
+enterFunctionScope
+leaveFunctionScope
+
+printStack
+
+*/
+
 export class Stack {
+  #scopeBounds = []
+
+  /** @type {Array<Value>} */
+  variables = []
+
+  /** @type {Map<string, Array<{name: string, reference: boolean, type: string}>>} */
+  parameterTypes = null;
+
+  /**
+   * Initializes a new Stack instance.
+   * @param {Map<string, Array<{name: string, reference: boolean, type: string}>>} parameterTypes - A map of all parameters assigned to their functions's names.
+   */
+  constructor(parameterTypes) {
+    this.parameterTypes = parameterTypes
+  }
+
+  /**
+   * Finds a value on the stack, respecting function bounds.
+   * @param {string} key - Key of the variable we want to access.
+   * @returns {Value | null} - The variable or null, if not found.
+   */
+  get(key) {
+    for (let i = this.variables.length - 1; i >= 0; i--) {
+      if (this.#scopeBounds.findLast((bound) => bound.isFunctionScope && bound.length == i + 1)) {
+        return null;
+      }
+
+      if (this.variables[i].key == key) {
+        return this.variables[i].value;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Sets variable to the given value and type.
+   * @param {string} key - Key of the variable we want to set.
+   * @param {any} value - The value of the variable.
+   */
+  set(key, value) {
+    const existing_var = this.get(key);
+
+    if (existing_var) {
+      existing_var.set(value.value, value.type)
+    } else {
+      this.variables.push({
+        key: key,
+        value: value
+      })
+    }
+  }
+
+  create_reference(key, variable) {
+    this.set(key, variable, TYPES.reference);
+  }
+
+  enterBasicScope(isFunc = false) {
+    this.#scopeBounds.push({
+      length: this.variables.length,
+      isFunctionScope: isFunc
+    })
+  }
+
+  leaveBasicScope() {
+    const current_bound = this.#scopeBounds.pop()
+    const length_diff = this.variables.length - current_bound.length;
+    this.variables.splice(this.variables.length - length_diff, length_diff)
+  }
+
+  enterFunctionScope(functionName, parameters) {
+    this.enterBasicScope(true)
+
+    const parameterTypes = this.parameterTypes.get(functionName);
+
+    parameters.forEach((parameter, index) => {
+      const current_type = parameterTypes[index]
+
+      if (current_type.reference) {
+        this.create_reference(current_type.name, parameter)
+      } else {
+        this.set(current_type.name, parameter, current_type.type)
+      }
+    })
+  }
+
+  leaveFunctionScope() {
+    this.leaveBasicScope()
+  }
+}
+
+/*
+let s = new Stack()
+s.set("x", "teszt", TYPES.string);
+
+s.enterBasicScope(false)
+
+s.set("y", "teszt", TYPES.string);
+
+s.enterBasicScope(false)
+s.set("z", "teszt", TYPES.string);
+s.set("d", "teszt", TYPES.string);
+
+s.set("x", "tesztes", TYPES.string);
+
+let x = s.get("x")
+s.enterFunctionScope()
+
+s.create_reference("val", x)
+
+s.set("val", "teszte", TYPES.string);
+
+s.leaveFunctionScope()
+
+s.leaveBasicScope()
+
+s.set("d", "teszt", TYPES.string);
+
+console.log(s.get("x")?.value)
+console.log(s)
+s.leaveBasicScope()
+*/
+
+class OldStack {
   head = null;
   previousHeads = [];
   paramnNames = null;
@@ -104,7 +271,7 @@ export class Stack {
       const currentParamName = paramNames[index]
 
       if (currentParamName.reference) {
-        this.create_reference(currentParamName.name, parameter, this.previousHeads[Math.max(this.previousHeads.length-1, 0)])
+        this.create_reference(currentParamName.name, parameter, this.previousHeads[Math.max(this.previousHeads.length - 1, 0)])
       } else {
         this.set(currentParamName.name, parameter, true)
       }
@@ -121,14 +288,14 @@ export class Stack {
     console.log("VEREM KEZDETE");
     while (current != null) {
       console.log(current.key, " - ", current.value);
-      if (this.previousHeads.includes(current)) {console.log("új scope")}
+      if (this.previousHeads.includes(current)) { console.log("új scope") }
       current = current.next;
     }
     console.log("VEREM VÉGE");
   }
 }
 
-class OldStack {
+class OlderStack {
   constructor(parameters) {
     this.previousHead = [];
     this.head = null;
