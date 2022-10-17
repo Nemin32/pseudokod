@@ -26,7 +26,9 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   visitDebugPrintStatement(ctx) {
     let exp = this.visit(ctx.expression());
 
-    if (exp.type !== TYPES.array) {
+    if (exp === null) {
+      this.outputFunc("[üres]")
+    } else if (exp.type !== TYPES.array) {
       this.outputFunc(exp.value);
     } else {
       this.outputFunc(exp.value.map((val) => val.value))
@@ -41,6 +43,8 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const statements = ctx.statement();
 
     if (statements !== null) {
+      this.variableStack.enterBasicScope()
+
       for (let statement of statements) {
         const value = this.visit(statement);
 
@@ -48,6 +52,8 @@ export class PseudoVisitor extends PseudoCodeVisitor {
           return value;
         }
       }
+
+      this.variableStack.leaveBasicScope()
     }
 
     return null;
@@ -117,23 +123,33 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitForStatement(ctx) {
+    const body = ctx.body()
     const varname = ctx.variable().getText();
-    const start = this.visit(ctx.expression(0));
-    const end = this.visit(ctx.expression(1));
-    const body = ctx.body();
+    const start = this.visit(ctx.expression(0)).safe_get(TYPES.number);
+    const end = this.visit(ctx.expression(1)).safe_get(TYPES.number);
 
-    this.variableStack.enterBasicScope();
+    this.variableStack.enterBasicScope()
 
-    this.variableStack.set(varname, start);
+    this.variableStack.set(varname, new Value(start, TYPES.number));
 
-    let value = start;
-    while (value < end) {
-      this.visit(body);
-      value = this.variableStack.get(varname);
-      this.variableStack.set(varname, value + 1);
+    while (true) {
+      const iterator = this.variableStack.get(varname);
+
+      if (iterator.value > end) {
+        break;
+      }
+
+      const value = this.visitBody(body);
+
+      if (value) {
+        this.variableStack.leaveBasicScope()
+        return value;
+      }
+
+      iterator.set(iterator.value + 1, iterator.type);
     }
 
-    this.variableStack.leaveBasicScope();
+    this.variableStack.leaveBasicScope()
   }
 
   visitWhileStatement(ctx) {
@@ -141,13 +157,13 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const body = ctx.body();
 
     while (true) {
-      if (this.visit(exp) == false) {
+      const pred = this.visit(exp).safe_get(TYPES.boolean)
+
+      if (pred == false) {
         return null;
       }
 
-      this.variableStack.enterBasicScope();
       const value = this.visit(body);
-      this.variableStack.leaveBasicScope();
 
       if (value) {
         return value;
@@ -160,15 +176,14 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const body = ctx.body();
 
     while (true) {
-      this.variableStack.enterBasicScope();
       const value = this.visit(body);
-      this.variableStack.leaveBasicScope();
 
       if (value) {
         return value;
       }
 
-      if (this.visit(exp) == false) {
+      const pred = this.visit(exp).safe_get(TYPES.boolean)
+      if (pred == false) {
         return null;
       }
     }
@@ -209,13 +224,10 @@ export class PseudoVisitor extends PseudoCodeVisitor {
 
     const parameters = ctx.parameters().expression().map(param => this.visit(param));
 
-    // console.log(parameters)
     if (funcBody) {
-      //this.variableStack.newFunctionFrame(funcName, parameters)
       this.variableStack.enterFunctionScope(funcName, parameters);
       const value = this.visitBody(funcBody);
       this.variableStack.leaveFunctionScope();
-      //this.variableStack.dropFrame()
       return value;
     } else {
       this.outputFunc("Nincs ilyen fgv: " + funcName);
@@ -314,22 +326,24 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const exp1 = exp1_raw.value;
     const exp2 = exp2_raw.value;
 
-    const value = (() => {switch (comparer) {
-      case "<":
-        return exp1 < exp2;
-      case ">":
-        return exp1 > exp2;
-      case "<=":
-        return exp1 <= exp2;
-      case ">=":
-        return exp1 >= exp2;
-      case "=":
-        return exp1 === exp2;
-      case "=/=":
-        return exp1 !== exp2;
-      default:
-        throw new Error("Illegal operator found in comparison.");
-    }})()
+    const value = (() => {
+      switch (comparer) {
+        case "<":
+          return exp1 < exp2;
+        case ">":
+          return exp1 > exp2;
+        case "<=":
+          return exp1 <= exp2;
+        case ">=":
+          return exp1 >= exp2;
+        case "=":
+          return exp1 === exp2;
+        case "=/=":
+          return exp1 !== exp2;
+        default:
+          throw new Error("Illegal operator found in comparison.");
+      }
+    })()
 
     return new Value(value, TYPES.boolean);
   }
@@ -347,20 +361,22 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const exp1 = exp1_raw.value;
     const exp2 = exp2_raw.value;
 
-    const result = (() => {switch (op) {
-      case "+":
-        return exp1 + exp2;
-      case "-":
-        return exp1 - exp2;
-      case "*":
-        return exp1 * exp2;
-      case "/":
-        return exp1 / exp2;
-      case "mod":
-        return exp1 % exp2;
-      default:
-        throw new Error("Illegal operator found in calculation.");
-    }})()
+    const result = (() => {
+      switch (op) {
+        case "+":
+          return exp1 + exp2;
+        case "-":
+          return exp1 - exp2;
+        case "*":
+          return exp1 * exp2;
+        case "/":
+          return exp1 / exp2;
+        case "mod":
+          return exp1 % exp2;
+        default:
+          throw new Error("Illegal operator found in calculation.");
+      }
+    })()
 
     return new Value(result, TYPES.number);
   }

@@ -4,7 +4,7 @@ import antlr4 from 'antlr4';
 import PseudoCodeListener from './PseudoCodeListener.js';
 import PseudoCodeVisitor from './PseudoCodeVisitor.js';
 
-const serializedATN = [4,1,47,387,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,
+const serializedATN = [4,1,47,383,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,
 4,2,5,7,5,2,6,7,6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,
 2,13,7,13,2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,
 20,7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,2,27,
@@ -16,117 +16,115 @@ const serializedATN = [4,1,47,387,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,
 12,6,135,1,6,1,6,1,6,3,6,141,8,6,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,1,7,
 1,8,1,8,1,8,1,8,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,9,1,10,1,10,1,10,1,10,
 1,10,1,10,1,10,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,
-11,1,11,1,11,1,11,1,11,1,11,1,12,1,12,1,12,1,12,1,13,1,13,1,13,1,14,1,14,
-1,14,1,14,1,14,1,14,1,14,3,14,204,8,14,1,14,5,14,207,8,14,10,14,12,14,210,
-9,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,3,
-14,225,8,14,1,15,1,15,3,15,229,8,15,1,15,1,15,3,15,233,8,15,1,15,1,15,3,
-15,237,8,15,1,15,1,15,1,16,1,16,1,17,1,17,1,17,3,17,246,8,17,1,17,1,17,3,
-17,250,8,17,1,17,1,17,1,17,1,17,1,18,1,18,1,18,1,18,3,18,260,8,18,1,18,1,
-18,3,18,264,8,18,1,18,1,18,3,18,268,8,18,1,18,1,18,3,18,272,8,18,1,18,1,
-18,1,19,1,19,1,19,1,19,1,20,1,20,1,20,1,20,1,20,3,20,285,8,20,1,20,1,20,
-3,20,289,8,20,1,20,1,20,3,20,293,8,20,1,20,1,20,1,20,3,20,298,8,20,1,20,
-1,20,3,20,302,8,20,1,20,1,20,1,20,3,20,307,8,20,1,20,1,20,3,20,311,8,20,
-1,20,1,20,1,20,3,20,316,8,20,1,20,1,20,3,20,320,8,20,1,20,5,20,323,8,20,
-10,20,12,20,326,9,20,1,21,1,21,1,21,1,22,1,22,1,22,1,22,1,22,3,22,336,8,
-22,1,22,5,22,339,8,22,10,22,12,22,342,9,22,1,22,1,22,3,22,346,8,22,1,23,
-1,23,1,24,1,24,1,24,3,24,353,8,24,1,25,1,25,1,25,1,25,3,25,359,8,25,1,26,
-1,26,1,27,1,27,1,28,1,28,1,29,1,29,1,29,1,29,3,29,371,8,29,1,29,4,29,374,
-8,29,11,29,12,29,375,1,29,1,29,1,30,1,30,1,30,1,30,1,30,1,31,1,31,1,31,0,
-1,40,32,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,
-46,48,50,52,54,56,58,60,62,0,1,1,0,9,14,410,0,65,1,0,0,0,2,73,1,0,0,0,4,
-94,1,0,0,0,6,98,1,0,0,0,8,100,1,0,0,0,10,104,1,0,0,0,12,140,1,0,0,0,14,142,
-1,0,0,0,16,152,1,0,0,0,18,156,1,0,0,0,20,165,1,0,0,0,22,172,1,0,0,0,24,189,
-1,0,0,0,26,193,1,0,0,0,28,224,1,0,0,0,30,228,1,0,0,0,32,240,1,0,0,0,34,242,
-1,0,0,0,36,255,1,0,0,0,38,275,1,0,0,0,40,284,1,0,0,0,42,327,1,0,0,0,44,345,
-1,0,0,0,46,347,1,0,0,0,48,352,1,0,0,0,50,358,1,0,0,0,52,360,1,0,0,0,54,362,
-1,0,0,0,56,364,1,0,0,0,58,366,1,0,0,0,60,379,1,0,0,0,62,384,1,0,0,0,64,66,
-5,47,0,0,65,64,1,0,0,0,65,66,1,0,0,0,66,68,1,0,0,0,67,69,3,4,2,0,68,67,1,
-0,0,0,69,70,1,0,0,0,70,68,1,0,0,0,70,71,1,0,0,0,71,1,1,0,0,0,72,74,5,47,
-0,0,73,72,1,0,0,0,73,74,1,0,0,0,74,77,1,0,0,0,75,78,3,4,2,0,76,78,5,46,0,
-0,77,75,1,0,0,0,77,76,1,0,0,0,78,79,1,0,0,0,79,77,1,0,0,0,79,80,1,0,0,0,
-80,3,1,0,0,0,81,95,3,10,5,0,82,95,3,26,13,0,83,95,3,12,6,0,84,95,3,18,9,
-0,85,95,3,20,10,0,86,95,3,22,11,0,87,95,3,34,17,0,88,95,3,36,18,0,89,95,
-3,38,19,0,90,95,3,24,12,0,91,95,3,28,14,0,92,95,3,8,4,0,93,95,3,6,3,0,94,
-81,1,0,0,0,94,82,1,0,0,0,94,83,1,0,0,0,94,84,1,0,0,0,94,85,1,0,0,0,94,86,
-1,0,0,0,94,87,1,0,0,0,94,88,1,0,0,0,94,89,1,0,0,0,94,90,1,0,0,0,94,91,1,
-0,0,0,94,92,1,0,0,0,94,93,1,0,0,0,95,96,1,0,0,0,96,97,5,46,0,0,97,5,1,0,
-0,0,98,99,5,1,0,0,99,7,1,0,0,0,100,101,5,2,0,0,101,102,5,47,0,0,102,103,
-3,40,20,0,103,9,1,0,0,0,104,105,5,3,0,0,105,11,1,0,0,0,106,107,5,24,0,0,
-107,108,5,47,0,0,108,109,3,40,20,0,109,110,5,47,0,0,110,111,5,26,0,0,111,
-112,5,46,0,0,112,113,3,2,1,0,113,114,5,30,0,0,114,141,1,0,0,0,115,116,5,
-24,0,0,116,117,5,47,0,0,117,118,3,40,20,0,118,119,5,47,0,0,119,120,5,26,
-0,0,120,121,5,46,0,0,121,122,3,2,1,0,122,123,3,16,8,0,123,124,5,30,0,0,124,
-141,1,0,0,0,125,126,5,24,0,0,126,127,5,47,0,0,127,128,3,40,20,0,128,129,
-5,47,0,0,129,130,5,26,0,0,130,131,5,46,0,0,131,133,3,2,1,0,132,134,3,14,
-7,0,133,132,1,0,0,0,134,135,1,0,0,0,135,133,1,0,0,0,135,136,1,0,0,0,136,
-137,1,0,0,0,137,138,3,16,8,0,138,139,5,30,0,0,139,141,1,0,0,0,140,106,1,
-0,0,0,140,115,1,0,0,0,140,125,1,0,0,0,141,13,1,0,0,0,142,143,5,25,0,0,143,
-144,5,47,0,0,144,145,5,24,0,0,145,146,5,47,0,0,146,147,3,40,20,0,147,148,
-5,47,0,0,148,149,5,26,0,0,149,150,5,46,0,0,150,151,3,2,1,0,151,15,1,0,0,
-0,152,153,5,25,0,0,153,154,5,46,0,0,154,155,3,2,1,0,155,17,1,0,0,0,156,157,
-5,23,0,0,157,158,5,47,0,0,158,159,5,22,0,0,159,160,5,47,0,0,160,161,3,40,
-20,0,161,162,5,46,0,0,162,163,3,2,1,0,163,164,5,29,0,0,164,19,1,0,0,0,165,
-166,5,23,0,0,166,167,5,46,0,0,167,168,3,2,1,0,168,169,5,22,0,0,169,170,5,
-47,0,0,170,171,3,40,20,0,171,21,1,0,0,0,172,173,5,23,0,0,173,174,5,47,0,
-0,174,175,3,62,31,0,175,176,5,47,0,0,176,177,5,34,0,0,177,178,5,47,0,0,178,
-179,3,40,20,0,179,180,5,47,0,0,180,181,5,27,0,0,181,182,5,47,0,0,182,183,
-3,40,20,0,183,184,5,47,0,0,184,185,5,28,0,0,185,186,5,46,0,0,186,187,3,2,
-1,0,187,188,5,29,0,0,188,23,1,0,0,0,189,190,5,40,0,0,190,191,5,47,0,0,191,
-192,3,40,20,0,192,25,1,0,0,0,193,194,3,46,23,0,194,195,3,44,22,0,195,27,
-1,0,0,0,196,197,5,31,0,0,197,198,5,47,0,0,198,199,3,46,23,0,199,200,5,4,
-0,0,200,208,3,30,15,0,201,203,5,5,0,0,202,204,5,47,0,0,203,202,1,0,0,0,203,
-204,1,0,0,0,204,205,1,0,0,0,205,207,3,30,15,0,206,201,1,0,0,0,207,210,1,
-0,0,0,208,206,1,0,0,0,208,209,1,0,0,0,209,211,1,0,0,0,210,208,1,0,0,0,211,
-212,5,6,0,0,212,213,5,46,0,0,213,214,3,2,1,0,214,215,5,32,0,0,215,225,1,
-0,0,0,216,217,5,31,0,0,217,218,5,47,0,0,218,219,3,46,23,0,219,220,5,7,0,
-0,220,221,5,46,0,0,221,222,3,2,1,0,222,223,5,32,0,0,223,225,1,0,0,0,224,
-196,1,0,0,0,224,216,1,0,0,0,225,29,1,0,0,0,226,227,5,21,0,0,227,229,5,47,
-0,0,228,226,1,0,0,0,228,229,1,0,0,0,229,230,1,0,0,0,230,232,3,62,31,0,231,
-233,5,47,0,0,232,231,1,0,0,0,232,233,1,0,0,0,233,234,1,0,0,0,234,236,5,8,
-0,0,235,237,5,47,0,0,236,235,1,0,0,0,236,237,1,0,0,0,237,238,1,0,0,0,238,
-239,3,32,16,0,239,31,1,0,0,0,240,241,7,0,0,0,241,33,1,0,0,0,242,243,3,62,
-31,0,243,245,5,15,0,0,244,246,5,47,0,0,245,244,1,0,0,0,245,246,1,0,0,0,246,
-247,1,0,0,0,247,249,3,40,20,0,248,250,5,47,0,0,249,248,1,0,0,0,249,250,1,
-0,0,0,250,251,1,0,0,0,251,252,5,16,0,0,252,253,5,33,0,0,253,254,3,40,20,
-0,254,35,1,0,0,0,255,256,3,62,31,0,256,257,5,33,0,0,257,259,5,17,0,0,258,
-260,5,47,0,0,259,258,1,0,0,0,259,260,1,0,0,0,260,261,1,0,0,0,261,263,3,32,
-16,0,262,264,5,47,0,0,263,262,1,0,0,0,263,264,1,0,0,0,264,265,1,0,0,0,265,
-267,5,18,0,0,266,268,5,47,0,0,267,266,1,0,0,0,267,268,1,0,0,0,268,269,1,
-0,0,0,269,271,3,40,20,0,270,272,5,47,0,0,271,270,1,0,0,0,271,272,1,0,0,0,
-272,273,1,0,0,0,273,274,5,6,0,0,274,37,1,0,0,0,275,276,3,62,31,0,276,277,
-5,33,0,0,277,278,3,40,20,0,278,39,1,0,0,0,279,280,6,20,-1,0,280,285,3,42,
-21,0,281,282,5,36,0,0,282,285,3,40,20,4,283,285,3,48,24,0,284,279,1,0,0,
-0,284,281,1,0,0,0,284,283,1,0,0,0,285,324,1,0,0,0,286,288,10,7,0,0,287,289,
-5,47,0,0,288,287,1,0,0,0,288,289,1,0,0,0,289,290,1,0,0,0,290,292,5,19,0,
-0,291,293,5,47,0,0,292,291,1,0,0,0,292,293,1,0,0,0,293,294,1,0,0,0,294,323,
-3,40,20,8,295,297,10,6,0,0,296,298,5,47,0,0,297,296,1,0,0,0,297,298,1,0,
-0,0,298,299,1,0,0,0,299,301,5,20,0,0,300,302,5,47,0,0,301,300,1,0,0,0,301,
-302,1,0,0,0,302,303,1,0,0,0,303,323,3,40,20,7,304,306,10,3,0,0,305,307,5,
-47,0,0,306,305,1,0,0,0,306,307,1,0,0,0,307,308,1,0,0,0,308,310,5,42,0,0,
-309,311,5,47,0,0,310,309,1,0,0,0,310,311,1,0,0,0,311,312,1,0,0,0,312,323,
-3,40,20,4,313,315,10,2,0,0,314,316,5,47,0,0,315,314,1,0,0,0,315,316,1,0,
-0,0,316,317,1,0,0,0,317,319,5,43,0,0,318,320,5,47,0,0,319,318,1,0,0,0,319,
-320,1,0,0,0,320,321,1,0,0,0,321,323,3,40,20,3,322,286,1,0,0,0,322,295,1,
-0,0,0,322,304,1,0,0,0,322,313,1,0,0,0,323,326,1,0,0,0,324,322,1,0,0,0,324,
-325,1,0,0,0,325,41,1,0,0,0,326,324,1,0,0,0,327,328,3,46,23,0,328,329,3,44,
-22,0,329,43,1,0,0,0,330,346,5,7,0,0,331,332,5,4,0,0,332,340,3,40,20,0,333,
-335,5,5,0,0,334,336,5,47,0,0,335,334,1,0,0,0,335,336,1,0,0,0,336,337,1,0,
-0,0,337,339,3,40,20,0,338,333,1,0,0,0,339,342,1,0,0,0,340,338,1,0,0,0,340,
-341,1,0,0,0,341,343,1,0,0,0,342,340,1,0,0,0,343,344,5,6,0,0,344,346,1,0,
-0,0,345,330,1,0,0,0,345,331,1,0,0,0,346,45,1,0,0,0,347,348,5,44,0,0,348,
-47,1,0,0,0,349,353,3,60,30,0,350,353,3,50,25,0,351,353,3,62,31,0,352,349,
-1,0,0,0,352,350,1,0,0,0,352,351,1,0,0,0,353,49,1,0,0,0,354,359,3,54,27,0,
-355,359,3,56,28,0,356,359,3,52,26,0,357,359,3,58,29,0,358,354,1,0,0,0,358,
-355,1,0,0,0,358,356,1,0,0,0,358,357,1,0,0,0,359,51,1,0,0,0,360,361,5,35,
-0,0,361,53,1,0,0,0,362,363,5,37,0,0,363,55,1,0,0,0,364,365,5,38,0,0,365,
-57,1,0,0,0,366,367,5,4,0,0,367,373,3,40,20,0,368,370,5,5,0,0,369,371,5,47,
-0,0,370,369,1,0,0,0,370,371,1,0,0,0,371,372,1,0,0,0,372,374,3,40,20,0,373,
-368,1,0,0,0,374,375,1,0,0,0,375,373,1,0,0,0,375,376,1,0,0,0,376,377,1,0,
-0,0,377,378,5,6,0,0,378,59,1,0,0,0,379,380,3,62,31,0,380,381,5,15,0,0,381,
-382,3,40,20,0,382,383,5,16,0,0,383,61,1,0,0,0,384,385,5,45,0,0,385,63,1,
-0,0,0,38,65,70,73,77,79,94,135,140,203,208,224,228,232,236,245,249,259,263,
-267,271,284,288,292,297,301,306,310,315,319,322,324,335,340,345,352,358,
-370,375];
+11,1,11,1,12,1,12,1,12,1,12,1,13,1,13,1,13,1,14,1,14,1,14,1,14,1,14,1,14,
+1,14,3,14,200,8,14,1,14,5,14,203,8,14,10,14,12,14,206,9,14,1,14,1,14,1,14,
+1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,1,14,3,14,221,8,14,1,15,1,15,
+3,15,225,8,15,1,15,1,15,3,15,229,8,15,1,15,1,15,3,15,233,8,15,1,15,1,15,
+1,16,1,16,1,17,1,17,1,17,3,17,242,8,17,1,17,1,17,3,17,246,8,17,1,17,1,17,
+1,17,1,17,1,18,1,18,1,18,1,18,3,18,256,8,18,1,18,1,18,3,18,260,8,18,1,18,
+1,18,3,18,264,8,18,1,18,1,18,3,18,268,8,18,1,18,1,18,1,19,1,19,1,19,1,19,
+1,20,1,20,1,20,1,20,1,20,3,20,281,8,20,1,20,1,20,3,20,285,8,20,1,20,1,20,
+3,20,289,8,20,1,20,1,20,1,20,3,20,294,8,20,1,20,1,20,3,20,298,8,20,1,20,
+1,20,1,20,3,20,303,8,20,1,20,1,20,3,20,307,8,20,1,20,1,20,1,20,3,20,312,
+8,20,1,20,1,20,3,20,316,8,20,1,20,5,20,319,8,20,10,20,12,20,322,9,20,1,21,
+1,21,1,21,1,22,1,22,1,22,1,22,1,22,3,22,332,8,22,1,22,5,22,335,8,22,10,22,
+12,22,338,9,22,1,22,1,22,3,22,342,8,22,1,23,1,23,1,24,1,24,1,24,3,24,349,
+8,24,1,25,1,25,1,25,1,25,3,25,355,8,25,1,26,1,26,1,27,1,27,1,28,1,28,1,29,
+1,29,1,29,1,29,3,29,367,8,29,1,29,4,29,370,8,29,11,29,12,29,371,1,29,1,29,
+1,30,1,30,1,30,1,30,1,30,1,31,1,31,1,31,0,1,40,32,0,2,4,6,8,10,12,14,16,
+18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,0,1,
+1,0,9,14,406,0,65,1,0,0,0,2,73,1,0,0,0,4,94,1,0,0,0,6,98,1,0,0,0,8,100,1,
+0,0,0,10,104,1,0,0,0,12,140,1,0,0,0,14,142,1,0,0,0,16,152,1,0,0,0,18,156,
+1,0,0,0,20,165,1,0,0,0,22,172,1,0,0,0,24,185,1,0,0,0,26,189,1,0,0,0,28,220,
+1,0,0,0,30,224,1,0,0,0,32,236,1,0,0,0,34,238,1,0,0,0,36,251,1,0,0,0,38,271,
+1,0,0,0,40,280,1,0,0,0,42,323,1,0,0,0,44,341,1,0,0,0,46,343,1,0,0,0,48,348,
+1,0,0,0,50,354,1,0,0,0,52,356,1,0,0,0,54,358,1,0,0,0,56,360,1,0,0,0,58,362,
+1,0,0,0,60,375,1,0,0,0,62,380,1,0,0,0,64,66,5,47,0,0,65,64,1,0,0,0,65,66,
+1,0,0,0,66,68,1,0,0,0,67,69,3,4,2,0,68,67,1,0,0,0,69,70,1,0,0,0,70,68,1,
+0,0,0,70,71,1,0,0,0,71,1,1,0,0,0,72,74,5,47,0,0,73,72,1,0,0,0,73,74,1,0,
+0,0,74,77,1,0,0,0,75,78,3,4,2,0,76,78,5,46,0,0,77,75,1,0,0,0,77,76,1,0,0,
+0,78,79,1,0,0,0,79,77,1,0,0,0,79,80,1,0,0,0,80,3,1,0,0,0,81,95,3,10,5,0,
+82,95,3,26,13,0,83,95,3,12,6,0,84,95,3,18,9,0,85,95,3,20,10,0,86,95,3,22,
+11,0,87,95,3,34,17,0,88,95,3,36,18,0,89,95,3,38,19,0,90,95,3,24,12,0,91,
+95,3,28,14,0,92,95,3,8,4,0,93,95,3,6,3,0,94,81,1,0,0,0,94,82,1,0,0,0,94,
+83,1,0,0,0,94,84,1,0,0,0,94,85,1,0,0,0,94,86,1,0,0,0,94,87,1,0,0,0,94,88,
+1,0,0,0,94,89,1,0,0,0,94,90,1,0,0,0,94,91,1,0,0,0,94,92,1,0,0,0,94,93,1,
+0,0,0,95,96,1,0,0,0,96,97,5,46,0,0,97,5,1,0,0,0,98,99,5,1,0,0,99,7,1,0,0,
+0,100,101,5,2,0,0,101,102,5,47,0,0,102,103,3,40,20,0,103,9,1,0,0,0,104,105,
+5,3,0,0,105,11,1,0,0,0,106,107,5,24,0,0,107,108,5,47,0,0,108,109,3,40,20,
+0,109,110,5,47,0,0,110,111,5,26,0,0,111,112,5,46,0,0,112,113,3,2,1,0,113,
+114,5,30,0,0,114,141,1,0,0,0,115,116,5,24,0,0,116,117,5,47,0,0,117,118,3,
+40,20,0,118,119,5,47,0,0,119,120,5,26,0,0,120,121,5,46,0,0,121,122,3,2,1,
+0,122,123,3,16,8,0,123,124,5,30,0,0,124,141,1,0,0,0,125,126,5,24,0,0,126,
+127,5,47,0,0,127,128,3,40,20,0,128,129,5,47,0,0,129,130,5,26,0,0,130,131,
+5,46,0,0,131,133,3,2,1,0,132,134,3,14,7,0,133,132,1,0,0,0,134,135,1,0,0,
+0,135,133,1,0,0,0,135,136,1,0,0,0,136,137,1,0,0,0,137,138,3,16,8,0,138,139,
+5,30,0,0,139,141,1,0,0,0,140,106,1,0,0,0,140,115,1,0,0,0,140,125,1,0,0,0,
+141,13,1,0,0,0,142,143,5,25,0,0,143,144,5,47,0,0,144,145,5,24,0,0,145,146,
+5,47,0,0,146,147,3,40,20,0,147,148,5,47,0,0,148,149,5,26,0,0,149,150,5,46,
+0,0,150,151,3,2,1,0,151,15,1,0,0,0,152,153,5,25,0,0,153,154,5,46,0,0,154,
+155,3,2,1,0,155,17,1,0,0,0,156,157,5,23,0,0,157,158,5,47,0,0,158,159,5,22,
+0,0,159,160,5,47,0,0,160,161,3,40,20,0,161,162,5,46,0,0,162,163,3,2,1,0,
+163,164,5,29,0,0,164,19,1,0,0,0,165,166,5,23,0,0,166,167,5,46,0,0,167,168,
+3,2,1,0,168,169,5,22,0,0,169,170,5,47,0,0,170,171,3,40,20,0,171,21,1,0,0,
+0,172,173,5,23,0,0,173,174,5,47,0,0,174,175,3,62,31,0,175,176,5,33,0,0,176,
+177,3,40,20,0,177,178,5,27,0,0,178,179,5,47,0,0,179,180,3,40,20,0,180,181,
+5,28,0,0,181,182,5,46,0,0,182,183,3,2,1,0,183,184,5,29,0,0,184,23,1,0,0,
+0,185,186,5,40,0,0,186,187,5,47,0,0,187,188,3,40,20,0,188,25,1,0,0,0,189,
+190,3,46,23,0,190,191,3,44,22,0,191,27,1,0,0,0,192,193,5,31,0,0,193,194,
+5,47,0,0,194,195,3,46,23,0,195,196,5,4,0,0,196,204,3,30,15,0,197,199,5,5,
+0,0,198,200,5,47,0,0,199,198,1,0,0,0,199,200,1,0,0,0,200,201,1,0,0,0,201,
+203,3,30,15,0,202,197,1,0,0,0,203,206,1,0,0,0,204,202,1,0,0,0,204,205,1,
+0,0,0,205,207,1,0,0,0,206,204,1,0,0,0,207,208,5,6,0,0,208,209,5,46,0,0,209,
+210,3,2,1,0,210,211,5,32,0,0,211,221,1,0,0,0,212,213,5,31,0,0,213,214,5,
+47,0,0,214,215,3,46,23,0,215,216,5,7,0,0,216,217,5,46,0,0,217,218,3,2,1,
+0,218,219,5,32,0,0,219,221,1,0,0,0,220,192,1,0,0,0,220,212,1,0,0,0,221,29,
+1,0,0,0,222,223,5,21,0,0,223,225,5,47,0,0,224,222,1,0,0,0,224,225,1,0,0,
+0,225,226,1,0,0,0,226,228,3,62,31,0,227,229,5,47,0,0,228,227,1,0,0,0,228,
+229,1,0,0,0,229,230,1,0,0,0,230,232,5,8,0,0,231,233,5,47,0,0,232,231,1,0,
+0,0,232,233,1,0,0,0,233,234,1,0,0,0,234,235,3,32,16,0,235,31,1,0,0,0,236,
+237,7,0,0,0,237,33,1,0,0,0,238,239,3,62,31,0,239,241,5,15,0,0,240,242,5,
+47,0,0,241,240,1,0,0,0,241,242,1,0,0,0,242,243,1,0,0,0,243,245,3,40,20,0,
+244,246,5,47,0,0,245,244,1,0,0,0,245,246,1,0,0,0,246,247,1,0,0,0,247,248,
+5,16,0,0,248,249,5,33,0,0,249,250,3,40,20,0,250,35,1,0,0,0,251,252,3,62,
+31,0,252,253,5,33,0,0,253,255,5,17,0,0,254,256,5,47,0,0,255,254,1,0,0,0,
+255,256,1,0,0,0,256,257,1,0,0,0,257,259,3,32,16,0,258,260,5,47,0,0,259,258,
+1,0,0,0,259,260,1,0,0,0,260,261,1,0,0,0,261,263,5,18,0,0,262,264,5,47,0,
+0,263,262,1,0,0,0,263,264,1,0,0,0,264,265,1,0,0,0,265,267,3,40,20,0,266,
+268,5,47,0,0,267,266,1,0,0,0,267,268,1,0,0,0,268,269,1,0,0,0,269,270,5,6,
+0,0,270,37,1,0,0,0,271,272,3,62,31,0,272,273,5,33,0,0,273,274,3,40,20,0,
+274,39,1,0,0,0,275,276,6,20,-1,0,276,281,3,42,21,0,277,278,5,36,0,0,278,
+281,3,40,20,4,279,281,3,48,24,0,280,275,1,0,0,0,280,277,1,0,0,0,280,279,
+1,0,0,0,281,320,1,0,0,0,282,284,10,7,0,0,283,285,5,47,0,0,284,283,1,0,0,
+0,284,285,1,0,0,0,285,286,1,0,0,0,286,288,5,19,0,0,287,289,5,47,0,0,288,
+287,1,0,0,0,288,289,1,0,0,0,289,290,1,0,0,0,290,319,3,40,20,8,291,293,10,
+6,0,0,292,294,5,47,0,0,293,292,1,0,0,0,293,294,1,0,0,0,294,295,1,0,0,0,295,
+297,5,20,0,0,296,298,5,47,0,0,297,296,1,0,0,0,297,298,1,0,0,0,298,299,1,
+0,0,0,299,319,3,40,20,7,300,302,10,3,0,0,301,303,5,47,0,0,302,301,1,0,0,
+0,302,303,1,0,0,0,303,304,1,0,0,0,304,306,5,42,0,0,305,307,5,47,0,0,306,
+305,1,0,0,0,306,307,1,0,0,0,307,308,1,0,0,0,308,319,3,40,20,4,309,311,10,
+2,0,0,310,312,5,47,0,0,311,310,1,0,0,0,311,312,1,0,0,0,312,313,1,0,0,0,313,
+315,5,43,0,0,314,316,5,47,0,0,315,314,1,0,0,0,315,316,1,0,0,0,316,317,1,
+0,0,0,317,319,3,40,20,3,318,282,1,0,0,0,318,291,1,0,0,0,318,300,1,0,0,0,
+318,309,1,0,0,0,319,322,1,0,0,0,320,318,1,0,0,0,320,321,1,0,0,0,321,41,1,
+0,0,0,322,320,1,0,0,0,323,324,3,46,23,0,324,325,3,44,22,0,325,43,1,0,0,0,
+326,342,5,7,0,0,327,328,5,4,0,0,328,336,3,40,20,0,329,331,5,5,0,0,330,332,
+5,47,0,0,331,330,1,0,0,0,331,332,1,0,0,0,332,333,1,0,0,0,333,335,3,40,20,
+0,334,329,1,0,0,0,335,338,1,0,0,0,336,334,1,0,0,0,336,337,1,0,0,0,337,339,
+1,0,0,0,338,336,1,0,0,0,339,340,5,6,0,0,340,342,1,0,0,0,341,326,1,0,0,0,
+341,327,1,0,0,0,342,45,1,0,0,0,343,344,5,44,0,0,344,47,1,0,0,0,345,349,3,
+60,30,0,346,349,3,50,25,0,347,349,3,62,31,0,348,345,1,0,0,0,348,346,1,0,
+0,0,348,347,1,0,0,0,349,49,1,0,0,0,350,355,3,54,27,0,351,355,3,56,28,0,352,
+355,3,52,26,0,353,355,3,58,29,0,354,350,1,0,0,0,354,351,1,0,0,0,354,352,
+1,0,0,0,354,353,1,0,0,0,355,51,1,0,0,0,356,357,5,35,0,0,357,53,1,0,0,0,358,
+359,5,37,0,0,359,55,1,0,0,0,360,361,5,38,0,0,361,57,1,0,0,0,362,363,5,4,
+0,0,363,369,3,40,20,0,364,366,5,5,0,0,365,367,5,47,0,0,366,365,1,0,0,0,366,
+367,1,0,0,0,367,368,1,0,0,0,368,370,3,40,20,0,369,364,1,0,0,0,370,371,1,
+0,0,0,371,369,1,0,0,0,371,372,1,0,0,0,372,373,1,0,0,0,373,374,5,6,0,0,374,
+59,1,0,0,0,375,376,3,62,31,0,376,377,5,15,0,0,377,378,3,40,20,0,378,379,
+5,16,0,0,379,61,1,0,0,0,380,381,5,45,0,0,381,63,1,0,0,0,38,65,70,73,77,79,
+94,135,140,199,204,220,224,228,232,241,245,255,259,263,267,280,284,288,293,
+297,302,306,311,315,318,320,331,336,341,348,354,366,371];
 
 
 const atn = new antlr4.atn.ATNDeserializer().deserialize(serializedATN);
@@ -729,30 +727,22 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	        this.state = 174;
 	        this.variable();
 	        this.state = 175;
-	        this.match(PseudoCodeParser.WS);
+	        this.match(PseudoCodeParser.ASSIGN);
 	        this.state = 176;
-	        this.match(PseudoCodeParser.NYIL);
+	        this.expression(0);
 	        this.state = 177;
-	        this.match(PseudoCodeParser.WS);
-	        this.state = 178;
-	        this.expression(0);
-	        this.state = 179;
-	        this.match(PseudoCodeParser.WS);
-	        this.state = 180;
 	        this.match(PseudoCodeParser.CSTART);
-	        this.state = 181;
+	        this.state = 178;
 	        this.match(PseudoCodeParser.WS);
-	        this.state = 182;
+	        this.state = 179;
 	        this.expression(0);
-	        this.state = 183;
-	        this.match(PseudoCodeParser.WS);
-	        this.state = 184;
+	        this.state = 180;
 	        this.match(PseudoCodeParser.CEND);
-	        this.state = 185;
+	        this.state = 181;
 	        this.match(PseudoCodeParser.NL);
-	        this.state = 186;
+	        this.state = 182;
 	        this.body();
-	        this.state = 187;
+	        this.state = 183;
 	        this.match(PseudoCodeParser.CVEGE);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -775,11 +765,11 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 24, PseudoCodeParser.RULE_returnStatement);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 189;
+	        this.state = 185;
 	        this.match(PseudoCodeParser.VISSZA);
-	        this.state = 190;
+	        this.state = 186;
 	        this.match(PseudoCodeParser.WS);
-	        this.state = 191;
+	        this.state = 187;
 	        this.expression(0);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -802,9 +792,9 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 26, PseudoCodeParser.RULE_methodCallStatement);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 193;
+	        this.state = 189;
 	        this.functionName();
-	        this.state = 194;
+	        this.state = 190;
 	        this.parameters();
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -827,69 +817,69 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 28, PseudoCodeParser.RULE_functionDeclarationStatement);
 	    var _la = 0; // Token type
 	    try {
-	        this.state = 224;
+	        this.state = 220;
 	        this._errHandler.sync(this);
 	        var la_ = this._interp.adaptivePredict(this._input,10,this._ctx);
 	        switch(la_) {
 	        case 1:
 	            localctx = new FunctionDeclarationWithParametersContext(this, localctx);
 	            this.enterOuterAlt(localctx, 1);
-	            this.state = 196;
+	            this.state = 192;
 	            this.match(PseudoCodeParser.FUGGVENY);
-	            this.state = 197;
+	            this.state = 193;
 	            this.match(PseudoCodeParser.WS);
-	            this.state = 198;
+	            this.state = 194;
 	            this.functionName();
-	            this.state = 199;
+	            this.state = 195;
 	            this.match(PseudoCodeParser.T__3);
-	            this.state = 200;
+	            this.state = 196;
 	            this.parameterWithType();
-	            this.state = 208;
+	            this.state = 204;
 	            this._errHandler.sync(this);
 	            _la = this._input.LA(1);
 	            while(_la===5) {
-	                this.state = 201;
+	                this.state = 197;
 	                this.match(PseudoCodeParser.T__4);
-	                this.state = 203;
+	                this.state = 199;
 	                this._errHandler.sync(this);
 	                _la = this._input.LA(1);
 	                if(_la===47) {
-	                    this.state = 202;
+	                    this.state = 198;
 	                    this.match(PseudoCodeParser.WS);
 	                }
 
-	                this.state = 205;
+	                this.state = 201;
 	                this.parameterWithType();
-	                this.state = 210;
+	                this.state = 206;
 	                this._errHandler.sync(this);
 	                _la = this._input.LA(1);
 	            }
-	            this.state = 211;
+	            this.state = 207;
 	            this.match(PseudoCodeParser.T__5);
-	            this.state = 212;
+	            this.state = 208;
 	            this.match(PseudoCodeParser.NL);
-	            this.state = 213;
+	            this.state = 209;
 	            this.body();
-	            this.state = 214;
+	            this.state = 210;
 	            this.match(PseudoCodeParser.FVEGE);
 	            break;
 
 	        case 2:
 	            localctx = new FunctionDeclarationWithoutParametersContext(this, localctx);
 	            this.enterOuterAlt(localctx, 2);
-	            this.state = 216;
+	            this.state = 212;
 	            this.match(PseudoCodeParser.FUGGVENY);
-	            this.state = 217;
+	            this.state = 213;
 	            this.match(PseudoCodeParser.WS);
-	            this.state = 218;
+	            this.state = 214;
 	            this.functionName();
-	            this.state = 219;
+	            this.state = 215;
 	            this.match(PseudoCodeParser.T__6);
-	            this.state = 220;
+	            this.state = 216;
 	            this.match(PseudoCodeParser.NL);
-	            this.state = 221;
+	            this.state = 217;
 	            this.body();
-	            this.state = 222;
+	            this.state = 218;
 	            this.match(PseudoCodeParser.FVEGE);
 	            break;
 
@@ -916,18 +906,28 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    var _la = 0; // Token type
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 228;
+	        this.state = 224;
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
 	        if(_la===21) {
-	            this.state = 226;
+	            this.state = 222;
 	            this.match(PseudoCodeParser.CIMSZERINT);
+	            this.state = 223;
+	            this.match(PseudoCodeParser.WS);
+	        }
+
+	        this.state = 226;
+	        this.variable();
+	        this.state = 228;
+	        this._errHandler.sync(this);
+	        _la = this._input.LA(1);
+	        if(_la===47) {
 	            this.state = 227;
 	            this.match(PseudoCodeParser.WS);
 	        }
 
 	        this.state = 230;
-	        this.variable();
+	        this.match(PseudoCodeParser.T__7);
 	        this.state = 232;
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
@@ -937,16 +937,6 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	        }
 
 	        this.state = 234;
-	        this.match(PseudoCodeParser.T__7);
-	        this.state = 236;
-	        this._errHandler.sync(this);
-	        _la = this._input.LA(1);
-	        if(_la===47) {
-	            this.state = 235;
-	            this.match(PseudoCodeParser.WS);
-	        }
-
-	        this.state = 238;
 	        this.type();
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -970,7 +960,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    var _la = 0; // Token type
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 240;
+	        this.state = 236;
 	        _la = this._input.LA(1);
 	        if(!((((_la) & ~0x1f) == 0 && ((1 << _la) & 32256) !== 0))) {
 	        this._errHandler.recoverInline(this);
@@ -1001,10 +991,20 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    var _la = 0; // Token type
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 242;
+	        this.state = 238;
 	        this.variable();
-	        this.state = 243;
+	        this.state = 239;
 	        this.match(PseudoCodeParser.T__14);
+	        this.state = 241;
+	        this._errHandler.sync(this);
+	        _la = this._input.LA(1);
+	        if(_la===47) {
+	            this.state = 240;
+	            this.match(PseudoCodeParser.WS);
+	        }
+
+	        this.state = 243;
+	        this.expression(0);
 	        this.state = 245;
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
@@ -1014,20 +1014,10 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	        }
 
 	        this.state = 247;
-	        this.expression(0);
-	        this.state = 249;
-	        this._errHandler.sync(this);
-	        _la = this._input.LA(1);
-	        if(_la===47) {
-	            this.state = 248;
-	            this.match(PseudoCodeParser.WS);
-	        }
-
-	        this.state = 251;
 	        this.match(PseudoCodeParser.T__15);
-	        this.state = 252;
+	        this.state = 248;
 	        this.match(PseudoCodeParser.ASSIGN);
-	        this.state = 253;
+	        this.state = 249;
 	        this.expression(0);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1051,12 +1041,22 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    var _la = 0; // Token type
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 255;
+	        this.state = 251;
 	        this.variable();
-	        this.state = 256;
+	        this.state = 252;
 	        this.match(PseudoCodeParser.ASSIGN);
-	        this.state = 257;
+	        this.state = 253;
 	        this.match(PseudoCodeParser.T__16);
+	        this.state = 255;
+	        this._errHandler.sync(this);
+	        _la = this._input.LA(1);
+	        if(_la===47) {
+	            this.state = 254;
+	            this.match(PseudoCodeParser.WS);
+	        }
+
+	        this.state = 257;
+	        this.type();
 	        this.state = 259;
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
@@ -1066,7 +1066,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	        }
 
 	        this.state = 261;
-	        this.type();
+	        this.match(PseudoCodeParser.T__17);
 	        this.state = 263;
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
@@ -1076,7 +1076,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	        }
 
 	        this.state = 265;
-	        this.match(PseudoCodeParser.T__17);
+	        this.expression(0);
 	        this.state = 267;
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
@@ -1086,16 +1086,6 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	        }
 
 	        this.state = 269;
-	        this.expression(0);
-	        this.state = 271;
-	        this._errHandler.sync(this);
-	        _la = this._input.LA(1);
-	        if(_la===47) {
-	            this.state = 270;
-	            this.match(PseudoCodeParser.WS);
-	        }
-
-	        this.state = 273;
 	        this.match(PseudoCodeParser.T__5);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1118,11 +1108,11 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 38, PseudoCodeParser.RULE_assignmentStatement);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 275;
+	        this.state = 271;
 	        this.variable();
-	        this.state = 276;
+	        this.state = 272;
 	        this.match(PseudoCodeParser.ASSIGN);
-	        this.state = 277;
+	        this.state = 273;
 	        this.expression(0);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1152,7 +1142,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    var _la = 0; // Token type
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 284;
+	        this.state = 280;
 	        this._errHandler.sync(this);
 	        switch(this._input.LA(1)) {
 	        case 44:
@@ -1160,16 +1150,16 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	            this._ctx = localctx;
 	            _prevctx = localctx;
 
-	            this.state = 280;
+	            this.state = 276;
 	            this.functionCall();
 	            break;
 	        case 36:
 	            localctx = new NotExpressionContext(this, localctx);
 	            this._ctx = localctx;
 	            _prevctx = localctx;
-	            this.state = 281;
+	            this.state = 277;
 	            this.match(PseudoCodeParser.NOT);
-	            this.state = 282;
+	            this.state = 278;
 	            this.expression(4);
 	            break;
 	        case 4:
@@ -1180,14 +1170,14 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	            localctx = new ValueExpressionContext(this, localctx);
 	            this._ctx = localctx;
 	            _prevctx = localctx;
-	            this.state = 283;
+	            this.state = 279;
 	            this.value();
 	            break;
 	        default:
 	            throw new antlr4.error.NoViableAltException(this);
 	        }
 	        this._ctx.stop = this._input.LT(-1);
-	        this.state = 324;
+	        this.state = 320;
 	        this._errHandler.sync(this);
 	        var _alt = this._interp.adaptivePredict(this._input,30,this._ctx)
 	        while(_alt!=2 && _alt!=antlr4.atn.ATN.INVALID_ALT_NUMBER) {
@@ -1196,17 +1186,27 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	                    this.triggerExitRuleEvent();
 	                }
 	                _prevctx = localctx;
-	                this.state = 322;
+	                this.state = 318;
 	                this._errHandler.sync(this);
 	                var la_ = this._interp.adaptivePredict(this._input,29,this._ctx);
 	                switch(la_) {
 	                case 1:
 	                    localctx = new CalculationExpressionContext(this, new ExpressionContext(this, _parentctx, _parentState));
 	                    this.pushNewRecursionContext(localctx, _startState, PseudoCodeParser.RULE_expression);
-	                    this.state = 286;
+	                    this.state = 282;
 	                    if (!( this.precpred(this._ctx, 7))) {
 	                        throw new antlr4.error.FailedPredicateException(this, "this.precpred(this._ctx, 7)");
 	                    }
+	                    this.state = 284;
+	                    this._errHandler.sync(this);
+	                    _la = this._input.LA(1);
+	                    if(_la===47) {
+	                        this.state = 283;
+	                        this.match(PseudoCodeParser.WS);
+	                    }
+
+	                    this.state = 286;
+	                    this.match(PseudoCodeParser.OPERATOR);
 	                    this.state = 288;
 	                    this._errHandler.sync(this);
 	                    _la = this._input.LA(1);
@@ -1216,26 +1216,26 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	                    }
 
 	                    this.state = 290;
-	                    this.match(PseudoCodeParser.OPERATOR);
-	                    this.state = 292;
-	                    this._errHandler.sync(this);
-	                    _la = this._input.LA(1);
-	                    if(_la===47) {
-	                        this.state = 291;
-	                        this.match(PseudoCodeParser.WS);
-	                    }
-
-	                    this.state = 294;
 	                    this.expression(8);
 	                    break;
 
 	                case 2:
 	                    localctx = new ComparisonExpressionContext(this, new ExpressionContext(this, _parentctx, _parentState));
 	                    this.pushNewRecursionContext(localctx, _startState, PseudoCodeParser.RULE_expression);
-	                    this.state = 295;
+	                    this.state = 291;
 	                    if (!( this.precpred(this._ctx, 6))) {
 	                        throw new antlr4.error.FailedPredicateException(this, "this.precpred(this._ctx, 6)");
 	                    }
+	                    this.state = 293;
+	                    this._errHandler.sync(this);
+	                    _la = this._input.LA(1);
+	                    if(_la===47) {
+	                        this.state = 292;
+	                        this.match(PseudoCodeParser.WS);
+	                    }
+
+	                    this.state = 295;
+	                    this.match(PseudoCodeParser.COMPARISON);
 	                    this.state = 297;
 	                    this._errHandler.sync(this);
 	                    _la = this._input.LA(1);
@@ -1245,26 +1245,26 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	                    }
 
 	                    this.state = 299;
-	                    this.match(PseudoCodeParser.COMPARISON);
-	                    this.state = 301;
-	                    this._errHandler.sync(this);
-	                    _la = this._input.LA(1);
-	                    if(_la===47) {
-	                        this.state = 300;
-	                        this.match(PseudoCodeParser.WS);
-	                    }
-
-	                    this.state = 303;
 	                    this.expression(7);
 	                    break;
 
 	                case 3:
 	                    localctx = new AndExpressionContext(this, new ExpressionContext(this, _parentctx, _parentState));
 	                    this.pushNewRecursionContext(localctx, _startState, PseudoCodeParser.RULE_expression);
-	                    this.state = 304;
+	                    this.state = 300;
 	                    if (!( this.precpred(this._ctx, 3))) {
 	                        throw new antlr4.error.FailedPredicateException(this, "this.precpred(this._ctx, 3)");
 	                    }
+	                    this.state = 302;
+	                    this._errHandler.sync(this);
+	                    _la = this._input.LA(1);
+	                    if(_la===47) {
+	                        this.state = 301;
+	                        this.match(PseudoCodeParser.WS);
+	                    }
+
+	                    this.state = 304;
+	                    this.match(PseudoCodeParser.ES);
 	                    this.state = 306;
 	                    this._errHandler.sync(this);
 	                    _la = this._input.LA(1);
@@ -1274,26 +1274,26 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	                    }
 
 	                    this.state = 308;
-	                    this.match(PseudoCodeParser.ES);
-	                    this.state = 310;
-	                    this._errHandler.sync(this);
-	                    _la = this._input.LA(1);
-	                    if(_la===47) {
-	                        this.state = 309;
-	                        this.match(PseudoCodeParser.WS);
-	                    }
-
-	                    this.state = 312;
 	                    this.expression(4);
 	                    break;
 
 	                case 4:
 	                    localctx = new OrExpressionContext(this, new ExpressionContext(this, _parentctx, _parentState));
 	                    this.pushNewRecursionContext(localctx, _startState, PseudoCodeParser.RULE_expression);
-	                    this.state = 313;
+	                    this.state = 309;
 	                    if (!( this.precpred(this._ctx, 2))) {
 	                        throw new antlr4.error.FailedPredicateException(this, "this.precpred(this._ctx, 2)");
 	                    }
+	                    this.state = 311;
+	                    this._errHandler.sync(this);
+	                    _la = this._input.LA(1);
+	                    if(_la===47) {
+	                        this.state = 310;
+	                        this.match(PseudoCodeParser.WS);
+	                    }
+
+	                    this.state = 313;
+	                    this.match(PseudoCodeParser.VAGY);
 	                    this.state = 315;
 	                    this._errHandler.sync(this);
 	                    _la = this._input.LA(1);
@@ -1303,22 +1303,12 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	                    }
 
 	                    this.state = 317;
-	                    this.match(PseudoCodeParser.VAGY);
-	                    this.state = 319;
-	                    this._errHandler.sync(this);
-	                    _la = this._input.LA(1);
-	                    if(_la===47) {
-	                        this.state = 318;
-	                        this.match(PseudoCodeParser.WS);
-	                    }
-
-	                    this.state = 321;
 	                    this.expression(3);
 	                    break;
 
 	                } 
 	            }
-	            this.state = 326;
+	            this.state = 322;
 	            this._errHandler.sync(this);
 	            _alt = this._interp.adaptivePredict(this._input,30,this._ctx);
 	        }
@@ -1344,9 +1334,9 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 42, PseudoCodeParser.RULE_functionCall);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 327;
+	        this.state = 323;
 	        this.functionName();
-	        this.state = 328;
+	        this.state = 324;
 	        this.parameters();
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1369,41 +1359,41 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 44, PseudoCodeParser.RULE_parameters);
 	    var _la = 0; // Token type
 	    try {
-	        this.state = 345;
+	        this.state = 341;
 	        this._errHandler.sync(this);
 	        switch(this._input.LA(1)) {
 	        case 7:
 	            this.enterOuterAlt(localctx, 1);
-	            this.state = 330;
+	            this.state = 326;
 	            this.match(PseudoCodeParser.T__6);
 	            break;
 	        case 4:
 	            this.enterOuterAlt(localctx, 2);
-	            this.state = 331;
+	            this.state = 327;
 	            this.match(PseudoCodeParser.T__3);
-	            this.state = 332;
+	            this.state = 328;
 	            this.expression(0);
-	            this.state = 340;
+	            this.state = 336;
 	            this._errHandler.sync(this);
 	            _la = this._input.LA(1);
 	            while(_la===5) {
-	                this.state = 333;
+	                this.state = 329;
 	                this.match(PseudoCodeParser.T__4);
-	                this.state = 335;
+	                this.state = 331;
 	                this._errHandler.sync(this);
 	                _la = this._input.LA(1);
 	                if(_la===47) {
-	                    this.state = 334;
+	                    this.state = 330;
 	                    this.match(PseudoCodeParser.WS);
 	                }
 
-	                this.state = 337;
+	                this.state = 333;
 	                this.expression(0);
-	                this.state = 342;
+	                this.state = 338;
 	                this._errHandler.sync(this);
 	                _la = this._input.LA(1);
 	            }
-	            this.state = 343;
+	            this.state = 339;
 	            this.match(PseudoCodeParser.T__5);
 	            break;
 	        default:
@@ -1430,7 +1420,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 46, PseudoCodeParser.RULE_functionName);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 347;
+	        this.state = 343;
 	        this.match(PseudoCodeParser.FUNCTION);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1452,25 +1442,25 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    let localctx = new ValueContext(this, this._ctx, this.state);
 	    this.enterRule(localctx, 48, PseudoCodeParser.RULE_value);
 	    try {
-	        this.state = 352;
+	        this.state = 348;
 	        this._errHandler.sync(this);
 	        var la_ = this._interp.adaptivePredict(this._input,34,this._ctx);
 	        switch(la_) {
 	        case 1:
 	            this.enterOuterAlt(localctx, 1);
-	            this.state = 349;
+	            this.state = 345;
 	            this.arrayIndex();
 	            break;
 
 	        case 2:
 	            this.enterOuterAlt(localctx, 2);
-	            this.state = 350;
+	            this.state = 346;
 	            this.atom();
 	            break;
 
 	        case 3:
 	            this.enterOuterAlt(localctx, 3);
-	            this.state = 351;
+	            this.state = 347;
 	            this.variable();
 	            break;
 
@@ -1495,27 +1485,27 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    let localctx = new AtomContext(this, this._ctx, this.state);
 	    this.enterRule(localctx, 50, PseudoCodeParser.RULE_atom);
 	    try {
-	        this.state = 358;
+	        this.state = 354;
 	        this._errHandler.sync(this);
 	        switch(this._input.LA(1)) {
 	        case 37:
 	            this.enterOuterAlt(localctx, 1);
-	            this.state = 354;
+	            this.state = 350;
 	            this.number();
 	            break;
 	        case 38:
 	            this.enterOuterAlt(localctx, 2);
-	            this.state = 355;
+	            this.state = 351;
 	            this.bool();
 	            break;
 	        case 35:
 	            this.enterOuterAlt(localctx, 3);
-	            this.state = 356;
+	            this.state = 352;
 	            this.string();
 	            break;
 	        case 4:
 	            this.enterOuterAlt(localctx, 4);
-	            this.state = 357;
+	            this.state = 353;
 	            this.arrayShorthand();
 	            break;
 	        default:
@@ -1542,7 +1532,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 52, PseudoCodeParser.RULE_string);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 360;
+	        this.state = 356;
 	        this.match(PseudoCodeParser.STRING);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1565,7 +1555,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 54, PseudoCodeParser.RULE_number);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 362;
+	        this.state = 358;
 	        this.match(PseudoCodeParser.NUMBER);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1588,7 +1578,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 56, PseudoCodeParser.RULE_bool);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 364;
+	        this.state = 360;
 	        this.match(PseudoCodeParser.BOOL);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1612,31 +1602,31 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    var _la = 0; // Token type
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 366;
+	        this.state = 362;
 	        this.match(PseudoCodeParser.T__3);
-	        this.state = 367;
+	        this.state = 363;
 	        this.expression(0);
-	        this.state = 373; 
+	        this.state = 369; 
 	        this._errHandler.sync(this);
 	        _la = this._input.LA(1);
 	        do {
-	            this.state = 368;
+	            this.state = 364;
 	            this.match(PseudoCodeParser.T__4);
-	            this.state = 370;
+	            this.state = 366;
 	            this._errHandler.sync(this);
 	            _la = this._input.LA(1);
 	            if(_la===47) {
-	                this.state = 369;
+	                this.state = 365;
 	                this.match(PseudoCodeParser.WS);
 	            }
 
-	            this.state = 372;
+	            this.state = 368;
 	            this.expression(0);
-	            this.state = 375; 
+	            this.state = 371; 
 	            this._errHandler.sync(this);
 	            _la = this._input.LA(1);
 	        } while(_la===5);
-	        this.state = 377;
+	        this.state = 373;
 	        this.match(PseudoCodeParser.T__5);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1659,13 +1649,13 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 60, PseudoCodeParser.RULE_arrayIndex);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 379;
+	        this.state = 375;
 	        this.variable();
-	        this.state = 380;
+	        this.state = 376;
 	        this.match(PseudoCodeParser.T__14);
-	        this.state = 381;
+	        this.state = 377;
 	        this.expression(0);
-	        this.state = 382;
+	        this.state = 378;
 	        this.match(PseudoCodeParser.T__15);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -1688,7 +1678,7 @@ export default class PseudoCodeParser extends antlr4.Parser {
 	    this.enterRule(localctx, 62, PseudoCodeParser.RULE_variable);
 	    try {
 	        this.enterOuterAlt(localctx, 1);
-	        this.state = 384;
+	        this.state = 380;
 	        this.match(PseudoCodeParser.VARIABLE);
 	    } catch (re) {
 	    	if(re instanceof antlr4.error.RecognitionException) {
@@ -2675,8 +2665,8 @@ class ForStatementContext extends antlr4.ParserRuleContext {
 	    return this.getTypedRuleContext(VariableContext,0);
 	};
 
-	NYIL() {
-	    return this.getToken(PseudoCodeParser.NYIL, 0);
+	ASSIGN() {
+	    return this.getToken(PseudoCodeParser.ASSIGN, 0);
 	};
 
 	expression = function(i) {

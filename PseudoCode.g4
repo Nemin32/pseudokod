@@ -54,7 +54,7 @@ doWhileStatement:
         AMIG WS expression;
 
 forStatement:
-        CIKLUS WS variable WS NYIL WS expression WS CSTART WS expression WS CEND NL
+        CIKLUS WS variable ASSIGN expression CSTART WS expression CEND NL
             body
         CVEGE;
 

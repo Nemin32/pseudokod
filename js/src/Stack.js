@@ -41,7 +41,7 @@ export class Value {
       throw new Error("Expected type was " + expected_type + ", but variable was " + this.#_type);
     }
 
-    return this.type
+    return this.value
   }
 }
 

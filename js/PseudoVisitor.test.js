@@ -4,11 +4,11 @@ import { runText } from "./src/index.js"
 const mockOutput = jest.fn((input) => input)
 
 /** @param {string} input */
-const r = (input) => runText(input, (input) => {}, mockOutput)
+const r = (input) => runText(input, (input) => { }, mockOutput)
 
 const generateTest = (testInstance) => test(testInstance.name, () => {
     r(testInstance.input)
-    expect(mockOutput.mock.calls.length).toBe(1)
+    expect(mockOutput.mock.calls.length).toBe(testInstance.times ?? 1)
     expect(mockOutput.mock.results[0].value).toStrictEqual(testInstance.output ?? "OK")
 })
 
@@ -65,8 +65,7 @@ const if_tests = {
                 kiir "OK"
             különben
                 kiir "HIBA"
-            elágazás vége\n
-            ` },
+            elágazás vége` },
         {
             name: "különben - hamis",
             input: `
@@ -93,15 +92,15 @@ const variable_tests = {
     tests: [
         {
             name: "Változó = értéke",
-            input:
-            `x <- 5
+            input: `
+            x <- 5
             ha x = 5 akkor
                 kiir "OK"
             elágazás vége` },
         {
             name: "Változó megváltoztatható",
-            input:
-            `x <- 5
+            input: `
+            x <- 5
             ha x =/= 5 akkor
                 kiir "HIBA"
             elágazás vége
@@ -113,8 +112,8 @@ const variable_tests = {
             elágazás vége` },
         {
             name: "Változó hivatkozhat önmagára",
-            input:
-            `x <- 5
+            input: `
+            x <- 5
             x <- x * 2
             
             ha x = 10 akkor
@@ -128,8 +127,8 @@ const function_tests = {
     tests: [
         {
             name: "Explicit árnyékolás",
-            input:
-            `x<-3
+            input: `
+            x<-3
             függvény Teszt(x : egész)
                 x<-5
             függvény vége
@@ -138,8 +137,7 @@ const function_tests = {
         },
         {
             name: "Implicit árnyékolás",
-            input:
-            `
+            input: `
             x<-3
             y<-4
             függvény Teszt()
@@ -152,8 +150,8 @@ const function_tests = {
         },
         {
             name: "Implicit árnyékolás két változóval",
-            input:
-            `x<-3
+            input: `
+            x<-3
             függvény Teszt()
                 y<-3
                 x<-5
@@ -166,8 +164,8 @@ const function_tests = {
         },
         {
             name: "Primitív címszerint - ugyanaz a név",
-            input:
-            `x<-3
+            input: `
+            x<-3
             függvény Teszt(címszerint x : egész)
                 x<-5
             függvény vége
@@ -178,8 +176,8 @@ const function_tests = {
         },
         {
             name: "Primitív címszerint - más név",
-            input:
-            `x<-3
+            input: `
+            x<-3
             függvény Teszt(címszerint y : egész)
                 y<-5
             függvény vége
@@ -197,3 +195,34 @@ generateTestGroup(comparison_tests)
 generateTestGroup(if_tests)
 generateTestGroup(variable_tests)
 generateTestGroup(function_tests)
+
+describe("Ciklusok", () => {
+    test("Egyszerű ciklus", () => {
+        r(`
+        x <- 0
+        ciklus amíg x < 5
+            kiir x
+            x <- x + 1
+        ciklus vége
+
+        kiir x
+        `)
+
+        expect(mockOutput.mock.calls.length).toBe(6)
+        expect(mockOutput.mock.results[5].value).toBe(5)
+    })
+
+    test("For ciklus", () => {
+        r(`
+        x <- 1
+        ciklus i <- 1-től 5-ig
+            x <- x * 2
+        ciklus vége
+
+        kiir x
+        `)
+
+        expect(mockOutput.mock.calls.length).toBe(1)
+        expect(mockOutput.mock.results[0].value).toBe(32)
+    })
+})
