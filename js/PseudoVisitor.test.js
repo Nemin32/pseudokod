@@ -185,7 +185,55 @@ const function_tests = {
             
             kiir 5`,
             output: 5
-        }
+        },
+    ]
+}
+
+const return_tests = {
+    name: "Visszatérés",
+    tests: [
+        {
+            name: "Egyszerű paraméteres",
+            input: `
+            x<-3
+            függvény Teszt(x : egész)
+                vissza x * 2
+            függvény vége
+            kiir Teszt(x)`,
+            output: 6
+        },
+        {
+            name: "Elágazásból",
+            input: `
+            x <- 3
+            függvény Teszt(x : egész)
+                ha x > 3 akkor
+                    vissza x
+                különben
+                    vissza x * 2
+                elágazás vége
+            függvény vége
+            kiir Teszt(x)`,
+            output: 6
+        },
+        {
+            name: "Beágyazott elágazásból",
+            input: `
+            x <- 3
+            függvény Teszt(x : egész)
+                ha x > 3 akkor
+                    vissza x
+                különben
+                    ha x = 3 akkor
+                        vissza x * 2
+                    különben
+                        vissza x * 4
+                    elágazás vége
+                elágazás vége
+            függvény vége
+            kiir Teszt(x)`,
+            output: 6
+        },
     ]
 }
 
@@ -195,6 +243,7 @@ generateTestGroup(comparison_tests)
 generateTestGroup(if_tests)
 generateTestGroup(variable_tests)
 generateTestGroup(function_tests)
+generateTestGroup(return_tests)
 
 describe("Ciklusok", () => {
     test("Egyszerű ciklus", () => {
