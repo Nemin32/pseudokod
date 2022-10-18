@@ -20,29 +20,33 @@ window.addEventListener("load", () => {
 				error
 			})
 
-			output.innerHTML += message + "\n";
-
+			output.innerHTML += `${line}:${column} - ${message}\n`;
 			button.className = "bad"
 		}
 
 		button.className = "good"
-		PseudoVisitor.runText(
-			inputElem.value,
-			syntaxReporter,
-			(...rest) => { rest.forEach(elem => {output.innerText += elem +"\n"}) },
-			(head, scope_limits) => {
-				let current = head;
 
-				while (current != null) {
-					if (scope_limits.includes(current)) {
-						vars.innerHTML += `<span>limit</span>`
+		try {
+			PseudoVisitor.runText(
+				inputElem.value,
+				syntaxReporter,
+				(...rest) => { rest.forEach(elem => { output.innerText += elem + "\n" }) },
+				(variables, scopeBounds) => {
+					vars.innerHTML = ""
+
+					for (let i = variables.length - 1; i >= 0; i--) {
+						if (scopeBounds.find((elem) => elem.isFunctionScope && elem.length == i + 1)) {
+							vars.innerHTML += `<span>limit</span>`
+						}
+
+						vars.innerHTML += `<span>${variables[i].key} - ${variables[i].value.value} (${variables[i].value.type})`
+
 					}
-
-					vars.innerHTML += `<span>${current.key} - ${current.value}</span>`
-
-					current = current.next
 				}
-			}
-		)
+			)
+		} catch (e) {
+			output.innerHTML += e.message + "\n"
+			button.className = "bad"
+		}
 	})
 })

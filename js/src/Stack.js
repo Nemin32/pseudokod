@@ -38,7 +38,7 @@ export class Value {
 
   safe_get(expected_type) {
     if (this.#_type !== expected_type) {
-      throw new Error("Expected type was " + expected_type + ", but variable was " + this.#_type);
+      throw new Error(`'${expected_type}' típust vártunk, de a változó '${this.#_type}' típusú volt!`);
     }
 
     return this.value
@@ -64,6 +64,10 @@ printStack
 
 export class Stack {
   #scopeBounds = []
+
+  get scopeBounds() {
+    return this.#scopeBounds
+  }
 
   /** @type {Array<Value>} */
   variables = []

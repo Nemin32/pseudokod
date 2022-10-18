@@ -20,7 +20,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitVars(ctx) {
-    this.variableOutput(this.variableStack.head, this.variableStack.previousHeads);
+    this.variableOutput(this.variableStack.variables, this.variableStack.scopeBounds);
   }
 
   visitDebugPrintStatement(ctx) {
@@ -49,6 +49,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         const value = this.visit(statement);
 
         if (value !== null && value !== undefined) {
+          this.variableStack.leaveBasicScope()
           return value;
         }
       }
@@ -182,8 +183,8 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         return value;
       }
 
-      const pred = this.visit(exp).safe_get(TYPES.boolean)
-      if (pred == false) {
+      const predicate = this.visit(exp).safe_get(TYPES.boolean)
+      if (predicate == false) {
         return null;
       }
     }
