@@ -26,13 +26,27 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   visitDebugPrintStatement(ctx) {
     let exp = this.visit(ctx.expression());
 
-    if (exp === null) {
-      this.outputFunc("[üres]")
-    } else if (exp.type !== TYPES.array) {
-      this.outputFunc(exp.value);
-    } else {
-      this.outputFunc(exp.value.map((val) => val.value))
+    let output = ""
+    const extract = (exp) => {
+      if (exp === null) {
+        output += "[Nem létezik]"
+      } else if (exp.type !== TYPES.array) {
+        output += exp.value
+      } else {
+        output += "["
+        exp.value.forEach((val, idx) => {
+          extract(val)
+
+          if (idx != exp.value.length - 1) {
+            output += ", "
+          }
+        })
+        output += "]"
+      }
     }
+
+    extract(exp)
+    this.outputFunc(output)
   }
 
   visitStatement(ctx) {
@@ -246,25 +260,40 @@ export class PseudoVisitor extends PseudoCodeVisitor {
 
   visitArrayElementAssignmentStatement(ctx) {
     const variable = this.visitVariable(ctx.variable());
-    const index = Number(this.visit(ctx.expression(0))) - 1; // Pszeudokód 1-től kezdi.
+    const index = this.visit(ctx.expression(0)).safe_get(TYPES.number) - 1; // Pszeudokód 1-től kezdi.
     const value = this.visit(ctx.expression(1));
 
-    variable[index] = value;
+    variable.value[index] = value;
   }
 
   visitArrayAssignmentStatement(ctx) {
     const varname = ctx.variable().getText();
-    const _type = ctx.type().getText();
-    const _length = this.visit(ctx.expression())
+    const typeName = ctx.type().getText();
+    const length = this.visit(ctx.expression()).safe_get(TYPES.number)
 
-    this.variableStack.set(varname, [])
+    const defaultValue = (() => {
+      switch (typeName) {
+        case "egész": return [Number(), TYPES.number];
+        case "szöveg": return [String(), TYPES.string];
+        case "logikai": return [Boolean(), TYPES.boolean];
+      }
+    })()
+
+
+    this.variableStack.set(
+      varname,
+      new Value(
+        Array.from(
+          Array(length),
+          () => new Value(...defaultValue)),
+        TYPES.array))
   }
 
   visitAssignmentStatement(ctx) {
     const varname = ctx.variable().getText();
     const value = this.visit(ctx.expression());
 
-    this.variableStack.set(varname, value);
+    this.variableStack.set(varname, value.clone());
   }
 
   visitOrExpression(ctx) {
@@ -280,10 +309,19 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitArrayIndex(ctx) {
-    const variable = this.visit(ctx.variable()).safe_get(TYPES.array)
-    const index = this.visit(ctx.expression()).safe_get(TYPES.number) - 1
+    let current_variable = this.visit(ctx.variable()).safe_get(TYPES.array)
 
-    return variable[index]
+    let expressions = ctx.expression()
+
+    for (let i = 0; i < expressions.length - 1; i++) {
+      let exp = expressions[i]
+      const index = this.visit(exp).safe_get(TYPES.number) - 1
+      current_variable = current_variable[index].safe_get(TYPES.array);
+    }
+
+    let index = this.visit(expressions[expressions.length - 1]).safe_get(TYPES.number) - 1
+
+    return current_variable[index];
   }
 
   visitValue(ctx) {

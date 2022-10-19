@@ -36,6 +36,10 @@ export class Value {
     return this.#_type;
   }
 
+  clone() {
+    return new Value(this.#_value, this.#_type)
+  }
+
   safe_get(expected_type) {
     if (this.#_type !== expected_type) {
       throw new Error(`'${expected_type}' típust vártunk, de a változó '${this.#_type}' típusú volt!`);

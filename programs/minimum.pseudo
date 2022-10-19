@@ -1,0 +1,26 @@
+függvény Csere(címszerint a : egész, címszerint b : egész)
+   temp <- a
+   a <- b
+   b <- temp
+függvény vége
+
+függvény Minimum(címszerint tomb : egész tömb, n : egész)
+  ciklus i <- 1-től n-1-ig
+    min <- i
+    ciklus j <- i+1-től n-ig
+      ha tomb[min] > tomb[j] akkor
+        min <- j
+      elágazás vége
+    ciklus vége
+  Csere(tomb[i], tomb[min])
+  ciklus vége
+függvény vége
+
+x <- (3, 2, 4, 6, 1)
+
+Csere(x[1], x[2])
+
+kiir x
+
+Minimum(x, 5)
+kiir x
