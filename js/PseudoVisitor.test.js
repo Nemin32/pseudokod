@@ -57,7 +57,7 @@ const comparison_tests = {
 }
 
 const if_tests = {
-    name: "Ha",
+    name: "Elágazások",
     tests: [
         {
             name: "különben - igaz",

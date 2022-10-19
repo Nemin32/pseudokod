@@ -1,6 +1,6 @@
 grammar PseudoCode;
 
-program: WS? statement+;
+program: WS? (NL | statement)+;
 
 body: WS? (statement | NL)+;
 

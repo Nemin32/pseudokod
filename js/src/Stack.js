@@ -41,7 +41,7 @@ export class Value {
   }
 
   safe_get(expected_type) {
-    if (this.#_type !== expected_type) {
+    if (this.#_type !== expected_type && this.#_type !== null) {
       throw new Error(`'${expected_type}' típust vártunk, de a változó '${this.#_type}' típusú volt!`);
     }
 

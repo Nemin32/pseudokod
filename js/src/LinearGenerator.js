@@ -1,10 +1,14 @@
 import PseudoCodeVisitor from "./libs/PseudoCodeVisitor.js";
+import { Stack, Value, TYPES } from "./Stack.js";
 
 export class LinearGenerator extends PseudoCodeVisitor {
-    output = []
+    output = {
+        code: [],
+        parameterTypes: new Map()
+    }
 
     createOp(opcode, payload = null) {
-        this.output.push({
+        this.output.code.push({
             opcode,
             payload
         })
@@ -14,10 +18,50 @@ export class LinearGenerator extends PseudoCodeVisitor {
         super()
     }
 
+    /*
     visitProgram(ctx) {
         super.visitChildren(ctx)
 
         // console.log(this.output)
+    }*/
+
+    visitFunctionCall(ctx) {
+        const fName = ctx.functionName().getText();
+
+        this.visit(ctx.parameters())
+
+        this.createOp("functionCall", fName)
+    }
+
+    visitParameterWithType(ctx) {
+        return {
+            name: ctx.variable().getText(),
+            reference: ctx.CIMSZERINT() !== null,
+            type: ctx.type().getText()
+        };
+    }
+
+    visitFunctionDeclarationWithParameters(ctx) {
+        const fName = ctx.functionName().getText();
+        const params = ctx.parameterWithType().map(p => this.visit(p))
+
+        this.output.parameterTypes.set(fName, params);
+
+        this.createOp("functionDef", fName)
+
+        this.visit(ctx.body())
+
+        this.createOp("functionEnd", fName);
+    }
+
+    visitFunctionDeclarationWithoutParameters(ctx) {
+        const fName = ctx.functionName().getText();
+
+        this.createOp("functionDef", fName);
+
+        this.visit(ctx.body())
+
+        this.createOp("functionEnd", fName);
     }
 
     visitDebugPrintStatement(ctx) {
@@ -148,19 +192,30 @@ export class LinearGenerator extends PseudoCodeVisitor {
 export class LinearExecutor {
     ip = 0;
 
+    ipStack = []
+
     /** @type {Array<{opcode: String}>} */
     instructions = []
 
     stack = []
 
+    /*
+    /** @type {Map<string, string | number | boolean>}
     variables = new Map();
+    */
+
+    variables = new Stack()
+
+    /** @type {Map<string, Array<{name: string, reference: boolean, type: string}>>} */
+    parameterTypes = null;
 
     /**
      * Initializes a new execution context.
      * @param {Array<{opcode: String}>} instructions The list of instructions to execute.
      */
-    constructor(instructions, outputFunc = console.log) {
-        this.instructions = instructions
+    constructor(environment, outputFunc = console.log) {
+        this.instructions = environment.code
+        this.parameterTypes = environment.parameterTypes
         this.outputFunc = outputFunc
     }
 
@@ -172,7 +227,11 @@ export class LinearExecutor {
         return this.instructions[this.ip].payload
     }
 
-    #skip(opcodes, payload, direction) {
+    #skip(opcodes, payload, direction, full = false) {
+        if (full) {
+            this.ip = 0;
+        }
+
         const checkPayload = () => (payload == null) ? false : (this.currentPayload() != payload);
         const checkOpcode = (Array.isArray(opcodes))
             ? () => !opcodes.includes(this.currentOpcode())
@@ -181,6 +240,10 @@ export class LinearExecutor {
         while (checkOpcode() || checkPayload()) {
             this.ip += direction;
         }
+    }
+
+    fullSeek(opcode, payload) {
+        this.#skip(opcode, payload, 1, true)
     }
 
     skipTo(opcodes, payload) {
@@ -197,70 +260,86 @@ export class LinearExecutor {
         // console.log(instruction.opcode)
         switch (opcode) {
             case "print":
-                this.outputFunc(this.stack.pop())
+                this.outputFunc(this.stack.pop()?.value)
                 break;
 
             case "push":
-                this.stack.push(payload)
+                this.stack.push(new Value(payload, null))
                 break;
 
             case "compare":
                 {
-                    const exp2 = this.stack.pop()
-                    const exp1 = this.stack.pop()
+                    const exp2 = this.stack.pop().safe_get(TYPES.number)
+                    const exp1 = this.stack.pop().safe_get(TYPES.number)
 
-                    switch (payload) {
-                        case "=": this.stack.push(exp1 === exp2); break;
-                        case "=/=": this.stack.push(exp1 !== exp2); break;
-                        case ">": this.stack.push(exp1 > exp2); break;
-                        case "<": this.stack.push(exp1 < exp2); break;
-                        case ">=": this.stack.push(exp1 >= exp2); break;
-                        case "<=": this.stack.push(exp1 <= exp2); break;
-                        default: this.stack.push(false)
-                    }
+                    this.stack.push(new Value((() => {
+                        switch (payload) {
+                            case "=": return exp1 === exp2
+                            case "=/=": return exp1 !== exp2
+                            case ">": return exp1 > exp2
+                            case "<": return exp1 < exp2
+                            case ">=": return exp1 >= exp2
+                            case "<=": return exp1 <= exp2
+                            default: return false
+                        }
+                    })(), TYPES.boolean))
                 }
                 break;
 
             case "calculate":
                 {
-                    const exp2 = this.stack.pop()
-                    const exp1 = this.stack.pop()
+                    const exp2 = this.stack.pop().safe_get(TYPES.number)
+                    const exp1 = this.stack.pop().safe_get(TYPES.number)
 
-                    switch (payload) {
-                        case "+": this.stack.push(exp1 + exp2); break;
-                        case "-": this.stack.push(exp1 - exp2); break;
-                        case "*": this.stack.push(exp1 * exp2); break;
-                        case "/": this.stack.push(exp1 / exp2); break;
-                        case "mod": this.stack.push(exp1 % exp2); break;
-                        default: this.stack.push(false)
-                    }
+                    this.stack.push(new Value((() => {
+                        switch (payload) {
+                            case "+": return exp1 + exp2;
+                            case "-": return exp1 - exp2;
+                            case "*": return exp1 * exp2;
+                            case "/": return exp1 / exp2;
+                            case "mod": return exp1 % exp2;
+                            default: return 0;
+                        }
+                    })(), TYPES.number))
                 }
                 break;
 
             case "jmp":
                 this.skipTo([payload])
+                this.ip--;
                 break;
 
             case "if":
             case "elIf":
                 const isIf = opcode == "if";
-                const enter = this.stack.pop()
+                const enter = this.stack.pop().safe_get(TYPES.boolean)
 
                 if (!enter) {
+                    // To handle elIf
+                    if (!isIf) {
+                        this.ip++
+                    }
+
                     this.skipTo(["else", "elIf", "endIf"])
 
                     if (isIf && this.instructions[this.ip].opcode == "elIf") {
                         this.skipBack(["jmp"])
                     }
                 }
+
+                this.variables.enterBasicScope()
                 break;
 
             case "else":
-                this.skipTo(["endif"])
+                this.skipTo(["endIf"])
+                break;
+
+            case "endIf":
+                this.variables.leaveBasicScope()
                 break;
 
             case "while":
-                const should = this.stack.pop()
+                const should = this.stack.pop().safe_get(TYPES.boolean)
 
                 if (!should) {
                     this.skipTo("loop", payload)
@@ -271,8 +350,32 @@ export class LinearExecutor {
                 this.skipBack("while_prep", payload);
                 break;
 
+            case "functionDef":
+                this.skipTo("functionEnd", payload)
+                break;
+
+            case "functionEnd":
+                this.ip = this.ipStack.pop()
+                this.variables.leaveBasicScope()
+                break;
+
+            case "functionCall":
+                this.ipStack.push(this.ip)
+
+                this.variables.enterBasicScope(true)
+
+                const parameters = this.parameterTypes.get(payload).reverse();
+
+                for (let paramType of parameters) {
+                    this.variables.set(paramType.name, this.stack.pop())
+                }
+
+                this.fullSeek("functionDef", payload);
+                break;
+
             case "assign":
-                this.variables.set(payload, this.stack.pop());
+                const val = this.stack.pop()
+                this.variables.set(payload, val.clone());
                 break;
 
             case "pushVar":

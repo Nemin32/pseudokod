@@ -25,13 +25,13 @@ window.addEventListener("load", () => {
 
 		vars.innerText = "VARS:\n"
 
-		for (const [key, val] of exec.variables.entries()) {
-			vars.innerText += `${key} - ${val}\n`
+		for (const { key, value } of exec.variables.variables) {
+			vars.innerText += `${key} - ${value.value}\n`
 		}
 
 		vars.innerText += "STACK:\n"
 		exec.stack.forEach(s => {
-			vars.innerText += s + "\n"
+			vars.innerText += s?.value + "\n"
 		})
 	}
 

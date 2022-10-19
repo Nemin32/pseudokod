@@ -102,7 +102,7 @@ kiir Faktorialis(5)
 
 `;
 
-const input = `
+const ainput = `
 függvény LNKO(m : egész, n : egész)
   r <- m mod n
   
@@ -118,7 +118,7 @@ függvény vége
 kiir LNKO(15, 33)
 `
 
-export { LinearExecutor } from "./LinearGenerator";
+export { LinearExecutor } from "./LinearGenerator.js";
 
 export function createProgram(input) {
   const chars = new antlr4.InputStream(input + "\n");
@@ -167,15 +167,17 @@ export function runText(input, errorFunc, outputFunc, varOutput) {
 
   //outputFunc(tree.toStringTree(parser.ruleNames))
 
-  outputFunc("VISITOR:")
+  //outputFunc("VISITOR:")
   visitor.visit(tree);
 
+  /*
   generator.visit(tree)
 
   const executor = new LinearExecutor(generator.output, outputFunc)
 
   outputFunc("EXECUTOR:")
   executor.run()
+  */
 }
 
 
