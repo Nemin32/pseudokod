@@ -1,6 +1,7 @@
 import antlr4 from "antlr4";
 import PseudoCodeLexer from "./libs/PseudoCodeLexer.js";
 import PseudoCodeParser from "./libs/PseudoCodeParser.js";
+import { LinearExecutor, LinearGenerator } from "./LinearGenerator.js";
 
 import { PseudoVisitor } from "./PseudoVisitor.js";
 
@@ -121,23 +122,35 @@ kiir LNKO(15, 33)
 export function runText(input, errorFunc, outputFunc, varOutput) {
   const chars = new antlr4.InputStream(input + "\n");
   const lexer = new PseudoCodeLexer(chars);
-  
+
   lexer.removeErrorListeners();
-  lexer.addErrorListener({syntaxError: errorFunc});
+  lexer.addErrorListener({ syntaxError: errorFunc });
 
   const tokens = new antlr4.CommonTokenStream(lexer);
   const parser = new PseudoCodeParser(tokens);
 
   parser.removeErrorListeners();
-  parser.addErrorListener({syntaxError: errorFunc});
-  
+  parser.addErrorListener({ syntaxError: errorFunc });
+
   const tree = parser.program();
-  
+
   const visitor = new PseudoVisitor(outputFunc, varOutput);
-  
+  const generator = new LinearGenerator()
+
   //outputFunc(tree.toStringTree(parser.ruleNames))
 
   visitor.visit(tree);
+
+  generator.visit(tree)
+
+  const executor = new LinearExecutor(generator.output)
+
+  generator.output.forEach(elem => {
+    const pl = (elem.payload !== null) ? " - " + elem.payload : ""
+    outputFunc(elem.opcode.toUpperCase() + pl)
+  })
+
+  executor.run()
 }
 
 

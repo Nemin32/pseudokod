@@ -1,5 +1,7 @@
 //import * as PseudoVisitor from "./main.js"
 
+import * as PseudoVisitor from "./esbundle.js"
+
 window.addEventListener("load", () => {
 	const inputElem = document.getElementById("input")
 	const output = document.getElementById("output")
