@@ -18467,27 +18467,21 @@ var LinearExecutor = class {
   currentOpcode() {
     return this.instructions[this.ip].opcode;
   }
-  skipTo(opcodes) {
-    if (Array.isArray(opcodes)) {
-      while (!opcodes.includes(this.currentOpcode())) {
-        this.ip++;
-      }
-    } else {
-      while (this.currentOpcode() != opcodes) {
-        this.ip++;
-      }
+  currentPayload() {
+    return this.instructions[this.ip].payload;
+  }
+  #skip(opcodes, payload, direction) {
+    const checkPayload = () => payload == null ? false : this.currentPayload() != payload;
+    const checkOpcode = Array.isArray(opcodes) ? () => !opcodes.includes(this.currentOpcode()) : () => this.currentOpcode() != opcodes;
+    while (checkOpcode() || checkPayload()) {
+      this.ip += direction;
     }
   }
-  skipBack(opcodes) {
-    if (Array.isArray(opcodes)) {
-      while (!opcodes.includes(this.currentOpcode())) {
-        this.ip--;
-      }
-    } else {
-      while (this.currentOpcode() != opcodes) {
-        this.ip--;
-      }
-    }
+  skipTo(opcodes, payload) {
+    this.#skip(opcodes, payload, 1);
+  }
+  skipBack(opcodes, payload) {
+    this.#skip(opcodes, payload, -1);
   }
   execute(instruction) {
     const { opcode, payload } = instruction;

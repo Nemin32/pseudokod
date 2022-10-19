@@ -15,7 +15,7 @@ window.addEventListener("load", () => {
 		code.innerHTML = ""
 		exec.instructions.forEach((elem, idx) => {
 			const curr = (idx == exec.ip) ? ">" : " "
-			const pl = (elem.payload !== null) ? " - " + elem.payload : ""
+			const pl = (elem.payload !== null) ? "(" + elem.payload + ")" : ""
 			code.innerText += curr + elem.opcode.toUpperCase() + pl + "\n"
 		})
 

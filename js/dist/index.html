@@ -41,12 +41,18 @@
 
 		#internals {
 			grid-area: b;
+			display: flex;
 		}
 
 		#output_container {
 			grid-area: c;
 			background-color: #eee;
 			border: 1px solid #ddd;
+		}
+
+		#output {
+			overflow: auto;
+			max-height: 300px;
 		}
 
 		textarea {
