@@ -18413,16 +18413,24 @@ var LinearGenerator = class extends PseudoCodeVisitor {
     this.visit(ctx.body());
     this.createOp("jmp", "endIf");
   }
+  depth = 0;
+  visitWhileStatement(ctx) {
+    this.createOp("while_prep", ++this.depth);
+    this.visit(ctx.expression());
+    this.createOp("while", this.depth);
+    this.visit(ctx.body());
+    this.createOp("loop", this.depth--);
+  }
   visitComparisonExpression(ctx) {
     const comparer = ctx.COMPARISON().getText();
-    this.visit(ctx.expression(1));
     this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
     this.createOp("compare", comparer);
   }
   visitCalculationExpression(ctx) {
     const operator = ctx.OPERATOR().getText();
-    this.visit(ctx.expression(1));
     this.visit(ctx.expression(0));
+    this.visit(ctx.expression(1));
     this.createOp("calculate", operator);
   }
   visitVariable(ctx) {
@@ -18460,13 +18468,25 @@ var LinearExecutor = class {
     return this.instructions[this.ip].opcode;
   }
   skipTo(opcodes) {
-    while (!opcodes.includes(this.currentOpcode())) {
-      this.ip++;
+    if (Array.isArray(opcodes)) {
+      while (!opcodes.includes(this.currentOpcode())) {
+        this.ip++;
+      }
+    } else {
+      while (this.currentOpcode() != opcodes) {
+        this.ip++;
+      }
     }
   }
   skipBack(opcodes) {
-    while (!opcodes.includes(this.currentOpcode())) {
-      this.ip--;
+    if (Array.isArray(opcodes)) {
+      while (!opcodes.includes(this.currentOpcode())) {
+        this.ip--;
+      }
+    } else {
+      while (this.currentOpcode() != opcodes) {
+        this.ip--;
+      }
     }
   }
   execute(instruction) {
@@ -18480,8 +18500,8 @@ var LinearExecutor = class {
         break;
       case "compare":
         {
-          const exp1 = this.stack.pop();
           const exp2 = this.stack.pop();
+          const exp1 = this.stack.pop();
           switch (payload) {
             case "=":
               this.stack.push(exp1 === exp2);
@@ -18508,8 +18528,8 @@ var LinearExecutor = class {
         break;
       case "calculate":
         {
-          const exp1 = this.stack.pop();
           const exp2 = this.stack.pop();
+          const exp1 = this.stack.pop();
           switch (payload) {
             case "+":
               this.stack.push(exp1 + exp2);
@@ -18548,6 +18568,15 @@ var LinearExecutor = class {
       case "else":
         this.skipTo(["endif"]);
         break;
+      case "while":
+        const should = this.stack.pop();
+        if (!should) {
+          this.skipTo("loop", payload);
+        }
+        break;
+      case "loop":
+        this.skipBack("while_prep", payload);
+        break;
       case "assign":
         this.variables.set(payload, this.stack.pop());
         break;
@@ -18557,14 +18586,21 @@ var LinearExecutor = class {
     }
   }
   step() {
-    const current_instruction = this.instructions[this.ip];
-    this.execute(current_instruction);
-    this.ip++;
+    if (this.ip < this.instructions.length) {
+      const current_instruction = this.instructions[this.ip];
+      this.execute(current_instruction);
+      this.ip++;
+    }
   }
   run() {
     while (this.ip < this.instructions.length) {
       this.step();
     }
+  }
+  reset() {
+    this.variables = [];
+    this.stack = [];
+    this.ip = 0;
   }
 };
 
@@ -19052,6 +19088,16 @@ var PseudoVisitor = class extends PseudoCodeVisitor {
 };
 
 // src/index.js
+function createProgram(input) {
+  const chars = new antlr4_default.InputStream(input + "\n");
+  const lexer = new PseudoCodeLexer(chars);
+  const tokens = new antlr4_default.CommonTokenStream(lexer);
+  const parser = new PseudoCodeParser(tokens);
+  const tree = parser.program();
+  const generator = new LinearGenerator();
+  generator.visit(tree);
+  return generator.output;
+}
 function runLinear(input, outputFunc) {
   const chars = new antlr4_default.InputStream(input + "\n");
   const lexer = new PseudoCodeLexer(chars);
@@ -19075,17 +19121,17 @@ function runText(input, errorFunc, outputFunc, varOutput) {
   const tree = parser.program();
   const visitor = new PseudoVisitor(outputFunc, varOutput);
   const generator = new LinearGenerator();
+  outputFunc("VISITOR:");
   visitor.visit(tree);
   generator.visit(tree);
-  const executor = new LinearExecutor(generator.output);
-  generator.output.forEach((elem) => {
-    const pl = elem.payload !== null ? " - " + elem.payload : "";
-    outputFunc(elem.opcode.toUpperCase() + pl);
-  });
+  const executor = new LinearExecutor(generator.output, outputFunc);
+  outputFunc("EXECUTOR:");
   executor.run();
 }
 console.log("Hello!");
 export {
+  LinearExecutor,
+  createProgram,
   runLinear,
   runText
 };

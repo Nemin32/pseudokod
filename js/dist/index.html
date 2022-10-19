@@ -28,10 +28,25 @@
 
 		#controls {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
+			grid-template-areas: "a b" "c c";
+			grid-template-columns: 50% 50%;
 			gap: 1rem;
 			width: 80vw;
 			margin: 0 auto;
+		}
+
+		#inputs {
+			grid-area: a;
+		}
+
+		#internals {
+			grid-area: b;
+		}
+
+		#output_container {
+			grid-area: c;
+			background-color: #eee;
+			border: 1px solid #ddd;
 		}
 
 		textarea {
@@ -64,13 +79,17 @@
 	<h1>PszeudoKód Értelmező</h1>
 
 	<div id="controls">
-		<div>
+		<div id="inputs">
 			<textarea id="input" cols="80" rows="24" spellcheck="false"></textarea>
+			<button id="compile">Compile</button>
 			<button id="send">Run</button>
 		</div>
-		<div class="gray">
-			<p id="output"></p>
+		<div id="internals" class="gray">
+			<pre id="code"></pre>
 			<p id="vars"></p>
+		</div>
+		<div id="output_container">
+			<p id="output"></p>
 		</div>
 	</div>
 </body>

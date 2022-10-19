@@ -85,11 +85,25 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.createOp("jmp", "endIf")
     }
 
+    depth = 0;
+    visitWhileStatement(ctx) {
+        this.createOp("while_prep", ++this.depth)
+
+        this.visit(ctx.expression());
+
+        this.createOp("while", this.depth)
+
+        this.visit(ctx.body())
+
+        this.createOp("loop", this.depth--)
+
+    }
+
     visitComparisonExpression(ctx) {
         const comparer = ctx.COMPARISON().getText();
 
-        this.visit(ctx.expression(1))
         this.visit(ctx.expression(0))
+        this.visit(ctx.expression(1))
 
         this.createOp("compare", comparer)
     }
@@ -97,8 +111,8 @@ export class LinearGenerator extends PseudoCodeVisitor {
     visitCalculationExpression(ctx) {
         const operator = ctx.OPERATOR().getText()
 
-        this.visit(ctx.expression(1))
         this.visit(ctx.expression(0))
+        this.visit(ctx.expression(1))
 
         this.createOp("calculate", operator)
     }
@@ -155,14 +169,28 @@ export class LinearExecutor {
     }
 
     skipTo(opcodes) {
-        while (!opcodes.includes(this.currentOpcode())) {
-            this.ip++;
+        if (Array.isArray(opcodes)) {
+            while (!opcodes.includes(this.currentOpcode())) {
+                this.ip++;
+            }
+
+        } else {
+            while (this.currentOpcode() != opcodes) {
+                this.ip++;
+            }
         }
     }
 
     skipBack(opcodes) {
-        while (!opcodes.includes(this.currentOpcode())) {
-            this.ip--;
+        if (Array.isArray(opcodes)) {
+            while (!opcodes.includes(this.currentOpcode())) {
+                this.ip--;
+            }
+
+        } else {
+            while (this.currentOpcode() != opcodes) {
+                this.ip--;
+            }
         }
     }
 
@@ -181,8 +209,8 @@ export class LinearExecutor {
 
             case "compare":
                 {
-                    const exp1 = this.stack.pop()
                     const exp2 = this.stack.pop()
+                    const exp1 = this.stack.pop()
 
                     switch (payload) {
                         case "=": this.stack.push(exp1 === exp2); break;
@@ -198,8 +226,8 @@ export class LinearExecutor {
 
             case "calculate":
                 {
-                    const exp1 = this.stack.pop()
                     const exp2 = this.stack.pop()
+                    const exp1 = this.stack.pop()
 
                     switch (payload) {
                         case "+": this.stack.push(exp1 + exp2); break;
@@ -234,6 +262,18 @@ export class LinearExecutor {
                 this.skipTo(["endif"])
                 break;
 
+            case "while":
+                const should = this.stack.pop()
+
+                if (!should) {
+                    this.skipTo("loop", payload)
+                }
+                break;
+
+            case "loop":
+                this.skipBack("while_prep", payload);
+                break;
+
             case "assign":
                 this.variables.set(payload, this.stack.pop());
                 break;
@@ -246,14 +286,22 @@ export class LinearExecutor {
     }
 
     step() {
-        const current_instruction = this.instructions[this.ip];
-        this.execute(current_instruction)
-        this.ip++;
+        if (this.ip < this.instructions.length) {
+            const current_instruction = this.instructions[this.ip];
+            this.execute(current_instruction)
+            this.ip++;
+        }
     }
 
     run() {
         while (this.ip < this.instructions.length) {
             this.step()
         }
+    }
+
+    reset() {
+        this.variables = []
+        this.stack = []
+        this.ip = 0;
     }
 }
