@@ -118,6 +118,19 @@ függvény vége
 kiir LNKO(15, 33)
 `
 
+export function runLinear(input, outputFunc) {
+  const chars = new antlr4.InputStream(input + "\n");
+  const lexer = new PseudoCodeLexer(chars);
+  const tokens = new antlr4.CommonTokenStream(lexer);
+  const parser = new PseudoCodeParser(tokens);
+  const tree = parser.program();
+
+  const generator = new LinearGenerator()
+  generator.visit(tree)
+
+  const executor = new LinearExecutor(generator.output, outputFunc)
+  executor.run()
+}
 
 export function runText(input, errorFunc, outputFunc, varOutput) {
   const chars = new antlr4.InputStream(input + "\n");

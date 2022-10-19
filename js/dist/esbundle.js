@@ -18372,7 +18372,6 @@ var LinearGenerator = class extends PseudoCodeVisitor {
   }
   visitProgram(ctx) {
     super.visitChildren(ctx);
-    console.log(this.output);
   }
   visitDebugPrintStatement(ctx) {
     this.visit(ctx.expression());
@@ -18420,6 +18419,21 @@ var LinearGenerator = class extends PseudoCodeVisitor {
     this.visit(ctx.expression(0));
     this.createOp("compare", comparer);
   }
+  visitCalculationExpression(ctx) {
+    const operator = ctx.OPERATOR().getText();
+    this.visit(ctx.expression(1));
+    this.visit(ctx.expression(0));
+    this.createOp("calculate", operator);
+  }
+  visitVariable(ctx) {
+    const varname = ctx.getText();
+    this.createOp("pushVar", varname);
+  }
+  visitAssignmentStatement(ctx) {
+    const varname = ctx.variable().getText();
+    this.visit(ctx.expression());
+    this.createOp("assign", varname);
+  }
   visitNumber(ctx) {
     const num = Number(ctx.getText());
     this.createOp("push", num);
@@ -18436,9 +18450,11 @@ var LinearGenerator = class extends PseudoCodeVisitor {
 var LinearExecutor = class {
   ip = 0;
   instructions = [];
-  variables = [];
-  constructor(instructions) {
+  stack = [];
+  variables = /* @__PURE__ */ new Map();
+  constructor(instructions, outputFunc = console.log) {
     this.instructions = instructions;
+    this.outputFunc = outputFunc;
   }
   currentOpcode() {
     return this.instructions[this.ip].opcode;
@@ -18454,34 +18470,74 @@ var LinearExecutor = class {
     }
   }
   execute(instruction) {
-    if (this.ifDepth > 0) {
-      return;
-    }
-    switch (instruction.opcode) {
+    const { opcode, payload } = instruction;
+    switch (opcode) {
       case "print":
-        console.log(this.variables.pop());
+        this.outputFunc(this.stack.pop());
         break;
       case "push":
-        this.variables.push(instruction.payload);
+        this.stack.push(payload);
         break;
       case "compare":
-        const exp1 = this.variables.pop();
-        const exp2 = this.variables.pop();
-        switch (instruction.payload) {
-          case "=":
-            this.variables.push(exp1 == exp2);
-            break;
-          default:
-            this.variables.push(false);
+        {
+          const exp1 = this.stack.pop();
+          const exp2 = this.stack.pop();
+          switch (payload) {
+            case "=":
+              this.stack.push(exp1 === exp2);
+              break;
+            case "=/=":
+              this.stack.push(exp1 !== exp2);
+              break;
+            case ">":
+              this.stack.push(exp1 > exp2);
+              break;
+            case "<":
+              this.stack.push(exp1 < exp2);
+              break;
+            case ">=":
+              this.stack.push(exp1 >= exp2);
+              break;
+            case "<=":
+              this.stack.push(exp1 <= exp2);
+              break;
+            default:
+              this.stack.push(false);
+          }
+        }
+        break;
+      case "calculate":
+        {
+          const exp1 = this.stack.pop();
+          const exp2 = this.stack.pop();
+          switch (payload) {
+            case "+":
+              this.stack.push(exp1 + exp2);
+              break;
+            case "-":
+              this.stack.push(exp1 - exp2);
+              break;
+            case "*":
+              this.stack.push(exp1 * exp2);
+              break;
+            case "/":
+              this.stack.push(exp1 / exp2);
+              break;
+            case "mod":
+              this.stack.push(exp1 % exp2);
+              break;
+            default:
+              this.stack.push(false);
+          }
         }
         break;
       case "jmp":
-        this.skipTo([instruction.payload]);
+        this.skipTo([payload]);
         break;
       case "if":
       case "elIf":
-        const isIf = instruction.opcode == "if";
-        const enter = this.variables.pop();
+        const isIf = opcode == "if";
+        const enter = this.stack.pop();
         if (!enter) {
           this.skipTo(["else", "elIf", "endIf"]);
           if (isIf && this.instructions[this.ip].opcode == "elIf") {
@@ -18490,9 +18546,13 @@ var LinearExecutor = class {
         }
         break;
       case "else":
-        while (this.instructions[this.ip].opcode != "endIf") {
-          this.ip++;
-        }
+        this.skipTo(["endif"]);
+        break;
+      case "assign":
+        this.variables.set(payload, this.stack.pop());
+        break;
+      case "pushVar":
+        this.stack.push(this.variables.get(payload));
         break;
     }
   }
@@ -18992,6 +19052,17 @@ var PseudoVisitor = class extends PseudoCodeVisitor {
 };
 
 // src/index.js
+function runLinear(input, outputFunc) {
+  const chars = new antlr4_default.InputStream(input + "\n");
+  const lexer = new PseudoCodeLexer(chars);
+  const tokens = new antlr4_default.CommonTokenStream(lexer);
+  const parser = new PseudoCodeParser(tokens);
+  const tree = parser.program();
+  const generator = new LinearGenerator();
+  generator.visit(tree);
+  const executor = new LinearExecutor(generator.output, outputFunc);
+  executor.run();
+}
 function runText(input, errorFunc, outputFunc, varOutput) {
   const chars = new antlr4_default.InputStream(input + "\n");
   const lexer = new PseudoCodeLexer(chars);
@@ -19015,6 +19086,7 @@ function runText(input, errorFunc, outputFunc, varOutput) {
 }
 console.log("Hello!");
 export {
+  runLinear,
   runText
 };
 /*! https://mths.be/codepointat v0.2.0 by @mathias */

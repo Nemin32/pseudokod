@@ -17,7 +17,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
     visitProgram(ctx) {
         super.visitChildren(ctx)
 
-        console.log(this.output)
+        // console.log(this.output)
     }
 
     visitDebugPrintStatement(ctx) {
@@ -94,6 +94,27 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.createOp("compare", comparer)
     }
 
+    visitCalculationExpression(ctx) {
+        const operator = ctx.OPERATOR().getText()
+
+        this.visit(ctx.expression(1))
+        this.visit(ctx.expression(0))
+
+        this.createOp("calculate", operator)
+    }
+
+    visitVariable(ctx) {
+        const varname = ctx.getText()
+        this.createOp("pushVar", varname)
+    }
+
+    visitAssignmentStatement(ctx) {
+        const varname = ctx.variable().getText()
+
+        this.visit(ctx.expression())
+        this.createOp("assign", varname)
+    }
+
     visitNumber(ctx) {
         const num = Number(ctx.getText())
         this.createOp("push", num)
@@ -116,14 +137,17 @@ export class LinearExecutor {
     /** @type {Array<{opcode: String}>} */
     instructions = []
 
-    variables = []
+    stack = []
+
+    variables = new Map();
 
     /**
      * Initializes a new execution context.
      * @param {Array<{opcode: String}>} instructions The list of instructions to execute.
      */
-    constructor(instructions) {
+    constructor(instructions, outputFunc = console.log) {
         this.instructions = instructions
+        this.outputFunc = outputFunc
     }
 
     currentOpcode() {
@@ -143,43 +167,59 @@ export class LinearExecutor {
     }
 
     execute(instruction) {
-        if (this.ifDepth > 0) {
-            return;
-        }
+        const { opcode, payload } = instruction;
 
         // console.log(instruction.opcode)
-        switch (instruction.opcode) {
+        switch (opcode) {
             case "print":
-                console.log(this.variables.pop())
+                this.outputFunc(this.stack.pop())
                 break;
 
             case "push":
-                this.variables.push(instruction.payload)
+                this.stack.push(payload)
                 break;
 
             case "compare":
-                const exp1 = this.variables.pop()
-                const exp2 = this.variables.pop()
+                {
+                    const exp1 = this.stack.pop()
+                    const exp2 = this.stack.pop()
 
-                switch (instruction.payload) {
-                    case "=":
-                        this.variables.push(exp1 == exp2)
-                        break;
-
-                    default:
-                        this.variables.push(false)
+                    switch (payload) {
+                        case "=": this.stack.push(exp1 === exp2); break;
+                        case "=/=": this.stack.push(exp1 !== exp2); break;
+                        case ">": this.stack.push(exp1 > exp2); break;
+                        case "<": this.stack.push(exp1 < exp2); break;
+                        case ">=": this.stack.push(exp1 >= exp2); break;
+                        case "<=": this.stack.push(exp1 <= exp2); break;
+                        default: this.stack.push(false)
+                    }
                 }
+                break;
 
+            case "calculate":
+                {
+                    const exp1 = this.stack.pop()
+                    const exp2 = this.stack.pop()
+
+                    switch (payload) {
+                        case "+": this.stack.push(exp1 + exp2); break;
+                        case "-": this.stack.push(exp1 - exp2); break;
+                        case "*": this.stack.push(exp1 * exp2); break;
+                        case "/": this.stack.push(exp1 / exp2); break;
+                        case "mod": this.stack.push(exp1 % exp2); break;
+                        default: this.stack.push(false)
+                    }
+                }
                 break;
 
             case "jmp":
-                this.skipTo([instruction.payload])
+                this.skipTo([payload])
                 break;
 
             case "if":
             case "elIf":
-                const isIf = instruction.opcode == "if";
-                const enter = this.variables.pop()
+                const isIf = opcode == "if";
+                const enter = this.stack.pop()
 
                 if (!enter) {
                     this.skipTo(["else", "elIf", "endIf"])
@@ -191,9 +231,15 @@ export class LinearExecutor {
                 break;
 
             case "else":
-                while (this.instructions[this.ip].opcode != "endIf") {
-                    this.ip++;
-                }
+                this.skipTo(["endif"])
+                break;
+
+            case "assign":
+                this.variables.set(payload, this.stack.pop());
+                break;
+
+            case "pushVar":
+                this.stack.push(this.variables.get(payload))
                 break;
 
         }

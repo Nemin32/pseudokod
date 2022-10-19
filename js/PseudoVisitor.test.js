@@ -1,10 +1,11 @@
 import { jest, test, describe, expect, afterEach } from "@jest/globals"
-import { runText } from "./src/index.js"
+import { runText, runLinear } from "./src/index.js"
 
 const mockOutput = jest.fn((input) => input)
 
 /** @param {string} input */
-const r = (input) => runText(input, (input) => { }, mockOutput)
+const r = (input) => runLinear(input, mockOutput)
+//const r = (input) => runText(input, (input) => { }, mockOutput)
 
 const generateTest = (testInstance) => test(testInstance.name, () => {
     r(testInstance.input)
