@@ -18592,11 +18592,29 @@ var LinearGenerator = class extends PseudoCodeVisitor {
   }
   depth = 0;
   visitWhileStatement(ctx) {
-    this.createOp("while_prep", ++this.depth);
+    this.createOp("whilePrep", ++this.depth);
     this.visit(ctx.expression());
     this.createOp("while", this.depth);
     this.visit(ctx.body());
     this.createOp("loop", this.depth--);
+  }
+  visitForStatement(ctx) {
+    const varname = ctx.variable().getText();
+    this.createOp("for");
+    this.visit(ctx.expression(0));
+    this.createOp("assign", varname);
+    this.createOp("whilePrep", ++this.depth);
+    this.createOp("pushVar", varname);
+    this.visit(ctx.expression(1));
+    this.createOp("compare", "<=");
+    this.createOp("while", this.depth);
+    this.visit(ctx.body());
+    this.createOp("push", 1);
+    this.createOp("pushVar", varname);
+    this.createOp("calculate", "+");
+    this.createOp("assign", varname);
+    this.createOp("loop", this.depth--);
+    this.createOp("forEnd");
   }
   visitComparisonExpression(ctx) {
     const comparer = ctx.COMPARISON().getText();
@@ -18750,13 +18768,19 @@ var LinearExecutor = class {
         this.variables.leaveBasicScope();
         break;
       case "while":
-        const should = this.stack.pop().safe_get(TYPES.bool);
+        const should = this.stack.pop().safe_get(TYPES.boolean);
         if (!should) {
           this.skipTo("loop", payload);
         }
         break;
       case "loop":
-        this.skipBack("while_prep", payload);
+        this.skipBack("whilePrep", payload);
+        break;
+      case "for":
+        this.variables.enterBasicScope();
+        break;
+      case "forEnd":
+        this.variables.leaveBasicScope();
         break;
       case "functionDef":
         this.skipTo("functionEnd", payload);

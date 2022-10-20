@@ -131,7 +131,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
 
     depth = 0;
     visitWhileStatement(ctx) {
-        this.createOp("while_prep", ++this.depth)
+        this.createOp("whilePrep", ++this.depth)
 
         this.visit(ctx.expression());
 
@@ -140,7 +140,38 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.visit(ctx.body())
 
         this.createOp("loop", this.depth--)
+    }
 
+    visitForStatement(ctx) {
+        const varname = ctx.variable().getText();
+
+        this.createOp("for")
+
+        // let varname = exp(0)
+        this.visit(ctx.expression(0))
+        this.createOp("assign", varname)
+
+        // while (varname <= exp(1))
+        this.createOp("whilePrep", ++this.depth);
+        this.createOp("pushVar", varname)
+        this.visit(ctx.expression(1))
+        this.createOp("compare", "<=")
+        this.createOp("while", this.depth)
+        // {
+
+        // statements...
+        this.visit(ctx.body())
+
+        // varname = varname + 1
+        this.createOp("push", 1)
+        this.createOp("pushVar", varname)
+        this.createOp("calculate", "+")
+        this.createOp("assign", varname)
+
+        // }
+        this.createOp("loop", this.depth--)
+
+        this.createOp("forEnd")
     }
 
     visitComparisonExpression(ctx) {
@@ -347,7 +378,15 @@ export class LinearExecutor {
                 break;
 
             case "loop":
-                this.skipBack("while_prep", payload);
+                this.skipBack("whilePrep", payload);
+                break;
+
+            case "for":
+                this.variables.enterBasicScope()
+                break;
+
+            case "forEnd":
+                this.variables.leaveBasicScope()
                 break;
 
             case "functionDef":
