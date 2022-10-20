@@ -18524,6 +18524,10 @@ var LinearGenerator = class extends PseudoCodeVisitor {
   constructor() {
     super();
   }
+  visitReturnStatement(ctx) {
+    this.visit(ctx.expression());
+    this.createOp("ret");
+  }
   visitFunctionCall(ctx) {
     const fName = ctx.functionName().getText();
     this.visit(ctx.parameters());
@@ -18785,6 +18789,7 @@ var LinearExecutor = class {
       case "functionDef":
         this.skipTo("functionEnd", payload);
         break;
+      case "ret":
       case "functionEnd":
         this.ip = this.ipStack.pop();
         this.variables.leaveBasicScope();
