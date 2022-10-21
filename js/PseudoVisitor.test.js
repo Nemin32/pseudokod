@@ -10,7 +10,7 @@ const r = (input) => runLinear(input, mockOutput)
 const generateTest = (testInstance) => test(testInstance.name, () => {
     r(testInstance.input)
     expect(mockOutput.mock.calls.length).toBe(testInstance.times ?? 1)
-    expect(mockOutput.mock.results[0].value).toStrictEqual(testInstance.output ?? "OK")
+    expect(mockOutput.mock.results[0].value).toStrictEqual(String(testInstance.output ?? "OK"))
 })
 
 const generateTestGroup = (groupDetails) => describe(groupDetails.name, () => {
@@ -238,6 +238,35 @@ const return_tests = {
     ]
 }
 
+const array_tests = {
+    name: "Tömbök",
+    tests: [
+        {
+            name: "Üres tömb",
+            input: `
+            x <- Létrehoz[egész](3)
+            kiir x`,
+            output: [0, 0, 0]
+        },
+        {
+            name: "Értékadás",
+            input: `
+            x <- Létrehoz[egész](3)
+            x[2] <- 1
+            kiir x`,
+            output: [0, 1, 0]
+        },
+        {
+            name: "Lekérés",
+            input: `
+            x <- Létrehoz[egész](3)
+            x[3] <- 5
+            kiir x[3]`,
+            output: 5
+        }
+    ]
+}
+
 generateTestGroup(primitive_tests)
 generateTestGroup(math_tests)
 generateTestGroup(comparison_tests)
@@ -245,6 +274,7 @@ generateTestGroup(if_tests)
 generateTestGroup(variable_tests)
 generateTestGroup(function_tests)
 generateTestGroup(return_tests)
+generateTestGroup(array_tests)
 
 describe("Ciklusok", () => {
     test("Egyszerű ciklus", () => {
@@ -259,7 +289,7 @@ describe("Ciklusok", () => {
         `)
 
         expect(mockOutput.mock.calls.length).toBe(6)
-        expect(mockOutput.mock.results[5].value).toBe(5)
+        expect(mockOutput.mock.results[5].value).toBe("5")
     })
 
     test("For ciklus", () => {
@@ -273,6 +303,6 @@ describe("Ciklusok", () => {
         `)
 
         expect(mockOutput.mock.calls.length).toBe(1)
-        expect(mockOutput.mock.results[0].value).toBe(32)
+        expect(mockOutput.mock.results[0].value).toBe("32")
     })
 })

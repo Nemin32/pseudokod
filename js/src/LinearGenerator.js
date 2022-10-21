@@ -14,6 +14,28 @@ export class LinearGenerator extends PseudoCodeVisitor {
         })
     }
 
+    /**
+     * Creates a list of opcodes based on input and appends it to the resulting code.
+     * @param {Array<[string, string?, string?]>} ops - The list of opcodes and payloads
+     */
+    _assemble(ctx, ops) {
+        ops.forEach(([opcode, payload, arg]) => {
+            switch (opcode) {
+                case "VISIT":
+                    this.visit(ctx[payload](Number(arg)))
+                    break;
+                default:
+                    this.createOp(opcode, payload);
+                    break;
+            }
+        })
+    }
+
+    assemble(ctx, input) {
+        const ops = input.split("\n").map(line => line.trim().split(" ")).filter(x => x[0] != "")
+        this._assemble(ctx, ops)
+    }
+
     constructor() {
         super()
     }
@@ -70,11 +92,17 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     visitDebugPrintStatement(ctx) {
-        this.visit(ctx.expression())
-        this.createOp("print")
+        // this.visit(ctx.expression())
+        // this.createOp("print")
+
+        this.assemble(ctx, `
+            VISIT expression
+            print
+        `)
     }
 
     visitSimpleIfStatement(ctx) {
+        /*
         this.visit(ctx.expression())
 
         this.createOp("if")
@@ -82,6 +110,14 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.visit(ctx.body())
 
         this.createOp("endIf")
+        */
+
+        this.assemble(ctx, `
+            VISIT expression
+            if
+            VISIT body
+            endIf
+        `)
     }
 
     visitIfElseStatement(ctx) {
@@ -197,6 +233,25 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.createOp("calculate", operator)
     }
 
+    visitArrayIndex(ctx) {
+        // indexes
+        const exps = ctx.expression();
+        exps.forEach(exp => { this.visit(exp) })
+
+        // array
+        const varname = ctx.variable().getText()
+        this.createOp("pushVar", varname)
+
+        // index into array
+        this.createOp("index", exps.length)
+    }
+
+    visitArrayShorthand(ctx) {
+        let exps = ctx.expression();
+        exps.forEach(exp => { this.visit(exp) })
+        this.createOp("array", exps.length)
+    }
+
     visitVariable(ctx) {
         const varname = ctx.getText()
         this.createOp("pushVar", varname)
@@ -230,9 +285,10 @@ export class LinearExecutor {
 
     ipStack = []
 
-    /** @type {Array<{opcode: String}>} */
+    /** @type {Array<{opcode: String}>} - Contains the opcodes of the program. */
     instructions = []
 
+    /** @type {Array<Value>} - Contains the immediate values. */
     stack = []
 
     /*
@@ -338,6 +394,33 @@ export class LinearExecutor {
                         }
                     })(), TYPES.number))
                 }
+                break;
+
+            case "index":
+                {
+                    let array = this.stack.pop()
+                    let indices = []
+
+                    for (let i = 0; i < payload; i++) {
+                        indices.push(this.stack.pop().safe_get(TYPES.number) - 1)
+                    }
+                    indices.reverse()
+
+                    let val = indices.reduce((prev, index) => { return prev.safe_get(TYPES.array)[index] }, array)
+                    this.stack.push(val.clone())
+                }
+                break;
+
+            case "array":
+                let arr = []
+
+                for (let i = 0; i < payload; i++) {
+                    arr.push(this.stack.pop())
+                }
+
+                arr.reverse()
+
+                this.stack.push(new Value(arr, TYPES.array))
                 break;
 
             case "jmp":

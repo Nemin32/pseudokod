@@ -18521,6 +18521,22 @@ var LinearGenerator = class extends PseudoCodeVisitor {
       payload
     });
   }
+  _assemble(ctx, ops) {
+    ops.forEach(([opcode, payload, arg]) => {
+      switch (opcode) {
+        case "VISIT":
+          this.visit(ctx[payload](Number(arg)));
+          break;
+        default:
+          this.createOp(opcode, payload);
+          break;
+      }
+    });
+  }
+  assemble(ctx, input) {
+    const ops = input.split("\n").map((line) => line.trim().split(" ")).filter((x) => x[0] != "");
+    this._assemble(ctx, ops);
+  }
   constructor() {
     super();
   }
@@ -18555,14 +18571,18 @@ var LinearGenerator = class extends PseudoCodeVisitor {
     this.createOp("functionEnd", fName);
   }
   visitDebugPrintStatement(ctx) {
-    this.visit(ctx.expression());
-    this.createOp("print");
+    this.assemble(ctx, `
+            VISIT expression
+            print
+        `);
   }
   visitSimpleIfStatement(ctx) {
-    this.visit(ctx.expression());
-    this.createOp("if");
-    this.visit(ctx.body());
-    this.createOp("endIf");
+    this.assemble(ctx, [
+      ["VISIT", "expression"],
+      ["if"],
+      ["VISIT", "body"],
+      ["endIf"]
+    ]);
   }
   visitIfElseStatement(ctx) {
     this.visit(ctx.expression());
@@ -18632,6 +18652,22 @@ var LinearGenerator = class extends PseudoCodeVisitor {
     this.visit(ctx.expression(1));
     this.createOp("calculate", operator);
   }
+  visitArrayIndex(ctx) {
+    const exps = ctx.expression();
+    exps.forEach((exp) => {
+      this.visit(exp);
+    });
+    const varname = ctx.variable().getText();
+    this.createOp("pushVar", varname);
+    this.createOp("index", exps.length);
+  }
+  visitArrayShorthand(ctx) {
+    let exps = ctx.expression();
+    exps.forEach((exp) => {
+      this.visit(exp);
+    });
+    this.createOp("array", exps.length);
+  }
   visitVariable(ctx) {
     const varname = ctx.getText();
     this.createOp("pushVar", varname);
@@ -18695,7 +18731,10 @@ var LinearExecutor = class {
     const { opcode, payload } = instruction;
     switch (opcode) {
       case "print":
-        this.outputFunc(this.stack.pop()?.value);
+        {
+          const value = this.stack.pop();
+          this.outputFunc(value?.value);
+        }
         break;
       case "push":
         this.stack.push(new Value(payload, null));
@@ -18745,6 +18784,28 @@ var LinearExecutor = class {
             }
           })(), TYPES.number));
         }
+        break;
+      case "index":
+        {
+          let array = this.stack.pop();
+          let indices = [];
+          for (let i = 0; i < payload; i++) {
+            indices.push(this.stack.pop().safe_get(TYPES.number) - 1);
+          }
+          indices.reverse();
+          let val2 = indices.reduce((prev, index) => {
+            return prev.safe_get(TYPES.array)[index];
+          }, array);
+          this.stack.push(val2.clone());
+        }
+        break;
+      case "array":
+        let arr = [];
+        for (let i = 0; i < payload; i++) {
+          arr.push(this.stack.pop());
+        }
+        arr.reverse();
+        this.stack.push(new Value(arr, TYPES.array));
         break;
       case "jmp":
         this.skipTo([payload]);
