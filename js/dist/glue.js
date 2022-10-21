@@ -37,8 +37,20 @@ window.addEventListener("load", () => {
 
 	let exec = null
 
+	const extract = (output, exp) => {
+		if (exp == null) {
+			return output + "[Nem létezik]"
+		} else if (exp.type !== TYPES.array) {
+			return output + exp.value
+		} else {
+			return output += "[" + exp.value.map((val) => extract(val)).join(", ") + "]"
+		}
+	}
+
 	compile.addEventListener("click", () => {
-		exec = new PseudoVisitor.LinearExecutor(PseudoVisitor.createProgram(inputElem.value), (text) => { output.innerText += text + "\n" })
+		exec = new PseudoVisitor.LinearExecutor(
+			PseudoVisitor.createProgram(inputElem.value),
+			(text) => { output.innerText += ((typeof text == "object") ? extract(text) : text) + "\n" })
 		printCode(code, exec)
 
 	})
