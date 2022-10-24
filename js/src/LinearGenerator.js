@@ -19,10 +19,18 @@ export class LinearGenerator extends PseudoCodeVisitor {
      * @param {Array<[string, string?, string?]>} ops - The list of opcodes and payloads
      */
     _assemble(ctx, ops) {
-        ops.forEach(([opcode, payload, arg]) => {
+        ops.forEach(([opcode, payload, maybe_arg]) => {
             switch (opcode) {
                 case "VISIT":
-                    this.visit(ctx[payload](Number(arg)))
+                    let arg = Number.isNaN(Number(maybe_arg)) ? undefined : Number(maybe_arg);
+
+                    if (ctx && ctx[payload]) {
+                        const newCtx = ctx[payload](arg)
+
+                        if (newCtx) {
+                            this.visit(newCtx)
+                        }
+                    }
                     break;
                 default:
                     this.createOp(opcode, payload);
@@ -32,7 +40,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     assemble(ctx, input) {
-        const ops = input.split("\n").map(line => line.trim().split(" ")).filter(x => x[0] != "")
+        const ops = input.split(/\n|;/).map(line => line.trim().split(" ")).filter(x => x[0] != "")
         this._assemble(ctx, ops)
     }
 
@@ -40,24 +48,24 @@ export class LinearGenerator extends PseudoCodeVisitor {
         super()
     }
 
-    /*
-    visitProgram(ctx) {
-        super.visitChildren(ctx)
-
-        // console.log(this.output)
-    }*/
+    visitMethodCallStatement(ctx) {
+        this.visitFunctionCall(ctx)
+    }
 
     visitReturnStatement(ctx) {
-        this.visit(ctx.expression())
-        this.createOp("ret")
+        this.assemble(ctx, `
+            VISIT expression;
+            ret
+        `)
     }
 
     visitFunctionCall(ctx) {
         const fName = ctx.functionName().getText();
 
-        this.visit(ctx.parameters())
-
-        this.createOp("functionCall", fName)
+        this.assemble(ctx, `
+            VISIT parameters; 
+            functionCall ${fName}
+        `)
     }
 
     visitParameterWithType(ctx) {
@@ -70,122 +78,112 @@ export class LinearGenerator extends PseudoCodeVisitor {
 
     visitFunctionDeclarationWithParameters(ctx) {
         const fName = ctx.functionName().getText();
-        const params = ctx.parameterWithType().map(p => this.visit(p))
-
+        const params = ctx.parameterWithType().map(p => this.visitParameterWithType(p))
         this.output.parameterTypes.set(fName, params);
 
-        this.createOp("functionDef", fName)
-
-        this.visit(ctx.body())
-
-        this.createOp("functionEnd", fName);
+        this.assemble(ctx, `
+            functionDef ${fName}; 
+            VISIT body; 
+            functionEnd ${fName}
+        `)
     }
 
     visitFunctionDeclarationWithoutParameters(ctx) {
         const fName = ctx.functionName().getText();
 
-        this.createOp("functionDef", fName);
-
-        this.visit(ctx.body())
-
-        this.createOp("functionEnd", fName);
+        this.assemble(ctx, `
+            functionDef ${fName}; 
+            VISIT body; 
+            functionEnd ${fName}
+        `)
     }
 
     visitDebugPrintStatement(ctx) {
-        // this.visit(ctx.expression())
-        // this.createOp("print")
-
         this.assemble(ctx, `
             VISIT expression
             print
         `)
     }
 
-    visitSimpleIfStatement(ctx) {
-        /*
-        this.visit(ctx.expression())
-
-        this.createOp("if")
-
-        this.visit(ctx.body())
-
-        this.createOp("endIf")
-        */
-
+    visitIfStatement(ctx) {
         this.assemble(ctx, `
             VISIT expression
             if
             VISIT body
+            jmp endIf
+            VISIT elseIfBranch
+            VISIT elseBranch
             endIf
         `)
     }
 
-    visitIfElseStatement(ctx) {
-        this.visit(ctx.expression())
-
-        this.createOp("if")
-
-        this.visit(ctx.body())
-
-        this.createOp("jmp", "endIf")
-
-        this.visit(ctx.elseBranch())
-
-        this.createOp("endIf")
-    }
-
     visitElseBranch(ctx) {
-        this.createOp("else")
-
-        this.visit(ctx.body())
-    }
-
-    visitIfElseIfStatement(ctx) {
-        this.visit(ctx.expression())
-
-        this.createOp("if")
-
-        this.visit(ctx.body())
-
-        this.createOp("jmp", "endIf")
-
-        const elIfBranches = ctx.elseIfBranch();
-
-        elIfBranches.forEach(branch => {
-            this.visit(branch);
-        })
-
-        this.visit(ctx.elseBranch())
-
-        this.createOp("endIf")
+        this.assemble(ctx, `
+            else
+            VISIT body
+        `)
     }
 
     visitElseIfBranch(ctx) {
-        this.visit(ctx.expression())
-
-        this.createOp("elIf")
-
-        this.visit(ctx.body())
-
-        this.createOp("jmp", "endIf")
+        this.assemble(ctx, `
+            VISIT expression
+            elIf
+            VISIT body
+            jmp endIf
+        `)
     }
 
     depth = 0;
     visitWhileStatement(ctx) {
-        this.createOp("whilePrep", ++this.depth)
+        this.depth++;
 
-        this.visit(ctx.expression());
+        this.assemble(ctx, `
+            whilePrep ${this.depth}
+            VISIT expression
+            while ${this.depth}
+            VISIT body
+            loop ${this.depth}
+        `)
 
-        this.createOp("while", this.depth)
-
-        this.visit(ctx.body())
-
-        this.createOp("loop", this.depth--)
+        this.depth--;
     }
 
     visitForStatement(ctx) {
         const varname = ctx.variable().getText();
 
+        this.depth++
+
+        this.assemble(ctx, `
+            for
+            VISIT expression 0
+            assign ${varname}
+
+            whilePrep ${this.depth}
+
+            pushVar ${varname}
+            VISIT expression 1
+            compare <=
+
+            while ${this.depth}
+            VISIT body
+        `)
+
+        // FIXME: Make this more ergonomic.
+        this.createOp("push", 1)
+
+        this.assemble(ctx, `
+            pushVar ${varname}
+            calculate +
+            assign ${varname}
+
+            loop ${this.depth}
+
+            forEnd
+        `)
+
+        this.depth--;
+
+        /*
         this.createOp("for")
 
         // let varname = exp(0)
@@ -213,55 +211,87 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.createOp("loop", this.depth--)
 
         this.createOp("forEnd")
+        */
     }
 
     visitComparisonExpression(ctx) {
         const comparer = ctx.COMPARISON().getText();
 
-        this.visit(ctx.expression(0))
+        /*this.visit(ctx.expression(0))
         this.visit(ctx.expression(1))
 
-        this.createOp("compare", comparer)
+        this.createOp("compare", comparer)*/
+
+        this.assemble(ctx, `
+            VISIT expression 0
+            VISIT expression 1
+            compare ${comparer}
+        `)
     }
 
     visitCalculationExpression(ctx) {
         const operator = ctx.OPERATOR().getText()
 
-        this.visit(ctx.expression(0))
+        /*this.visit(ctx.expression(0))
         this.visit(ctx.expression(1))
 
-        this.createOp("calculate", operator)
+        this.createOp("calculate", operator)*/
+
+        this.assemble(ctx, `
+            VISIT expression 0
+            VISIT expression 1
+            calculate ${operator}
+        `)
     }
 
     visitArrayIndex(ctx) {
+        /*
         // indexes
         const exps = ctx.expression();
         exps.forEach(exp => { this.visit(exp) })
 
         // array
-        const varname = ctx.variable().getText()
         this.createOp("pushVar", varname)
 
         // index into array
         this.createOp("index", exps.length)
+        */
+
+        const varname = ctx.variable().getText()
+
+        this.assemble(ctx, `
+            VISIT expression
+            pushVar ${varname}
+            index ${ctx.expression().length}
+        `)
     }
 
     visitArrayShorthand(ctx) {
-        let exps = ctx.expression();
+        /*let exps = ctx.expression();
         exps.forEach(exp => { this.visit(exp) })
-        this.createOp("array", exps.length)
-    }
+        this.createOp("array", exps.length)*/
 
-    visitVariable(ctx) {
-        const varname = ctx.getText()
-        this.createOp("pushVar", varname)
+        this.assemble(ctx, `
+            VISIT expression
+            array ${ctx.expression().length}
+        `)
     }
 
     visitAssignmentStatement(ctx) {
         const varname = ctx.variable().getText()
 
-        this.visit(ctx.expression())
-        this.createOp("assign", varname)
+        /*this.visit(ctx.expression())
+        this.createOp("assign", varname)*/
+
+        this.assemble(ctx, `
+            VISIT expression
+            assign ${varname}
+        `)
+    }
+
+    visitVariable(ctx) {
+        const varname = ctx.getText()
+        this.createOp("pushVar", varname)
     }
 
     visitNumber(ctx) {
@@ -352,7 +382,7 @@ export class LinearExecutor {
         // console.log(instruction.opcode)
         switch (opcode) {
             case "print":
-                this.outputFunc(this.stack.pop()?.value)
+                this.outputFunc(this.stack.pop())
                 break;
 
             case "push":
@@ -492,10 +522,12 @@ export class LinearExecutor {
 
                 this.variables.enterBasicScope(true)
 
-                const parameters = this.parameterTypes.get(payload).reverse();
+                const parameters = this.parameterTypes.get(payload)?.reverse();
 
-                for (let paramType of parameters) {
-                    this.variables.set(paramType.name, this.stack.pop())
+                if (parameters) {
+                    for (let paramType of parameters) {
+                        this.variables.set(paramType.name, this.stack.pop())
+                    }
                 }
 
                 this.fullSeek("functionDef", payload);
@@ -528,7 +560,7 @@ export class LinearExecutor {
     }
 
     reset() {
-        this.variables = []
+        this.variables = new Stack(this.parameterTypes)
         this.stack = []
         this.ip = 0;
     }
