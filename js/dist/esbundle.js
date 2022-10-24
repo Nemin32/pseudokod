@@ -18163,6 +18163,16 @@ var Value = class {
     }
     return this.value;
   }
+  toString() {
+    const convertToJSValue = (val) => {
+      if (val.type == TYPES.array) {
+        return val.value.map((innerVal) => convertToJSValue(innerVal));
+      } else {
+        return val.value;
+      }
+    };
+    return JSON.stringify(convertToJSValue(this)).replaceAll("[", "(").replaceAll("]", ")").replaceAll("true", "Igaz").replaceAll("false", "Hamis");
+  }
 };
 var Stack = class {
   #scopeBounds = [];
@@ -18468,7 +18478,7 @@ var LinearExecutor = class {
     const { opcode, payload } = instruction;
     switch (opcode) {
       case "print":
-        this.outputFunc(this.stack.pop()?.value);
+        this.outputFunc(this.stack.pop());
         break;
       case "push":
         this.stack.push(new Value(payload, null));
@@ -18620,7 +18630,7 @@ var LinearExecutor = class {
     }
   }
   reset() {
-    this.variables = [];
+    this.variables = new Stack(this.parameterTypes);
     this.stack = [];
     this.ip = 0;
   }
@@ -19004,45 +19014,35 @@ var PseudoVisitor = class extends PseudoCodeVisitor {
 };
 
 // src/index.js
-function createProgram(input) {
+function generateAST(input) {
   const chars = new antlr4_default.InputStream(input + "\n");
   const lexer = new PseudoCodeLexer(chars);
   const tokens = new antlr4_default.CommonTokenStream(lexer);
   const parser = new PseudoCodeParser(tokens);
   const tree = parser.program();
+  return tree;
+}
+function generateLinearEnvironment(input) {
+  const tree = generateAST(input);
   const generator = new LinearGenerator();
   generator.visit(tree);
   return generator.output;
 }
 function runLinear(input, outputFunc) {
-  const chars = new antlr4_default.InputStream(input + "\n");
-  const lexer = new PseudoCodeLexer(chars);
-  const tokens = new antlr4_default.CommonTokenStream(lexer);
-  const parser = new PseudoCodeParser(tokens);
-  const tree = parser.program();
-  const generator = new LinearGenerator();
-  generator.visit(tree);
-  const executor = new LinearExecutor(generator.output, outputFunc);
+  const env = generateLinearEnvironment(input);
+  const executor = new LinearExecutor(env, outputFunc);
   executor.run();
 }
 function runText(input, errorFunc, outputFunc, varOutput) {
-  const chars = new antlr4_default.InputStream(input + "\n");
-  const lexer = new PseudoCodeLexer(chars);
-  lexer.removeErrorListeners();
-  lexer.addErrorListener({ syntaxError: errorFunc });
-  const tokens = new antlr4_default.CommonTokenStream(lexer);
-  const parser = new PseudoCodeParser(tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener({ syntaxError: errorFunc });
-  const tree = parser.program();
+  const tree = generateAST(input);
   const visitor = new PseudoVisitor(outputFunc, varOutput);
-  const generator = new LinearGenerator();
   visitor.visit(tree);
 }
 console.log("Hello!");
 export {
   LinearExecutor,
-  createProgram,
+  TYPES,
+  generateLinearEnvironment,
   runLinear,
   runText
 };

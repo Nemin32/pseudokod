@@ -47,6 +47,23 @@ export class Value {
 
     return this.value
   }
+
+  toString() {
+    const convertToJSValue = (val) => {
+      if (val.type == TYPES.array) {
+        return val.value.map(innerVal => convertToJSValue(innerVal))
+      }
+      else {
+        return val.value
+      }
+    }
+
+    return JSON.stringify(convertToJSValue(this))
+      .replaceAll("[", "(")
+      .replaceAll("]", ")")
+      .replaceAll("true", "Igaz")
+      .replaceAll("false", "Hamis")
+  }
 }
 
 /*

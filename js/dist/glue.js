@@ -1,109 +1,102 @@
-//import * as PseudoVisitor from "./main.js"
-
-/*import { createProgram } from "../src/index.js"
-import { LinearExecutor } from "../src/LinearGenerator.js"*/
 import * as PseudoVisitor from "./esbundle.js"
 
-window.addEventListener("load", () => {
-	const inputElem = document.getElementById("input")
-	const output = document.getElementById("output")
-	const code = document.getElementById("code")
-	const vars = document.getElementById("vars")
-	const button = document.getElementById("send")
+const dumpEnvironment = (executor, codeOutput, varOutput) => {
+	codeOutput.innerText = ""
+	varOutput.innerText = ""
 
-	const printCode = (code, exec) => {
-		code.innerHTML = ""
-		exec.instructions.forEach((elem, idx) => {
-			const curr = (idx == exec.ip) ? ">" : " "
-			const pl = (elem.payload !== null) ? "(" + elem.payload + ")" : ""
-			code.innerText += curr + elem.opcode.toUpperCase() + pl + "\n"
-		})
+	let [code, stack, vars, paramTypes, ip, ipStack] = [
+		executor.instructions,
+		executor.stack,
+		executor.variables,
+		executor.paramTypes,
+		executor.ip,
+		executor.ipStack,
+	];
 
-		if (exec.ip == exec.instructions.length) {
-			code.innerText += "[DONE]"
-		}
-
-		vars.innerText = "VARS:\n"
-
-		for (const { key, value } of exec.variables.variables) {
-			vars.innerText += `${key} - ${value.value}\n`
-		}
-
-		vars.innerText += "STACK:\n"
-		exec.stack.forEach(s => {
-			vars.innerText += s?.value + "\n"
-		})
+	const padRight = (inp, length, char = "0") => {
+		return char.repeat(length - inp.length) + inp
 	}
 
-	let exec = null
+	codeOutput.innerText += "  IP: " + padRight(String(ip), 4) + "\n\n";
 
-	const extract = (output, exp) => {
-		if (exp == null) {
-			return output + "[Nem létezik]"
-		} else if (exp.type !== TYPES.array) {
-			return output + exp.value
-		} else {
-			return output += "[" + exp.value.map((val) => extract(val)).join(", ") + "]"
-		}
+	for (let i = 0; i < code.length; i++) {
+		const cursor = i == ip ? ">" : " ";
+		const opcode = code[i].opcode.toUpperCase();
+		const payload = code[i].payload ? `(${code[i].payload})` : ""
+
+		codeOutput.innerText += `${cursor} ${padRight(String(i), 4)} ${opcode}${payload}\n`
+	}
+
+	codeOutput.innerText += "\nIP STACK:\n"
+
+	for (let sip of ipStack) {
+		codeOutput.innerText += padRight(String(sip), 4) + "\n"
+	}
+};
+
+const pushStackCallback = (div, value) => {
+	let span = div.createElement("span");
+	span.innerText = value.toString()
+	div.insertBefore(div.firstChild)
+};
+
+const popStackCallback = (div) => {
+	div.firstChild.className = "removed";
+	setTimeout(() => {
+		div.removeChild(div.firstChild)
+	}, 100)
+};
+
+const outputFunction = (output, wrappedValue) => {
+	output.innerText += wrappedValue?.value;
+};
+
+const compileEnvironment = (input) => {
+	const env = PseudoVisitor.generateLinearEnvironment(input);
+	return env
+}
+
+window.addEventListener("load", () => {
+	/* User controls */
+	const inputElem = document.getElementById("input")
+	const compile = document.getElementById("compile")
+	const step = document.getElementById("step")
+	const run = document.getElementById("run")
+
+	/* Program output */
+	const output = document.getElementById("output")
+	const codeOutput = document.getElementById("code")
+	const varOutput = document.getElementById("vars")
+	const stackOutput = document.getElementById("stack")
+
+	let environment = null;
+	let executor = null;
+
+	const callbacks = {
+		output: (val) => outputFunction(output, val),
+		pushStack: (val) => pushStackCallback(stackOutput, val),
+		popStack: () => popStackCallback(stackOutput),
 	}
 
 	compile.addEventListener("click", () => {
-		exec = new PseudoVisitor.LinearExecutor(
-			PseudoVisitor.createProgram(inputElem.value),
-			(text) => { output.innerText += ((typeof text == "object") ? extract(text) : text) + "\n" })
-		printCode(code, exec)
+		environment = compileEnvironment(inputElem.value);
+		executor = new PseudoVisitor.LinearExecutor(environment, callbacks.output);
 
+		dumpEnvironment(executor, codeOutput, varOutput)
 	})
 
-	document.addEventListener("keyup", (key) => {
-		if (key.key == " ") {
-			exec.step();
-			printCode(code, exec)
+	run.addEventListener("click", () => {
+		if (executor) {
+			output.innerText = ""
+			executor.reset()
+			executor.run()
 		}
 	})
 
-
-	button.addEventListener("click", () => {
-		output.innerHTML = ""
-		vars.innerHTML = ""
-
-		const syntaxReporter = (recognizer, offendingSymbol, line, column, message, error) => {
-			console.log({
-				recognizer,
-				offendingSymbol,
-				line,
-				column,
-				message,
-				error
-			})
-
-			output.innerHTML += `${line}:${column} - ${message}\n`;
-			button.className = "bad"
-		}
-
-		button.className = "good"
-
-		try {
-			PseudoVisitor.runText(
-				inputElem.value,
-				syntaxReporter,
-				(...rest) => { rest.forEach(elem => { output.innerText += elem + "\n" }) },
-				(variables, scopeBounds) => {
-					vars.innerHTML = ""
-
-					for (let i = variables.length - 1; i >= 0; i--) {
-						if (scopeBounds.find((elem) => elem.isFunctionScope && elem.length == i + 1)) {
-							vars.innerHTML += `<span>limit</span>`
-						}
-
-						vars.innerHTML += `<span>${variables[i].key} - ${variables[i].value.value} (${variables[i].value.type})`
-
-					}
-				}
-			)
-		} catch (e) {
-			output.innerHTML += e.message + "\n"
-			button.className = "bad"
+	step.addEventListener("click", () => {
+		if (executor) {
+			executor.step()
+			dumpEnvironment(executor, codeOutput, varOutput)
 		}
 	})
 })

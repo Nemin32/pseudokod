@@ -78,6 +78,28 @@
 			display: block;
 			border: 1px solid;
 		}
+
+		#vars {
+			display: grid;
+			grid-template-columns: auto auto;
+			grid-auto-rows: min-content;
+		}
+
+		@keyframes blink {
+			from {
+				background-color: aqua;
+			}
+
+			to {
+				background-color: #eee;
+			}
+		}
+
+		#vars span {
+			animation: blink;
+			animation-duration: 0.5s;
+			background-color: #eee;
+		}
 	</style>
 </head>
 
@@ -88,11 +110,13 @@
 		<div id="inputs">
 			<textarea id="input" cols="80" rows="24" spellcheck="false"></textarea>
 			<button id="compile">Compile</button>
-			<button id="send">Run</button>
+			<button id="step">Step</button>
+			<button id="run">Run</button>
 		</div>
 		<div id="internals" class="gray">
 			<pre id="code"></pre>
-			<p id="vars"></p>
+			<div id="stack"></div>
+			<div id="vars"></div>
 		</div>
 		<div id="output_container">
 			<p id="output"></p>
