@@ -136,7 +136,7 @@ export class Stack {
 
     if (existing_var) {
       existing_var.set(value.value, value.type)
-      this.callbacks?.variableSet({ key, value });
+      this.callbacks?.variableSet?.({ key, value });
     } else {
       const newVar = {
         key: key,
@@ -144,7 +144,7 @@ export class Stack {
       }
 
       this.variables.push(newVar)
-      this.callbacks?.variableSet(newVar);
+      this.callbacks?.variableSet?.(newVar);
     }
   }
 
@@ -169,7 +169,7 @@ export class Stack {
     const length_diff = this.variables.length - current_bound.length;
     this.variables.splice(this.variables.length - length_diff, length_diff)
 
-    this.callbacks?.scopeLeave(this.variables);
+    this.callbacks?.scopeLeave?.(this.variables);
   }
 
   enterFunctionScope(functionName, parameters) {

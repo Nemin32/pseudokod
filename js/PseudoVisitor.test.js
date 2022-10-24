@@ -1,16 +1,16 @@
 import { jest, test, describe, expect, afterEach } from "@jest/globals"
 import { runText, runLinear } from "./src/index.js"
 
-const mockOutput = jest.fn((input) => input)
+const mockOutput = jest.fn((input) => input.value)
 
 /** @param {string} input */
-const r = (input) => runLinear(input, mockOutput)
+const r = (input) => runLinear(input, { output: mockOutput })
 //const r = (input) => runText(input, (input) => { }, mockOutput)
 
 const generateTest = (testInstance) => test(testInstance.name, () => {
     r(testInstance.input)
     expect(mockOutput.mock.calls.length).toBe(testInstance.times ?? 1)
-    expect(mockOutput.mock.results[0].value).toStrictEqual(String(testInstance.output ?? "OK"))
+    expect(mockOutput.mock.results[0].value).toStrictEqual(testInstance.output ?? "OK")
 })
 
 const generateTestGroup = (groupDetails) => describe(groupDetails.name, () => {
@@ -289,7 +289,7 @@ describe("Ciklusok", () => {
         `)
 
         expect(mockOutput.mock.calls.length).toBe(6)
-        expect(mockOutput.mock.results[5].value).toBe("5")
+        expect(mockOutput.mock.results[5].value).toBe(5)
     })
 
     test("For ciklus", () => {
@@ -303,6 +303,6 @@ describe("Ciklusok", () => {
         `)
 
         expect(mockOutput.mock.calls.length).toBe(1)
-        expect(mockOutput.mock.results[0].value).toBe("32")
+        expect(mockOutput.mock.results[0].value).toBe(32)
     })
 })

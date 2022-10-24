@@ -375,13 +375,13 @@ export class LinearExecutor {
 
     popStack() {
         if (this.stack.length > 0) {
-            this.callbacks.popStack()
+            this.callbacks.popStack?.()
             return this.stack.pop()
         }
     }
 
     pushStack(value) {
-        this.callbacks.pushStack(value)
+        this.callbacks.pushStack?.(value)
         this.stack.push(value)
     }
 
@@ -391,7 +391,7 @@ export class LinearExecutor {
         // console.log(instruction.opcode)
         switch (opcode) {
             case "print":
-                this.callbacks.output(this.popStack())
+                this.callbacks.output?.(this.popStack())
                 break;
 
             case "push":
