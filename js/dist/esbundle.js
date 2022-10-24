@@ -18175,9 +18175,9 @@ var Value = class {
   }
 };
 var Stack = class {
-  scopeBounds = [];
+  #scopeBounds = [];
   get scopeBounds() {
-    return this.scopeBounds;
+    return this.#scopeBounds;
   }
   variables = [];
   parameterTypes = null;
@@ -18188,7 +18188,7 @@ var Stack = class {
   }
   get(key) {
     for (let i = this.variables.length - 1; i >= 0; i--) {
-      if (this.scopeBounds.findLast((bound) => bound.isFunctionScope && bound.length == i + 1)) {
+      if (this.#scopeBounds.findLast((bound) => bound.isFunctionScope && bound.length == i + 1)) {
         return null;
       }
       if (this.variables[i].key == key) {
@@ -18201,35 +18201,33 @@ var Stack = class {
     const existing_var = this.get(key);
     if (existing_var) {
       existing_var.set(value.value, value.type);
-      this.callbacks?.variableSet({ key, value });
+      this.callbacks?.variableSet?.({ key, value });
     } else {
       const newVar = {
         key,
         value
       };
       this.variables.push(newVar);
-      this.callbacks?.variableSet(newVar);
+      this.callbacks?.variableSet?.(newVar);
     }
   }
   create_reference(key, variable) {
     this.set(key, variable, TYPES.reference);
   }
   enterBasicScope(isFunc = false) {
-    this.scopeBounds.push({
+    this.#scopeBounds.push({
       length: this.variables.length,
       isFunctionScope: isFunc
     });
-    console.log("After push:", this.scopeBounds);
   }
   leaveBasicScope(isFunc = false) {
-    let current_bound = this.scopeBounds.pop();
+    let current_bound = this.#scopeBounds.pop();
     while (isFunc && !current_bound.isFunctionScope) {
-      current_bound = this.scopeBounds.pop();
+      current_bound = this.#scopeBounds.pop();
     }
     const length_diff = this.variables.length - current_bound.length;
     this.variables.splice(this.variables.length - length_diff, length_diff);
-    console.log("After pop:", this.scopeBounds);
-    this.callbacks?.scopeLeave(this.variables);
+    this.callbacks?.scopeLeave?.(this.variables);
   }
   enterFunctionScope(functionName, parameters) {
     this.enterBasicScope(true);
@@ -18414,6 +18412,13 @@ var LinearGenerator = class extends PseudoCodeVisitor {
             calculate ${operator}
         `);
   }
+  visitArrayAssignmentStatement(ctx) {
+    const varname = ctx.variable().getText();
+    const typeName = ctx.type().getText();
+    this.visit(ctx.expression());
+    this.createOp("create_array", typeName);
+    this.createOp("assign", varname);
+  }
   visitArrayIndex(ctx) {
     const varname = ctx.variable().getText();
     this.assemble(ctx, `
@@ -18492,22 +18497,39 @@ var LinearExecutor = class {
   }
   popStack() {
     if (this.stack.length > 0) {
-      this.callbacks.popStack();
+      this.callbacks.popStack?.();
       return this.stack.pop();
     }
   }
   pushStack(value) {
-    this.callbacks.pushStack(value);
+    this.callbacks.pushStack?.(value);
     this.stack.push(value);
   }
   execute(instruction) {
     const { opcode, payload } = instruction;
     switch (opcode) {
       case "print":
-        this.callbacks.output(this.popStack());
+        this.callbacks.output?.(this.popStack());
         break;
       case "push":
         this.pushStack(new Value(payload, null));
+        break;
+      case "create_array":
+        {
+          const defaultValue = (() => {
+            switch (payload) {
+              case "eg\xE9sz":
+                return [Number(), TYPES.number];
+              case "sz\xF6veg":
+                return [String(), TYPES.string];
+              case "logikai":
+                return [Boolean(), TYPES.boolean];
+            }
+          })();
+          const length = this.popStack().safe_get(TYPES.number);
+          const values = Array.from(Array(length), () => new Value(...defaultValue));
+          this.pushStack(new Value(values, TYPES.array));
+        }
         break;
       case "compare":
         {
@@ -18721,7 +18743,6 @@ var PseudoVisitor = class extends PseudoCodeVisitor {
     this.debugger.prompt();
   }
   visitVars(ctx) {
-    this.variableOutput(this.variableStack.variables, this.variableStack.scopeBounds);
   }
   visitDebugPrintStatement(ctx) {
     let exp = this.visit(ctx.expression());

@@ -1,7 +1,7 @@
 import { jest, test, describe, expect, afterEach } from "@jest/globals"
 import { runText, runLinear } from "./src/index.js"
 
-const mockOutput = jest.fn((input) => input.value)
+const mockOutput = jest.fn((input) => input.convertToJSValue())
 
 /** @param {string} input */
 const r = (input) => runLinear(input, { output: mockOutput })

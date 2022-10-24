@@ -59,3 +59,14 @@ függvény vége
 kiir Paramnelkul()
 kiir Egyparameter(5)
 kiir Ketparameter(3, hamis)
+
+függvény Faktorialis(x : egész)
+debug
+  ha x <= 1 akkor
+    vissza x
+  különben
+    vissza x * Faktorialis(x - 1)
+  elágazás vége
+függvény vége
+
+kiir Faktorialis(5)

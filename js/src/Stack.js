@@ -41,6 +41,7 @@ export class Value {
   }
 
   safe_get(expected_type) {
+    // FIXME: Make this more robust. Remove part after &&.
     if (this.#_type !== expected_type && this.#_type !== null) {
       throw new Error(`'${expected_type}' típust vártunk, de a változó '${this.#_type}' típusú volt!`);
     }
@@ -48,17 +49,17 @@ export class Value {
     return this.value
   }
 
-  toString() {
-    const convertToJSValue = (val) => {
-      if (val.type == TYPES.array) {
-        return val.value.map(innerVal => convertToJSValue(innerVal))
-      }
-      else {
-        return val.value
-      }
+  convertToJSValue(val = this) {
+    if (val.type == TYPES.array) {
+      return val.value.map(innerVal => this.convertToJSValue(innerVal))
     }
+    else {
+      return val.value
+    }
+  }
 
-    return JSON.stringify(convertToJSValue(this))
+  toString() {
+    return JSON.stringify(this.convertToJSValue(this))
       .replaceAll("[", "(")
       .replaceAll("]", ")")
       .replaceAll("true", "Igaz")

@@ -1,0 +1,13 @@
+függvény LNKO(m : egész, n : egész)
+  r <- m mod n
+  
+  ciklus amíg r =/= 0
+    m <- n
+    n <- r
+    r <- m mod n  
+  ciklus vége
+
+  vissza n
+függvény vége
+
+kiir LNKO(15, 33)

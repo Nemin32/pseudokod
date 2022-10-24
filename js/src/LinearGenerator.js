@@ -244,6 +244,32 @@ export class LinearGenerator extends PseudoCodeVisitor {
         `)
     }
 
+    visitArrayElementAssignmentStatement(ctx) {
+        /*const variable = this.visitVariable(ctx.variable());
+        const index = this.visit(ctx.expression(0)).safe_get(TYPES.number) - 1; // Pszeudokód 1-től kezdi.
+        const value = this.visit(ctx.expression(1));
+
+        variable.value[index] = value; */
+
+        const varname = ctx.variable().getText();
+
+        this.assemble(ctx, `
+            pushVar ${varname}
+            VISIT expression 0
+            VISIT expression 1
+            setElement ${varname}
+        `)
+    }
+
+    visitArrayAssignmentStatement(ctx) {
+        const varname = ctx.variable().getText();
+        const typeName = ctx.type().getText();
+
+        this.visit(ctx.expression())
+        this.createOp("create_array", typeName)
+        this.createOp("assign", varname)
+    }
+
     visitArrayIndex(ctx) {
         /*
         // indexes
@@ -398,6 +424,23 @@ export class LinearExecutor {
                 this.pushStack(new Value(payload, null))
                 break;
 
+            case "create_array":
+                {
+                    const defaultValue = (() => {
+                        switch (payload) {
+                            case "egész": return [Number(), TYPES.number];
+                            case "szöveg": return [String(), TYPES.string];
+                            case "logikai": return [Boolean(), TYPES.boolean];
+                        }
+                    })()
+
+                    const length = this.popStack().safe_get(TYPES.number)
+                    const values = Array.from(Array(length), () => new Value(...defaultValue))
+
+                    this.pushStack(new Value(values, TYPES.array))
+                }
+                break
+
             case "compare":
                 {
                     const exp2 = this.popStack().safe_get(TYPES.number)
@@ -432,6 +475,18 @@ export class LinearExecutor {
                             default: return 0;
                         }
                     })(), TYPES.number))
+                }
+                break;
+
+            case "setElement":
+                {
+                    const value = this.popStack()
+                    const index = this.popStack().safe_get(TYPES.number) - 1
+                    const array = this.popStack().safe_get(TYPES.array)
+
+                    array[index] = value
+
+                    this.variables.set(payload, new Value(array, TYPES.array))
                 }
                 break;
 
