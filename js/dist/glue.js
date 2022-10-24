@@ -2,7 +2,7 @@ import * as PseudoVisitor from "./esbundle.js"
 
 const dumpEnvironment = (executor, codeOutput, varOutput) => {
 	codeOutput.innerText = ""
-	varOutput.innerText = ""
+	//varOutput.innerText = ""
 
 	let [code, stack, vars, paramTypes, ip, ipStack] = [
 		executor.instructions,
@@ -35,17 +35,37 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 };
 
 const pushStackCallback = (div, value) => {
-	let span = div.createElement("span");
+	let span = document.createElement("span");
 	span.innerText = value.toString()
-	div.insertBefore(div.firstChild)
+	div.insertBefore(span, div.firstChild)
 };
 
 const popStackCallback = (div) => {
-	div.firstChild.className = "removed";
+	let toBeRemoved = div.querySelector("span:not(.deleted)")
+	toBeRemoved.className = "deleted"
+
 	setTimeout(() => {
-		div.removeChild(div.firstChild)
-	}, 100)
+		div.removeChild(toBeRemoved)
+	}, 250)
 };
+
+const variableSetCallback = (div, variable) => {
+	let newElem = document.createElement("div")
+	newElem.innerHTML = `<span class="varname">${variable.key}</span><span class="value">${variable.value}</span>`
+	div.appendChild(newElem)
+
+	console.log(newElem)
+}
+
+const scopeLeaveCallback = (div, variables) => {
+	div.innerHTML = ""
+
+	for (let variable of variables) {
+		let newElem = document.createElement("div")
+		newElem.innerHTML = `<span class="varname">${variable.key}</span><span class="value">${variable.value}</span>`
+		div.appendChild(newElem)
+	}
+}
 
 const outputFunction = (output, wrappedValue) => {
 	output.innerText += wrappedValue?.value;
@@ -66,8 +86,8 @@ window.addEventListener("load", () => {
 	/* Program output */
 	const output = document.getElementById("output")
 	const codeOutput = document.getElementById("code")
-	const varOutput = document.getElementById("vars")
-	const stackOutput = document.getElementById("stack")
+	const varOutput = document.querySelector("#vars div")
+	const stackOutput = document.querySelector("#stack div")
 
 	let environment = null;
 	let executor = null;
@@ -76,11 +96,13 @@ window.addEventListener("load", () => {
 		output: (val) => outputFunction(output, val),
 		pushStack: (val) => pushStackCallback(stackOutput, val),
 		popStack: () => popStackCallback(stackOutput),
+		variableSet: (variable) => variableSetCallback(varOutput, variable),
+		scopeLeave: (variables) => scopeLeaveCallback(varOutput, variables)
 	}
 
 	compile.addEventListener("click", () => {
 		environment = compileEnvironment(inputElem.value);
-		executor = new PseudoVisitor.LinearExecutor(environment, callbacks.output);
+		executor = new PseudoVisitor.LinearExecutor(environment, callbacks);
 
 		dumpEnvironment(executor, codeOutput, varOutput)
 	})

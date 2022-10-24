@@ -20,7 +20,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitVars(ctx) {
-    this.variableOutput(this.variableStack.variables, this.variableStack.scopeBounds);
+    this.variableOutput(this.variableStack.variables, this.variableStack.#scopeBounds);
   }
 
   visitDebugPrintStatement(ctx) {

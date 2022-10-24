@@ -18175,18 +18175,20 @@ var Value = class {
   }
 };
 var Stack = class {
-  #scopeBounds = [];
+  scopeBounds = [];
   get scopeBounds() {
-    return this.#scopeBounds;
+    return this.scopeBounds;
   }
   variables = [];
   parameterTypes = null;
-  constructor(parameterTypes) {
+  callbacks = null;
+  constructor(parameterTypes, callbacks = null) {
     this.parameterTypes = parameterTypes;
+    this.callbacks = callbacks;
   }
   get(key) {
     for (let i = this.variables.length - 1; i >= 0; i--) {
-      if (this.#scopeBounds.findLast((bound) => bound.isFunctionScope && bound.length == i + 1)) {
+      if (this.scopeBounds.findLast((bound) => bound.isFunctionScope && bound.length == i + 1)) {
         return null;
       }
       if (this.variables[i].key == key) {
@@ -18199,26 +18201,35 @@ var Stack = class {
     const existing_var = this.get(key);
     if (existing_var) {
       existing_var.set(value.value, value.type);
+      this.callbacks?.variableSet({ key, value });
     } else {
-      this.variables.push({
+      const newVar = {
         key,
         value
-      });
+      };
+      this.variables.push(newVar);
+      this.callbacks?.variableSet(newVar);
     }
   }
   create_reference(key, variable) {
     this.set(key, variable, TYPES.reference);
   }
   enterBasicScope(isFunc = false) {
-    this.#scopeBounds.push({
+    this.scopeBounds.push({
       length: this.variables.length,
       isFunctionScope: isFunc
     });
+    console.log("After push:", this.scopeBounds);
   }
-  leaveBasicScope() {
-    const current_bound = this.#scopeBounds.pop();
+  leaveBasicScope(isFunc = false) {
+    let current_bound = this.scopeBounds.pop();
+    while (isFunc && !current_bound.isFunctionScope) {
+      current_bound = this.scopeBounds.pop();
+    }
     const length_diff = this.variables.length - current_bound.length;
     this.variables.splice(this.variables.length - length_diff, length_diff);
+    console.log("After pop:", this.scopeBounds);
+    this.callbacks?.scopeLeave(this.variables);
   }
   enterFunctionScope(functionName, parameters) {
     this.enterBasicScope(true);
@@ -18389,40 +18400,44 @@ var LinearGenerator = class extends PseudoCodeVisitor {
   }
   visitComparisonExpression(ctx) {
     const comparer = ctx.COMPARISON().getText();
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.createOp("compare", comparer);
+    this.assemble(ctx, `
+            VISIT expression 0
+            VISIT expression 1
+            compare ${comparer}
+        `);
   }
   visitCalculationExpression(ctx) {
     const operator = ctx.OPERATOR().getText();
-    this.visit(ctx.expression(0));
-    this.visit(ctx.expression(1));
-    this.createOp("calculate", operator);
+    this.assemble(ctx, `
+            VISIT expression 0
+            VISIT expression 1
+            calculate ${operator}
+        `);
   }
   visitArrayIndex(ctx) {
-    const exps = ctx.expression();
-    exps.forEach((exp) => {
-      this.visit(exp);
-    });
     const varname = ctx.variable().getText();
-    this.createOp("pushVar", varname);
-    this.createOp("index", exps.length);
+    this.assemble(ctx, `
+            VISIT expression
+            pushVar ${varname}
+            index ${ctx.expression().length}
+        `);
   }
   visitArrayShorthand(ctx) {
-    let exps = ctx.expression();
-    exps.forEach((exp) => {
-      this.visit(exp);
-    });
-    this.createOp("array", exps.length);
+    this.assemble(ctx, `
+            VISIT expression
+            array ${ctx.expression().length}
+        `);
+  }
+  visitAssignmentStatement(ctx) {
+    const varname = ctx.variable().getText();
+    this.assemble(ctx, `
+            VISIT expression
+            assign ${varname}
+        `);
   }
   visitVariable(ctx) {
     const varname = ctx.getText();
     this.createOp("pushVar", varname);
-  }
-  visitAssignmentStatement(ctx) {
-    const varname = ctx.variable().getText();
-    this.visit(ctx.expression());
-    this.createOp("assign", varname);
   }
   visitNumber(ctx) {
     const num = Number(ctx.getText());
@@ -18442,12 +18457,13 @@ var LinearExecutor = class {
   ipStack = [];
   instructions = [];
   stack = [];
-  variables = new Stack();
+  variables = null;
   parameterTypes = null;
-  constructor(environment, outputFunc = console.log) {
+  constructor(environment, callbacks) {
     this.instructions = environment.code;
     this.parameterTypes = environment.parameterTypes;
-    this.outputFunc = outputFunc;
+    this.callbacks = callbacks;
+    this.variables = new Stack(this.parameterTypes, callbacks);
   }
   currentOpcode() {
     return this.instructions[this.ip].opcode;
@@ -18474,20 +18490,30 @@ var LinearExecutor = class {
   skipBack(opcodes, payload) {
     this.#skip(opcodes, payload, -1);
   }
+  popStack() {
+    if (this.stack.length > 0) {
+      this.callbacks.popStack();
+      return this.stack.pop();
+    }
+  }
+  pushStack(value) {
+    this.callbacks.pushStack(value);
+    this.stack.push(value);
+  }
   execute(instruction) {
     const { opcode, payload } = instruction;
     switch (opcode) {
       case "print":
-        this.outputFunc(this.stack.pop());
+        this.callbacks.output(this.popStack());
         break;
       case "push":
-        this.stack.push(new Value(payload, null));
+        this.pushStack(new Value(payload, null));
         break;
       case "compare":
         {
-          const exp2 = this.stack.pop().safe_get(TYPES.number);
-          const exp1 = this.stack.pop().safe_get(TYPES.number);
-          this.stack.push(new Value((() => {
+          const exp2 = this.popStack().safe_get(TYPES.number);
+          const exp1 = this.popStack().safe_get(TYPES.number);
+          this.pushStack(new Value((() => {
             switch (payload) {
               case "=":
                 return exp1 === exp2;
@@ -18509,9 +18535,9 @@ var LinearExecutor = class {
         break;
       case "calculate":
         {
-          const exp2 = this.stack.pop().safe_get(TYPES.number);
-          const exp1 = this.stack.pop().safe_get(TYPES.number);
-          this.stack.push(new Value((() => {
+          const exp2 = this.popStack().safe_get(TYPES.number);
+          const exp1 = this.popStack().safe_get(TYPES.number);
+          this.pushStack(new Value((() => {
             switch (payload) {
               case "+":
                 return exp1 + exp2;
@@ -18531,25 +18557,25 @@ var LinearExecutor = class {
         break;
       case "index":
         {
-          let array = this.stack.pop();
+          let array = this.popStack();
           let indices = [];
           for (let i = 0; i < payload; i++) {
-            indices.push(this.stack.pop().safe_get(TYPES.number) - 1);
+            indices.push(this.popStack().safe_get(TYPES.number) - 1);
           }
           indices.reverse();
           let val2 = indices.reduce((prev, index) => {
             return prev.safe_get(TYPES.array)[index];
           }, array);
-          this.stack.push(val2.clone());
+          this.pushStack(val2.clone());
         }
         break;
       case "array":
         let arr = [];
         for (let i = 0; i < payload; i++) {
-          arr.push(this.stack.pop());
+          arr.push(this.popStack());
         }
         arr.reverse();
-        this.stack.push(new Value(arr, TYPES.array));
+        this.pushStack(new Value(arr, TYPES.array));
         break;
       case "jmp":
         this.skipTo([payload]);
@@ -18558,7 +18584,7 @@ var LinearExecutor = class {
       case "if":
       case "elIf":
         const isIf = opcode == "if";
-        const enter = this.stack.pop().safe_get(TYPES.boolean);
+        const enter = this.popStack().safe_get(TYPES.boolean);
         if (!enter) {
           if (!isIf) {
             this.ip++;
@@ -18577,7 +18603,7 @@ var LinearExecutor = class {
         this.variables.leaveBasicScope();
         break;
       case "while":
-        const should = this.stack.pop().safe_get(TYPES.boolean);
+        const should = this.popStack().safe_get(TYPES.boolean);
         if (!should) {
           this.skipTo("loop", payload);
         }
@@ -18597,23 +18623,25 @@ var LinearExecutor = class {
       case "ret":
       case "functionEnd":
         this.ip = this.ipStack.pop();
-        this.variables.leaveBasicScope();
+        this.variables.leaveBasicScope(true);
         break;
       case "functionCall":
         this.ipStack.push(this.ip);
         this.variables.enterBasicScope(true);
-        const parameters = this.parameterTypes.get(payload).reverse();
-        for (let paramType of parameters) {
-          this.variables.set(paramType.name, this.stack.pop());
+        const parameters = this.parameterTypes.get(payload)?.reverse();
+        if (parameters) {
+          for (let paramType of parameters) {
+            this.variables.set(paramType.name, this.popStack());
+          }
         }
         this.fullSeek("functionDef", payload);
         break;
       case "assign":
-        const val = this.stack.pop();
+        const val = this.popStack();
         this.variables.set(payload, val.clone());
         break;
       case "pushVar":
-        this.stack.push(this.variables.get(payload));
+        this.pushStack(this.variables.get(payload));
         break;
     }
   }
@@ -19041,7 +19069,6 @@ function runText(input, errorFunc, outputFunc, varOutput) {
 console.log("Hello!");
 export {
   LinearExecutor,
-  TYPES,
   generateLinearEnvironment,
   runLinear,
   runText

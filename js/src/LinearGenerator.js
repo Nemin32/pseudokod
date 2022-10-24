@@ -321,12 +321,8 @@ export class LinearExecutor {
     /** @type {Array<Value>} - Contains the immediate values. */
     stack = []
 
-    /*
-    /** @type {Map<string, string | number | boolean>}
-    variables = new Map();
-    */
-
-    variables = new Stack()
+    /** @type {Stack} - Contains the variables of the program. */
+    variables = null
 
     /** @type {Map<string, Array<{name: string, reference: boolean, type: string}>>} */
     parameterTypes = null;
@@ -335,10 +331,11 @@ export class LinearExecutor {
      * Initializes a new execution context.
      * @param {Array<{opcode: String}>} instructions The list of instructions to execute.
      */
-    constructor(environment, outputFunc = console.log) {
+    constructor(environment, callbacks) {
         this.instructions = environment.code
         this.parameterTypes = environment.parameterTypes
-        this.outputFunc = outputFunc
+        this.callbacks = callbacks
+        this.variables = new Stack(this.parameterTypes, callbacks)
     }
 
     currentOpcode() {
@@ -376,25 +373,37 @@ export class LinearExecutor {
         this.#skip(opcodes, payload, -1)
     }
 
+    popStack() {
+        if (this.stack.length > 0) {
+            this.callbacks.popStack()
+            return this.stack.pop()
+        }
+    }
+
+    pushStack(value) {
+        this.callbacks.pushStack(value)
+        this.stack.push(value)
+    }
+
     execute(instruction) {
         const { opcode, payload } = instruction;
 
         // console.log(instruction.opcode)
         switch (opcode) {
             case "print":
-                this.outputFunc(this.stack.pop())
+                this.callbacks.output(this.popStack())
                 break;
 
             case "push":
-                this.stack.push(new Value(payload, null))
+                this.pushStack(new Value(payload, null))
                 break;
 
             case "compare":
                 {
-                    const exp2 = this.stack.pop().safe_get(TYPES.number)
-                    const exp1 = this.stack.pop().safe_get(TYPES.number)
+                    const exp2 = this.popStack().safe_get(TYPES.number)
+                    const exp1 = this.popStack().safe_get(TYPES.number)
 
-                    this.stack.push(new Value((() => {
+                    this.pushStack(new Value((() => {
                         switch (payload) {
                             case "=": return exp1 === exp2
                             case "=/=": return exp1 !== exp2
@@ -410,10 +419,10 @@ export class LinearExecutor {
 
             case "calculate":
                 {
-                    const exp2 = this.stack.pop().safe_get(TYPES.number)
-                    const exp1 = this.stack.pop().safe_get(TYPES.number)
+                    const exp2 = this.popStack().safe_get(TYPES.number)
+                    const exp1 = this.popStack().safe_get(TYPES.number)
 
-                    this.stack.push(new Value((() => {
+                    this.pushStack(new Value((() => {
                         switch (payload) {
                             case "+": return exp1 + exp2;
                             case "-": return exp1 - exp2;
@@ -428,16 +437,16 @@ export class LinearExecutor {
 
             case "index":
                 {
-                    let array = this.stack.pop()
+                    let array = this.popStack()
                     let indices = []
 
                     for (let i = 0; i < payload; i++) {
-                        indices.push(this.stack.pop().safe_get(TYPES.number) - 1)
+                        indices.push(this.popStack().safe_get(TYPES.number) - 1)
                     }
                     indices.reverse()
 
                     let val = indices.reduce((prev, index) => { return prev.safe_get(TYPES.array)[index] }, array)
-                    this.stack.push(val.clone())
+                    this.pushStack(val.clone())
                 }
                 break;
 
@@ -445,12 +454,12 @@ export class LinearExecutor {
                 let arr = []
 
                 for (let i = 0; i < payload; i++) {
-                    arr.push(this.stack.pop())
+                    arr.push(this.popStack())
                 }
 
                 arr.reverse()
 
-                this.stack.push(new Value(arr, TYPES.array))
+                this.pushStack(new Value(arr, TYPES.array))
                 break;
 
             case "jmp":
@@ -461,7 +470,7 @@ export class LinearExecutor {
             case "if":
             case "elIf":
                 const isIf = opcode == "if";
-                const enter = this.stack.pop().safe_get(TYPES.boolean)
+                const enter = this.popStack().safe_get(TYPES.boolean)
 
                 if (!enter) {
                     // To handle elIf
@@ -488,7 +497,7 @@ export class LinearExecutor {
                 break;
 
             case "while":
-                const should = this.stack.pop().safe_get(TYPES.boolean)
+                const should = this.popStack().safe_get(TYPES.boolean)
 
                 if (!should) {
                     this.skipTo("loop", payload)
@@ -514,7 +523,7 @@ export class LinearExecutor {
             case "ret":
             case "functionEnd":
                 this.ip = this.ipStack.pop()
-                this.variables.leaveBasicScope()
+                this.variables.leaveBasicScope(true)
                 break;
 
             case "functionCall":
@@ -526,7 +535,7 @@ export class LinearExecutor {
 
                 if (parameters) {
                     for (let paramType of parameters) {
-                        this.variables.set(paramType.name, this.stack.pop())
+                        this.variables.set(paramType.name, this.popStack())
                     }
                 }
 
@@ -534,12 +543,12 @@ export class LinearExecutor {
                 break;
 
             case "assign":
-                const val = this.stack.pop()
+                const val = this.popStack()
                 this.variables.set(payload, val.clone());
                 break;
 
             case "pushVar":
-                this.stack.push(this.variables.get(payload))
+                this.pushStack(this.variables.get(payload))
                 break;
 
         }

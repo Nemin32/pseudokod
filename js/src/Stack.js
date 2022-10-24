@@ -96,12 +96,15 @@ export class Stack {
   /** @type {Map<string, Array<{name: string, reference: boolean, type: string}>>} */
   parameterTypes = null;
 
+  callbacks = null;
+
   /**
    * Initializes a new Stack instance.
    * @param {Map<string, Array<{name: string, reference: boolean, type: string}>>} parameterTypes - A map of all parameters assigned to their functions's names.
    */
-  constructor(parameterTypes) {
+  constructor(parameterTypes, callbacks = null) {
     this.parameterTypes = parameterTypes
+    this.callbacks = callbacks;
   }
 
   /**
@@ -133,11 +136,15 @@ export class Stack {
 
     if (existing_var) {
       existing_var.set(value.value, value.type)
+      this.callbacks?.variableSet({ key, value });
     } else {
-      this.variables.push({
+      const newVar = {
         key: key,
         value: value
-      })
+      }
+
+      this.variables.push(newVar)
+      this.callbacks?.variableSet(newVar);
     }
   }
 
@@ -152,10 +159,17 @@ export class Stack {
     })
   }
 
-  leaveBasicScope() {
-    const current_bound = this.#scopeBounds.pop()
+  leaveBasicScope(isFunc = false) {
+    let current_bound = this.#scopeBounds.pop()
+
+    while (isFunc && !current_bound.isFunctionScope) {
+      current_bound = this.#scopeBounds.pop()
+    }
+
     const length_diff = this.variables.length - current_bound.length;
     this.variables.splice(this.variables.length - length_diff, length_diff)
+
+    this.callbacks?.scopeLeave(this.variables);
   }
 
   enterFunctionScope(functionName, parameters) {

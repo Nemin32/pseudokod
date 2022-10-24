@@ -79,12 +79,6 @@
 			border: 1px solid;
 		}
 
-		#vars {
-			display: grid;
-			grid-template-columns: auto auto;
-			grid-auto-rows: min-content;
-		}
-
 		@keyframes blink {
 			from {
 				background-color: aqua;
@@ -95,9 +89,31 @@
 			}
 		}
 
-		#vars span {
+		@keyframes delete {
+			from {
+				background-color: #eee;
+			}
+
+			to {
+				background-color: red;
+			}
+		}
+
+		#vars div>div {
+			display: grid;
+			grid-template-columns: 12ch 15ch;
+		}
+
+		#vars span,
+		#stack span {
 			animation: blink;
-			animation-duration: 0.5s;
+			animation-duration: 0.25s;
+			background-color: #eee;
+		}
+
+		#stack span.deleted {
+			animation: delete;
+			animation-duration: 0.25s;
 			background-color: #eee;
 		}
 	</style>
@@ -115,8 +131,14 @@
 		</div>
 		<div id="internals" class="gray">
 			<pre id="code"></pre>
-			<div id="stack"></div>
-			<div id="vars"></div>
+			<div id="stack">
+				<p>Verem:</p>
+				<div></div>
+			</div>
+			<div id="vars">
+				<p>Változók:</p>
+				<div></div>
+			</div>
 		</div>
 		<div id="output_container">
 			<p id="output"></p>
