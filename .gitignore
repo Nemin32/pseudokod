@@ -1,5 +1,5 @@
 .antlr/
 .log/
 node_modules/
-**/dist/main.js
-**/dist/main.js.LICENSE.txt
+**/dist/esbundle.js
+**/dist/esbundle.js.map

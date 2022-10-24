@@ -2,7 +2,7 @@ import antlr4 from "antlr4";
 import PseudoCodeLexer from "./libs/PseudoCodeLexer.js";
 import PseudoCodeParser from "./libs/PseudoCodeParser.js";
 import { LinearExecutor, LinearGenerator } from "./LinearGenerator.js";
-import { PseudoVisitor } from "./PseudoVisitor.js";
+// import { PseudoVisitor } from "./PseudoVisitor.js";
 
 export { LinearExecutor } from "./LinearGenerator.js";
 
@@ -40,12 +40,14 @@ export function runLinear(input, outputFunc) {
   executor.run()
 }
 
+/*
 export function runText(input, errorFunc, outputFunc, varOutput) {
   const tree = generateAST(input)
   const visitor = new PseudoVisitor(outputFunc, varOutput);
 
   visitor.visit(tree)
 }
+*/
 
 
 console.log("Hello!")
