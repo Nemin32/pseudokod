@@ -27,9 +27,10 @@ debugPrintStatement: 'kiir' WS expression;
 vars: 'változók';
 
 ifStatement:
-	HA WS expression WS AKKOR NL body ELVEGE							# simpleIfStatement
-	| HA WS expression WS AKKOR NL body elseBranch ELVEGE				# ifElseStatement
-	| HA WS expression WS AKKOR NL body elseIfBranch+ elseBranch ELVEGE	# ifElseIfStatement;
+	HA WS expression WS AKKOR NL body (
+		elseIfBranch+ elseBranch
+		| elseBranch?
+	) ELVEGE;
 
 elseIfBranch: KULONBEN WS HA WS expression WS AKKOR NL body;
 elseBranch: KULONBEN NL body;

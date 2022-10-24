@@ -42,20 +42,8 @@ export default class PseudoCodeVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
-	// Visit a parse tree produced by PseudoCodeParser#simpleIfStatement.
-	visitSimpleIfStatement(ctx) {
-	  return this.visitChildren(ctx);
-	}
-
-
-	// Visit a parse tree produced by PseudoCodeParser#ifElseStatement.
-	visitIfElseStatement(ctx) {
-	  return this.visitChildren(ctx);
-	}
-
-
-	// Visit a parse tree produced by PseudoCodeParser#ifElseIfStatement.
-	visitIfElseIfStatement(ctx) {
+	// Visit a parse tree produced by PseudoCodeParser#ifStatement.
+	visitIfStatement(ctx) {
 	  return this.visitChildren(ctx);
 	}
 

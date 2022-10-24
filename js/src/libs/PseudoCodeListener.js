@@ -59,30 +59,12 @@ export default class PseudoCodeListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by PseudoCodeParser#simpleIfStatement.
-	enterSimpleIfStatement(ctx) {
+	// Enter a parse tree produced by PseudoCodeParser#ifStatement.
+	enterIfStatement(ctx) {
 	}
 
-	// Exit a parse tree produced by PseudoCodeParser#simpleIfStatement.
-	exitSimpleIfStatement(ctx) {
-	}
-
-
-	// Enter a parse tree produced by PseudoCodeParser#ifElseStatement.
-	enterIfElseStatement(ctx) {
-	}
-
-	// Exit a parse tree produced by PseudoCodeParser#ifElseStatement.
-	exitIfElseStatement(ctx) {
-	}
-
-
-	// Enter a parse tree produced by PseudoCodeParser#ifElseIfStatement.
-	enterIfElseIfStatement(ctx) {
-	}
-
-	// Exit a parse tree produced by PseudoCodeParser#ifElseIfStatement.
-	exitIfElseIfStatement(ctx) {
+	// Exit a parse tree produced by PseudoCodeParser#ifStatement.
+	exitIfStatement(ctx) {
 	}
 
 
