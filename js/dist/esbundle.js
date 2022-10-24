@@ -18163,15 +18163,15 @@ var Value = class {
     }
     return this.value;
   }
+  convertToJSValue(val = this) {
+    if (val.type == TYPES.array) {
+      return val.value.map((innerVal) => this.convertToJSValue(innerVal));
+    } else {
+      return val.value;
+    }
+  }
   toString() {
-    const convertToJSValue = (val) => {
-      if (val.type == TYPES.array) {
-        return val.value.map((innerVal) => convertToJSValue(innerVal));
-      } else {
-        return val.value;
-      }
-    };
-    return JSON.stringify(convertToJSValue(this)).replaceAll("[", "(").replaceAll("]", ")").replaceAll("true", "Igaz").replaceAll("false", "Hamis");
+    return JSON.stringify(this.convertToJSValue(this)).replaceAll("[", "(").replaceAll("]", ")").replaceAll("true", "Igaz").replaceAll("false", "Hamis");
   }
 };
 var Stack = class {
@@ -18222,6 +18222,7 @@ var Stack = class {
   }
   leaveBasicScope(isFunc = false) {
     let current_bound = this.#scopeBounds.pop();
+    console.log(current_bound);
     while (isFunc && !current_bound.isFunctionScope) {
       current_bound = this.#scopeBounds.pop();
     }
@@ -18280,8 +18281,8 @@ var LinearGenerator = class extends PseudoCodeVisitor {
     const ops = input.split(/\n|;/).map((line) => line.trim().split(" ")).filter((x) => x[0] != "");
     this._assemble(ctx, ops);
   }
-  constructor() {
-    super();
+  visitDebug(ctx) {
+    this.createOp("debug");
   }
   visitMethodCallStatement(ctx) {
     this.visitFunctionCall(ctx);
@@ -18331,57 +18332,63 @@ var LinearGenerator = class extends PseudoCodeVisitor {
         `);
   }
   visitIfStatement(ctx) {
+    this.whileDepth++;
     this.assemble(ctx, `
+            enterScope
             VISIT expression
-            if
+            if ${this.whileDepth}
             VISIT body
-            jmp endIf
+            jmp ${this.whileDepth}
             VISIT elseIfBranch
             VISIT elseBranch
-            endIf
+            endIf ${this.whileDepth}
+            exitScope
         `);
+    this.whileDepth--;
   }
   visitElseBranch(ctx) {
     this.assemble(ctx, `
-            else
+            else ${this.whileDepth}
             VISIT body
         `);
   }
   visitElseIfBranch(ctx) {
     this.assemble(ctx, `
             VISIT expression
-            elIf
+            elIf ${this.whileDepth}
             VISIT body
-            jmp endIf
+            jmp ${this.whileDepth}
         `);
   }
-  depth = 0;
+  whileDepth = 0;
   visitWhileStatement(ctx) {
-    this.depth++;
+    this.whileDepth++;
     this.assemble(ctx, `
-            whilePrep ${this.depth}
+            enterScope
+            whilePrep ${this.whileDepth}
             VISIT expression
-            while ${this.depth}
+            while ${this.whileDepth}
             VISIT body
-            loop ${this.depth}
+            loop ${this.whileDepth}
+            exitScope
         `);
-    this.depth--;
+    this.whileDepth--;
   }
   visitForStatement(ctx) {
     const varname = ctx.variable().getText();
-    this.depth++;
+    this.whileDepth++;
     this.assemble(ctx, `
-            for
+            enterScope
             VISIT expression 0
             assign ${varname}
 
-            whilePrep ${this.depth}
+            whilePrep ${this.whileDepth}
 
             pushVar ${varname}
             VISIT expression 1
             compare <=
 
-            while ${this.depth}
+            while ${this.whileDepth}
             VISIT body
         `);
     this.createOp("push", 1);
@@ -18390,11 +18397,11 @@ var LinearGenerator = class extends PseudoCodeVisitor {
             calculate +
             assign ${varname}
 
-            loop ${this.depth}
+            loop ${this.whileDepth}
 
-            forEnd
+            exitScope
         `);
-    this.depth--;
+    this.whileDepth--;
   }
   visitComparisonExpression(ctx) {
     const comparer = ctx.COMPARISON().getText();
@@ -18410,6 +18417,15 @@ var LinearGenerator = class extends PseudoCodeVisitor {
             VISIT expression 0
             VISIT expression 1
             calculate ${operator}
+        `);
+  }
+  visitArrayElementAssignmentStatement(ctx) {
+    const varname = ctx.variable().getText();
+    this.assemble(ctx, `
+            pushVar ${varname}
+            VISIT expression 0
+            VISIT expression 1
+            setElement ${varname}
         `);
   }
   visitArrayAssignmentStatement(ctx) {
@@ -18508,6 +18524,8 @@ var LinearExecutor = class {
   execute(instruction) {
     const { opcode, payload } = instruction;
     switch (opcode) {
+      case "debug":
+        return true;
       case "print":
         this.callbacks.output?.(this.popStack());
         break;
@@ -18577,6 +18595,15 @@ var LinearExecutor = class {
           })(), TYPES.number));
         }
         break;
+      case "setElement":
+        {
+          const value = this.popStack();
+          const index = this.popStack().safe_get(TYPES.number) - 1;
+          const array = this.popStack().safe_get(TYPES.array);
+          array[index] = value.clone();
+          this.variables.set(payload, new Value(array, TYPES.array));
+        }
+        break;
       case "index":
         {
           let array = this.popStack();
@@ -18599,30 +18626,22 @@ var LinearExecutor = class {
         arr.reverse();
         this.pushStack(new Value(arr, TYPES.array));
         break;
-      case "jmp":
-        this.skipTo([payload]);
-        this.ip--;
-        break;
-      case "if":
       case "elIf":
-        const isIf = opcode == "if";
-        const enter = this.popStack().safe_get(TYPES.boolean);
-        if (!enter) {
-          if (!isIf) {
+      case "if":
+        const predicate = this.popStack().safe_get(TYPES.boolean);
+        if (!predicate) {
+          this.skipTo(["jmp", "else"], payload);
+          if (this.instructions[this.ip + 1].opcode == "else")
             this.ip++;
-          }
-          this.skipTo(["else", "elIf", "endIf"]);
-          if (isIf && this.instructions[this.ip].opcode == "elIf") {
-            this.skipBack(["jmp"]);
-          }
         }
-        this.variables.enterBasicScope();
         break;
       case "else":
-        this.skipTo(["endIf"]);
+        this.skipTo("endIf", payload);
+        this.ip--;
         break;
-      case "endIf":
-        this.variables.leaveBasicScope();
+      case "jmp":
+        this.skipTo("endIf", payload);
+        this.ip--;
         break;
       case "while":
         const should = this.popStack().safe_get(TYPES.boolean);
@@ -18633,10 +18652,10 @@ var LinearExecutor = class {
       case "loop":
         this.skipBack("whilePrep", payload);
         break;
-      case "for":
+      case "enterScope":
         this.variables.enterBasicScope();
         break;
-      case "forEnd":
+      case "exitScope":
         this.variables.leaveBasicScope();
         break;
       case "functionDef":
@@ -18650,9 +18669,10 @@ var LinearExecutor = class {
       case "functionCall":
         this.ipStack.push(this.ip);
         this.variables.enterBasicScope(true);
-        const parameters = this.parameterTypes.get(payload)?.reverse();
+        const parameters = this.parameterTypes.get(payload);
         if (parameters) {
-          for (let paramType of parameters) {
+          for (let i = parameters.length - 1; i >= 0; i--) {
+            let paramType = parameters[i];
             this.variables.set(paramType.name, this.popStack());
           }
         }
@@ -18666,21 +18686,25 @@ var LinearExecutor = class {
         this.pushStack(this.variables.get(payload));
         break;
     }
+    return false;
   }
   step() {
     if (this.ip < this.instructions.length) {
       const current_instruction = this.instructions[this.ip];
-      this.execute(current_instruction);
+      const retval = this.execute(current_instruction);
       this.ip++;
+      return retval;
     }
+    return true;
   }
   run() {
     while (this.ip < this.instructions.length) {
-      this.step();
+      if (this.step())
+        return;
     }
   }
   reset() {
-    this.variables = new Stack(this.parameterTypes);
+    this.variables = new Stack(this.parameterTypes, this.callbacks);
     this.stack = [];
     this.ip = 0;
   }

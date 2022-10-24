@@ -17,21 +17,24 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		return char.repeat(length - inp.length) + inp
 	}
 
-	codeOutput.innerText += "  IP: " + padRight(String(ip), 4) + "\n\n";
+	let codeText = ""
+	codeText += "  IP: " + padRight(String(ip), 4) + "\n\n";
 
 	for (let i = 0; i < code.length; i++) {
 		const cursor = i == ip ? ">" : " ";
 		const opcode = code[i].opcode.toUpperCase();
 		const payload = code[i].payload ? `(${code[i].payload})` : ""
 
-		codeOutput.innerText += `${cursor} ${padRight(String(i), 4)} ${opcode}${payload}\n`
+		codeText += `${cursor} ${padRight(String(i), 4)} ${opcode}${payload}\n`
 	}
 
-	codeOutput.innerText += "\nIP STACK:\n"
+	codeText += "\nIP STACK:\n"
 
 	for (let sip of ipStack) {
-		codeOutput.innerText += padRight(String(sip), 4) + "\n"
+		codeText += padRight(String(sip), 4) + "\n"
 	}
+
+	codeOutput.innerText = codeText;
 };
 
 const pushStackCallback = (div, value) => {
@@ -53,8 +56,6 @@ const variableSetCallback = (div, variable) => {
 	let newElem = document.createElement("div")
 	newElem.innerHTML = `<span class="varname">${variable.key}</span><span class="value">${variable.value}</span>`
 	div.appendChild(newElem)
-
-	console.log(newElem)
 }
 
 const scopeLeaveCallback = (div, variables) => {
@@ -68,7 +69,7 @@ const scopeLeaveCallback = (div, variables) => {
 }
 
 const outputFunction = (output, wrappedValue) => {
-	output.innerText += wrappedValue?.value;
+	output.innerText += wrappedValue?.value + "\n";
 };
 
 const compileEnvironment = (input) => {
@@ -105,13 +106,14 @@ window.addEventListener("load", () => {
 		executor = new PseudoVisitor.LinearExecutor(environment, callbacks);
 
 		dumpEnvironment(executor, codeOutput, varOutput)
+
+		output.innerText = ""
 	})
 
 	run.addEventListener("click", () => {
 		if (executor) {
-			output.innerText = ""
-			executor.reset()
 			executor.run()
+			dumpEnvironment(executor, codeOutput, varOutput)
 		}
 	})
 

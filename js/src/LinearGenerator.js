@@ -7,6 +7,8 @@ export class LinearGenerator extends PseudoCodeVisitor {
         parameterTypes: new Map()
     }
 
+    contextID = 0;
+
     createOp(opcode, payload = null) {
         this.output.code.push({
             opcode,
@@ -44,8 +46,8 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this._assemble(ctx, ops)
     }
 
-    constructor() {
-        super()
+    visitDebug(ctx) {
+        this.createOp("debug")
     }
 
     visitMethodCallStatement(ctx) {
@@ -106,20 +108,26 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     visitIfStatement(ctx) {
+        this.contextID++;
+
         this.assemble(ctx, `
+            enterScope
             VISIT expression
-            if
+            if ${this.contextID}
             VISIT body
-            jmp endIf
+            jmp ${this.contextID}
             VISIT elseIfBranch
             VISIT elseBranch
-            endIf
+            endIf ${this.contextID}
+            exitScope
         `)
+
+        this.contextID--;
     }
 
     visitElseBranch(ctx) {
         this.assemble(ctx, `
-            else
+            else ${this.contextID}
             VISIT body
         `)
     }
@@ -127,44 +135,45 @@ export class LinearGenerator extends PseudoCodeVisitor {
     visitElseIfBranch(ctx) {
         this.assemble(ctx, `
             VISIT expression
-            elIf
+            elIf ${this.contextID}
             VISIT body
-            jmp endIf
+            jmp ${this.contextID}
         `)
     }
 
-    depth = 0;
     visitWhileStatement(ctx) {
-        this.depth++;
+        this.contextID++;
 
         this.assemble(ctx, `
-            whilePrep ${this.depth}
+            enterScope
+            whilePrep ${this.contextID}
             VISIT expression
-            while ${this.depth}
+            while ${this.contextID}
             VISIT body
-            loop ${this.depth}
+            loop ${this.contextID}
+            exitScope
         `)
 
-        this.depth--;
+        this.contextID--;
     }
 
     visitForStatement(ctx) {
         const varname = ctx.variable().getText();
 
-        this.depth++
+        this.contextID++
 
         this.assemble(ctx, `
-            for
+            enterScope
             VISIT expression 0
             assign ${varname}
 
-            whilePrep ${this.depth}
+            whilePrep ${this.contextID}
 
             pushVar ${varname}
             VISIT expression 1
             compare <=
 
-            while ${this.depth}
+            while ${this.contextID}
             VISIT body
         `)
 
@@ -176,51 +185,16 @@ export class LinearGenerator extends PseudoCodeVisitor {
             calculate +
             assign ${varname}
 
-            loop ${this.depth}
+            loop ${this.contextID}
 
-            forEnd
+            exitScope
         `)
 
-        this.depth--;
-
-        /*
-        this.createOp("for")
-
-        // let varname = exp(0)
-        this.visit(ctx.expression(0))
-        this.createOp("assign", varname)
-
-        // while (varname <= exp(1))
-        this.createOp("whilePrep", ++this.depth);
-        this.createOp("pushVar", varname)
-        this.visit(ctx.expression(1))
-        this.createOp("compare", "<=")
-        this.createOp("while", this.depth)
-        // {
-
-        // statements...
-        this.visit(ctx.body())
-
-        // varname = varname + 1
-        this.createOp("push", 1)
-        this.createOp("pushVar", varname)
-        this.createOp("calculate", "+")
-        this.createOp("assign", varname)
-
-        // }
-        this.createOp("loop", this.depth--)
-
-        this.createOp("forEnd")
-        */
+        this.contextID--;
     }
 
     visitComparisonExpression(ctx) {
         const comparer = ctx.COMPARISON().getText();
-
-        /*this.visit(ctx.expression(0))
-        this.visit(ctx.expression(1))
-
-        this.createOp("compare", comparer)*/
 
         this.assemble(ctx, `
             VISIT expression 0
@@ -232,11 +206,6 @@ export class LinearGenerator extends PseudoCodeVisitor {
     visitCalculationExpression(ctx) {
         const operator = ctx.OPERATOR().getText()
 
-        /*this.visit(ctx.expression(0))
-        this.visit(ctx.expression(1))
-
-        this.createOp("calculate", operator)*/
-
         this.assemble(ctx, `
             VISIT expression 0
             VISIT expression 1
@@ -245,12 +214,6 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     visitArrayElementAssignmentStatement(ctx) {
-        /*const variable = this.visitVariable(ctx.variable());
-        const index = this.visit(ctx.expression(0)).safe_get(TYPES.number) - 1; // Pszeudokód 1-től kezdi.
-        const value = this.visit(ctx.expression(1));
-
-        variable.value[index] = value; */
-
         const varname = ctx.variable().getText();
 
         this.assemble(ctx, `
@@ -271,18 +234,6 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     visitArrayIndex(ctx) {
-        /*
-        // indexes
-        const exps = ctx.expression();
-        exps.forEach(exp => { this.visit(exp) })
-
-        // array
-        this.createOp("pushVar", varname)
-
-        // index into array
-        this.createOp("index", exps.length)
-        */
-
         const varname = ctx.variable().getText()
 
         this.assemble(ctx, `
@@ -293,10 +244,6 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     visitArrayShorthand(ctx) {
-        /*let exps = ctx.expression();
-        exps.forEach(exp => { this.visit(exp) })
-        this.createOp("array", exps.length)*/
-
         this.assemble(ctx, `
             VISIT expression
             array ${ctx.expression().length}
@@ -305,9 +252,6 @@ export class LinearGenerator extends PseudoCodeVisitor {
 
     visitAssignmentStatement(ctx) {
         const varname = ctx.variable().getText()
-
-        /*this.visit(ctx.expression())
-        this.createOp("assign", varname)*/
 
         this.assemble(ctx, `
             VISIT expression
@@ -414,8 +358,10 @@ export class LinearExecutor {
     execute(instruction) {
         const { opcode, payload } = instruction;
 
-        // console.log(instruction.opcode)
         switch (opcode) {
+            case "debug":
+                return true;
+
             case "print":
                 this.callbacks.output?.(this.popStack())
                 break;
@@ -484,7 +430,7 @@ export class LinearExecutor {
                     const index = this.popStack().safe_get(TYPES.number) - 1
                     const array = this.popStack().safe_get(TYPES.array)
 
-                    array[index] = value
+                    array[index] = value.clone()
 
                     this.variables.set(payload, new Value(array, TYPES.array))
                 }
@@ -517,38 +463,25 @@ export class LinearExecutor {
                 this.pushStack(new Value(arr, TYPES.array))
                 break;
 
-            case "jmp":
-                this.skipTo([payload])
-                this.ip--;
-                break;
-
-            case "if":
             case "elIf":
-                const isIf = opcode == "if";
-                const enter = this.popStack().safe_get(TYPES.boolean)
+            case "if":
+                const predicate = this.popStack().safe_get(TYPES.boolean);
 
-                if (!enter) {
-                    // To handle elIf
-                    if (!isIf) {
-                        this.ip++
-                    }
+                if (!predicate) {
+                    this.skipTo(["jmp", "else"], payload)
 
-                    this.skipTo(["else", "elIf", "endIf"])
-
-                    if (isIf && this.instructions[this.ip].opcode == "elIf") {
-                        this.skipBack(["jmp"])
-                    }
+                    if (this.instructions[this.ip + 1].opcode == "else") this.ip++;
                 }
-
-                this.variables.enterBasicScope()
                 break;
 
             case "else":
-                this.skipTo(["endIf"])
+                this.skipTo("endIf", payload)
+                this.ip--;
                 break;
 
-            case "endIf":
-                this.variables.leaveBasicScope()
+            case "jmp":
+                this.skipTo("endIf", payload)
+                this.ip--;
                 break;
 
             case "while":
@@ -563,11 +496,11 @@ export class LinearExecutor {
                 this.skipBack("whilePrep", payload);
                 break;
 
-            case "for":
+            case "enterScope":
                 this.variables.enterBasicScope()
                 break;
 
-            case "forEnd":
+            case "exitScope":
                 this.variables.leaveBasicScope()
                 break;
 
@@ -586,10 +519,11 @@ export class LinearExecutor {
 
                 this.variables.enterBasicScope(true)
 
-                const parameters = this.parameterTypes.get(payload)?.reverse();
+                const parameters = this.parameterTypes.get(payload);
 
                 if (parameters) {
-                    for (let paramType of parameters) {
+                    for (let i = parameters.length - 1; i >= 0; i--) {
+                        let paramType = parameters[i]
                         this.variables.set(paramType.name, this.popStack())
                     }
                 }
@@ -607,24 +541,30 @@ export class LinearExecutor {
                 break;
 
         }
+
+        return false;
     }
 
     step() {
         if (this.ip < this.instructions.length) {
             const current_instruction = this.instructions[this.ip];
-            this.execute(current_instruction)
+            const retval = this.execute(current_instruction)
             this.ip++;
+
+            return retval;
         }
+
+        return true;
     }
 
     run() {
         while (this.ip < this.instructions.length) {
-            this.step()
+            if (this.step()) return;
         }
     }
 
     reset() {
-        this.variables = new Stack(this.parameterTypes)
+        this.variables = new Stack(this.parameterTypes, this.callbacks)
         this.stack = []
         this.ip = 0;
     }
