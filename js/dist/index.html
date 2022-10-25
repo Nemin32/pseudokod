@@ -34,6 +34,11 @@
 		#code span {
 			display: flex;
 			gap: 1ch;
+			white-space: pre;
+		}
+
+		#code span.highlight {
+			background-color: white;
 		}
 
 		#code pre {
@@ -139,6 +144,60 @@
 			animation-duration: 0.25s;
 			background-color: #eee;
 		}
+
+		#codeInput {
+			position: relative;
+		}
+
+		#input {
+			width: 100%;
+			min-height: 200px;
+
+			color: transparent;
+			caret-color: #eee;
+
+			font-family: monospace;
+			padding: 0;
+			margin: 0;
+
+			border: none;
+			overflow: auto;
+			outline: none;
+
+			-webkit-box-shadow: none;
+			-moz-box-shadow: none;
+			box-shadow: none;
+
+			background-color: #282828;
+
+			white-space: pre;
+		}
+
+		#syntax {
+			position: absolute;
+			top: 0;
+			left: 0;
+
+			font-family: monospace;
+
+			width: 100%;
+			height: 100%;
+
+			pointer-events: none;
+
+			color: #eee;
+			overflow: hidden;
+
+			white-space: pre;
+		}
+
+		#syntax span.highlight {
+			background-color: #666;
+		}
+
+		#syntax span>span {
+			display: inline;
+		}
 	</style>
 </head>
 
@@ -147,7 +206,10 @@
 
 	<div id="controls">
 		<div id="inputs">
-			<textarea id="input" cols="80" rows="24" spellcheck="false"></textarea>
+			<div id="codeInput">
+				<div id="syntax"></div>
+				<textarea id="input" spellcheck="false"></textarea>
+			</div>
 			<button id="compile">Compile</button>
 			<button id="step">Step</button>
 			<button id="run">Run</button>

@@ -1,12 +1,11 @@
 grammar PseudoCode;
 
-program: WS? (newline+ | statement)+;
+program: WS? (newline | statement)+;
 
-body: WS? (statement | newline+)+;
+body: WS? (statement | newline)+;
 
 statement: (
-		vars
-		| methodCallStatement
+		methodCallStatement
 		| ifStatement
 		| whileStatement
 		| doWhileStatement
@@ -18,43 +17,42 @@ statement: (
 		| functionDeclarationStatement
 		| debugPrintStatement
 		| debug
-	) newline+;
+	) newline;
 
 debug: 'debug';
 
 debugPrintStatement: 'kiir' WS expression;
 
-vars: 'változók';
-
 ifStatement:
-	HA WS expression WS AKKOR newline+ body (
+	HA WS expression WS AKKOR newline body (
 		elseIfBranch+ elseBranch
 		| elseBranch?
 	) ELVEGE;
 
 elseIfBranch:
-	KULONBEN WS HA WS expression WS AKKOR newline+ body;
-elseBranch: KULONBEN newline+ body;
+	KULONBEN WS HA WS expression WS AKKOR newline body;
+elseBranch: KULONBEN newline body;
 
-whileStatement:
-	CIKLUS WS AMIG WS expression newline+ body CVEGE;
+whileStatement: CIKLUS WS AMIG WS expression newline body CVEGE;
 
-doWhileStatement: CIKLUS newline+ body AMIG WS expression;
+doWhileStatement: CIKLUS newline body AMIG WS expression;
 
 forStatement:
-	CIKLUS WS variable ASSIGN expression CSTART WS expression CEND newline+ body CVEGE;
+	CIKLUS WS variable ASSIGN expression CSTART WS expression CEND newline body CVEGE;
 
 returnStatement: VISSZA WS expression;
 
 methodCallStatement: functionName parameters;
 
 functionDeclarationStatement:
-	FUGGVENY WS functionName '(' (WS | newline+)? parameterWithType (
-		',' (WS | newline+)? parameterWithType
-	)* (WS | newline+)? ')' newline body FVEGE			# functionDeclarationWithParameters
-	| FUGGVENY WS functionName '()' newline+ body FVEGE	# functionDeclarationWithoutParameters;
+	FUGGVENY WS functionName parameterList newline body FVEGE;
 
-parameterWithType: (CIMSZERINT WS)? variable WS? ':' WS? type;
+parameterList:
+	| '()'
+	| '(' parameterWithType (',' parameterWithType)* ')';
+
+parameterWithType:
+	newline? (CIMSZERINT WS)? variable WS? ':' WS? type newline?;
 
 type:
 	'egész'
@@ -99,7 +97,7 @@ arrayIndex: variable ('[' expression ']')+;
 
 variable: VARIABLE;
 
-newline: NL;
+newline: NL+;
 
 OPERATOR: '*' | '/' | '-' | '+' | 'mod';
 

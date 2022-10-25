@@ -44,7 +44,21 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		// Set back to true.
 		const color = (false && colorCode) ? `style="color: ${colorCode};"` : ""
 
-		codeText += `<span><pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre></span>\n`
+		// codeText += `<span><pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre></span>\n`
+
+		let span = document.createElement("span")
+		span.innerHTML = `<pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre>`
+		span.addEventListener("mouseenter", () => {
+			highlight(code[i].lineNum - 1, true)
+		})
+
+		span.addEventListener("mouseleave", () => {
+			highlight(code[i].lineNum - 1, false)
+		})
+
+		span.setAttribute("line", code[i].lineNum - 1)
+
+		codeOutput.appendChild(span)
 
 		if (["if", "elIf", "else", "functionDef", "while"].includes(code[i].opcode)) {
 			indent += 2
@@ -57,7 +71,7 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		codeText += padRight(String(sip), 4) + "\n"
 	}
 
-	codeOutput.innerHTML = codeText;
+	// codeOutput.innerHTML = codeText;
 };
 
 const pushStackCallback = (div, value) => {
@@ -91,8 +105,33 @@ const scopeLeaveCallback = (div, variables) => {
 	}
 }
 
+const colorSyntax = (input) => {
+	const colors = [
+		[/ha|akkor|különben|elágazás vége/g, "#fb4934"],
+		[/függvény|függvény vége/g, "#b8bb26"],
+		[/ciklus (vége)?|amíg/g, "#fe8019"],
+		[/kiir|vissza/g, "#8ec07c"],
+	]
+
+	const mapLine = (line) => {
+		return colors.reduce((line, [rx, color]) => line.replaceAll(rx, `<span style="color: ${color}">$&</span>`), line)
+	}
+
+	// Using NBSP instead of normal space.
+	return input.split("\n").map(line => `<span>${mapLine((line != "") ? line : " ")}</span>`).join("")
+}
+
+const highlight = (lineNum, should) => {
+	const syntaxElem = document.getElementById("syntax")
+	const codeOutput = document.getElementById("code")
+
+	syntaxElem.children[lineNum].className = (should) ? "highlight" : ""
+
+	codeOutput.querySelectorAll(`span[line="${lineNum}"]`).forEach(span => span.className = (should) ? "highlight" : "")
+}
+
 const outputFunction = (output, wrappedValue) => {
-	output.innerText += wrappedValue?.value + "\n";
+	output.innerHTML += wrappedValue?.value + "\n";
 };
 
 const compileEnvironment = (input) => {
@@ -103,6 +142,7 @@ const compileEnvironment = (input) => {
 window.addEventListener("load", () => {
 	/* User controls */
 	const inputElem = document.getElementById("input")
+	const syntaxElem = document.getElementById("syntax")
 	const compile = document.getElementById("compile")
 	const step = document.getElementById("step")
 	const run = document.getElementById("run")
@@ -123,6 +163,17 @@ window.addEventListener("load", () => {
 		variableSet: (variable) => variableSetCallback(varOutput, variable),
 		scopeLeave: (variables) => scopeLeaveCallback(varOutput, variables)
 	}
+
+	inputElem.addEventListener("input", () => {
+		syntaxElem.innerHTML = colorSyntax(inputElem.value)
+	})
+
+	syntaxElem.innerHTML = colorSyntax(inputElem.value)
+
+	inputElem.addEventListener("scroll", () => {
+		syntaxElem.scrollTop = inputElem.scrollTop
+	})
+
 
 	compile.addEventListener("click", () => {
 		environment = compileEnvironment(inputElem.value);

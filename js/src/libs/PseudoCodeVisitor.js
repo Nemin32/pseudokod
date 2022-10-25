@@ -36,12 +36,6 @@ export default class PseudoCodeVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
-	// Visit a parse tree produced by PseudoCodeParser#vars.
-	visitVars(ctx) {
-	  return this.visitChildren(ctx);
-	}
-
-
 	// Visit a parse tree produced by PseudoCodeParser#ifStatement.
 	visitIfStatement(ctx) {
 	  return this.visitChildren(ctx);
@@ -90,14 +84,14 @@ export default class PseudoCodeVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
-	// Visit a parse tree produced by PseudoCodeParser#functionDeclarationWithParameters.
-	visitFunctionDeclarationWithParameters(ctx) {
+	// Visit a parse tree produced by PseudoCodeParser#functionDeclarationStatement.
+	visitFunctionDeclarationStatement(ctx) {
 	  return this.visitChildren(ctx);
 	}
 
 
-	// Visit a parse tree produced by PseudoCodeParser#functionDeclarationWithoutParameters.
-	visitFunctionDeclarationWithoutParameters(ctx) {
+	// Visit a parse tree produced by PseudoCodeParser#parameterList.
+	visitParameterList(ctx) {
 	  return this.visitChildren(ctx);
 	}
 

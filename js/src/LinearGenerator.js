@@ -36,17 +36,13 @@ export class LinearGenerator extends PseudoCodeVisitor {
                         }
                     }
                     break;
+                case "NL":
+                case "NEWLINE":
+                    this.visitNewline(ctx.newline())
+                    break;
                 default:
                     this.createOp(opcode, payload);
                     break;
-            }
-
-            if (ctx) {
-                const nl = ctx["newline"]?.()
-
-                if (nl) {
-                    this.visit(nl);
-                }
             }
         })
     }
@@ -57,7 +53,10 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     visitNewline(ctx) {
-        this.lineNum++;
+        const nls = ctx.NL().length;
+
+        // this.createOp("newline", nls)
+        this.lineNum += nls;
     }
 
     visitDebug(ctx) {
@@ -84,6 +83,43 @@ export class LinearGenerator extends PseudoCodeVisitor {
         `)
     }
 
+    visitParameterWithType(ctx) {
+        this.assemble(ctx, `
+            VISIT newline 0
+            VISIT newline 1
+        `)
+
+        console.log("eefew")
+
+        return {
+            name: ctx.variable().getText(),
+            reference: ctx.CIMSZERINT() !== null,
+            type: ctx.type().getText()
+        };
+    }
+
+    visitParameterList(ctx) {
+        const params = ctx.parameterWithType()?.map(p => this.visitParameterWithType(p))
+
+        if (params) {
+            const fName = ctx.parentCtx.functionName().getText();
+            this.output.parameterTypes.set(fName, params);
+        }
+    }
+
+    visitFunctionDeclarationStatement(ctx) {
+        const fName = ctx.functionName().getText();
+
+        this.assemble(ctx, `
+            functionDef ${fName}; 
+            VISIT parameterList
+            NL
+            VISIT body; 
+            functionEnd ${fName}
+        `)
+    }
+
+    /*
     visitParameterWithType(ctx) {
         return {
             name: ctx.variable().getText(),
@@ -113,6 +149,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             functionEnd ${fName}
         `)
     }
+    */
 
     visitDebugPrintStatement(ctx) {
         this.assemble(ctx, `
@@ -128,6 +165,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             enterScope
             VISIT expression
             if ${this.contextID}
+            NL
             VISIT body
             jmp ${this.contextID}
             VISIT elseIfBranch
@@ -142,6 +180,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
     visitElseBranch(ctx) {
         this.assemble(ctx, `
             else ${this.contextID}
+            NL
             VISIT body
         `)
     }
@@ -150,6 +189,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.assemble(ctx, `
             VISIT expression
             elIf ${this.contextID}
+            NL
             VISIT body
             jmp ${this.contextID}
         `)
@@ -163,6 +203,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             whilePrep ${this.contextID}
             VISIT expression
             while ${this.contextID}
+            NL
             VISIT body
             loop ${this.contextID}
             exitScope
@@ -188,6 +229,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             compare <=
 
             while ${this.contextID}
+            NL
             VISIT body
         `)
 

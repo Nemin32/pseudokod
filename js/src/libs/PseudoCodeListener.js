@@ -50,15 +50,6 @@ export default class PseudoCodeListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by PseudoCodeParser#vars.
-	enterVars(ctx) {
-	}
-
-	// Exit a parse tree produced by PseudoCodeParser#vars.
-	exitVars(ctx) {
-	}
-
-
 	// Enter a parse tree produced by PseudoCodeParser#ifStatement.
 	enterIfStatement(ctx) {
 	}
@@ -131,21 +122,21 @@ export default class PseudoCodeListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
-	// Enter a parse tree produced by PseudoCodeParser#functionDeclarationWithParameters.
-	enterFunctionDeclarationWithParameters(ctx) {
+	// Enter a parse tree produced by PseudoCodeParser#functionDeclarationStatement.
+	enterFunctionDeclarationStatement(ctx) {
 	}
 
-	// Exit a parse tree produced by PseudoCodeParser#functionDeclarationWithParameters.
-	exitFunctionDeclarationWithParameters(ctx) {
+	// Exit a parse tree produced by PseudoCodeParser#functionDeclarationStatement.
+	exitFunctionDeclarationStatement(ctx) {
 	}
 
 
-	// Enter a parse tree produced by PseudoCodeParser#functionDeclarationWithoutParameters.
-	enterFunctionDeclarationWithoutParameters(ctx) {
+	// Enter a parse tree produced by PseudoCodeParser#parameterList.
+	enterParameterList(ctx) {
 	}
 
-	// Exit a parse tree produced by PseudoCodeParser#functionDeclarationWithoutParameters.
-	exitFunctionDeclarationWithoutParameters(ctx) {
+	// Exit a parse tree produced by PseudoCodeParser#parameterList.
+	exitParameterList(ctx) {
 	}
 
 
