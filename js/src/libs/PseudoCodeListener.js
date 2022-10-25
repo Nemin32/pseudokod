@@ -356,5 +356,14 @@ export default class PseudoCodeListener extends antlr4.tree.ParseTreeListener {
 	}
 
 
+	// Enter a parse tree produced by PseudoCodeParser#newline.
+	enterNewline(ctx) {
+	}
+
+	// Exit a parse tree produced by PseudoCodeParser#newline.
+	exitNewline(ctx) {
+	}
+
+
 
 }

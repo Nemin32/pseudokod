@@ -9,7 +9,14 @@ tc <- 1
 tape[1] <- 3
 tape[2] <- 5
 
-függvény Feldolgoz(címszerint tape : egész tömb, címszerint inst : egész tömb, címszerint stack : egész tömb, címszerint pc : egész, címszerint sc : egész, címszerint tc : egész)
+függvény Feldolgoz(
+címszerint tape : egész tömb, 
+címszerint inst : egész tömb,
+címszerint stack : egész tömb, 
+címszerint pc : egész,
+címszerint sc : egész,
+címszerint tc : egész
+)
   c <- inst[pc]
 
   ha c = ">" akkor

@@ -240,5 +240,11 @@ export default class PseudoCodeVisitor extends antlr4.tree.ParseTreeVisitor {
 	}
 
 
+	// Visit a parse tree produced by PseudoCodeParser#newline.
+	visitNewline(ctx) {
+	  return this.visitChildren(ctx);
+	}
+
+
 
 }

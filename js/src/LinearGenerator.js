@@ -8,11 +8,13 @@ export class LinearGenerator extends PseudoCodeVisitor {
     }
 
     contextID = 0;
+    lineNum = 1;
 
     createOp(opcode, payload = null) {
         this.output.code.push({
             opcode,
-            payload
+            payload,
+            lineNum: this.lineNum
         })
     }
 
@@ -38,12 +40,24 @@ export class LinearGenerator extends PseudoCodeVisitor {
                     this.createOp(opcode, payload);
                     break;
             }
+
+            if (ctx) {
+                const nl = ctx["newline"]?.()
+
+                if (nl) {
+                    this.visit(nl);
+                }
+            }
         })
     }
 
     assemble(ctx, input) {
         const ops = input.split(/\n|;/).map(line => line.trim().split(" ")).filter(x => x[0] != "")
         this._assemble(ctx, ops)
+    }
+
+    visitNewline(ctx) {
+        this.lineNum++;
     }
 
     visitDebug(ctx) {

@@ -1,8 +1,8 @@
 grammar PseudoCode;
 
-program: WS? (NL | statement)+;
+program: WS? (newline+ | statement)+;
 
-body: WS? (statement | NL)+;
+body: WS? (statement | newline+)+;
 
 statement: (
 		vars
@@ -18,7 +18,7 @@ statement: (
 		| functionDeclarationStatement
 		| debugPrintStatement
 		| debug
-	) NL;
+	) newline+;
 
 debug: 'debug';
 
@@ -27,30 +27,32 @@ debugPrintStatement: 'kiir' WS expression;
 vars: 'változók';
 
 ifStatement:
-	HA WS expression WS AKKOR NL body (
+	HA WS expression WS AKKOR newline+ body (
 		elseIfBranch+ elseBranch
 		| elseBranch?
 	) ELVEGE;
 
-elseIfBranch: KULONBEN WS HA WS expression WS AKKOR NL body;
-elseBranch: KULONBEN NL body;
+elseIfBranch:
+	KULONBEN WS HA WS expression WS AKKOR newline+ body;
+elseBranch: KULONBEN newline+ body;
 
-whileStatement: CIKLUS WS AMIG WS expression NL body CVEGE;
+whileStatement:
+	CIKLUS WS AMIG WS expression newline+ body CVEGE;
 
-doWhileStatement: CIKLUS NL body AMIG WS expression;
+doWhileStatement: CIKLUS newline+ body AMIG WS expression;
 
 forStatement:
-	CIKLUS WS variable ASSIGN expression CSTART WS expression CEND NL body CVEGE;
+	CIKLUS WS variable ASSIGN expression CSTART WS expression CEND newline+ body CVEGE;
 
 returnStatement: VISSZA WS expression;
 
 methodCallStatement: functionName parameters;
 
 functionDeclarationStatement:
-	FUGGVENY WS functionName '(' parameterWithType (
-		',' WS? parameterWithType
-	)* ')' NL body FVEGE							# functionDeclarationWithParameters
-	| FUGGVENY WS functionName '()' NL body FVEGE	# functionDeclarationWithoutParameters;
+	FUGGVENY WS functionName '(' (WS | newline+)? parameterWithType (
+		',' (WS | newline+)? parameterWithType
+	)* (WS | newline+)? ')' newline body FVEGE			# functionDeclarationWithParameters
+	| FUGGVENY WS functionName '()' newline+ body FVEGE	# functionDeclarationWithoutParameters;
 
 parameterWithType: (CIMSZERINT WS)? variable WS? ':' WS? type;
 
@@ -97,6 +99,8 @@ arrayIndex: variable ('[' expression ']')+;
 
 variable: VARIABLE;
 
+newline: NL;
+
 OPERATOR: '*' | '/' | '-' | '+' | 'mod';
 
 COMPARISON: '<' | '>' | '=' | '=/=' | '<=' | '>=';
@@ -131,5 +135,5 @@ VAGY: '\\/';
 FUNCTION: [A-Z] ([a-z] | [A-Z])*;
 VARIABLE: 'a' ..'z'+;
 
-NL: (WS? [\r\n]+ WS?)+;
+NL: (WS? [\r\n] WS?);
 WS: [ \t]+;

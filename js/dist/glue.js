@@ -17,15 +17,38 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		return char.repeat(length - inp.length) + inp
 	}
 
+	const colors = {
+		"push": "red",
+		"pushVar": "red",
+		"functionCall": "green",
+		"functionDef": "green",
+		"functionEnd": "green"
+	};
+
 	let codeText = ""
 	codeText += "  IP: " + padRight(String(ip), 4) + "\n\n";
 
+	let indent = 0;
 	for (let i = 0; i < code.length; i++) {
+		if (["endIf", "loop", "functionEnd", "elIf", "else"].includes(code[i].opcode)) {
+			indent -= 2
+		}
+
+		const spaces = " ".repeat(indent)
 		const cursor = i == ip ? ">" : " ";
 		const opcode = code[i].opcode.toUpperCase();
 		const payload = code[i].payload ? `(${code[i].payload})` : ""
 
-		codeText += `${cursor} ${padRight(String(i), 4)} ${opcode}${payload}\n`
+		const colorCode = colors[code[i].opcode]
+
+		// Set back to true.
+		const color = (false && colorCode) ? `style="color: ${colorCode};"` : ""
+
+		codeText += `<span><pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre></span>\n`
+
+		if (["if", "elIf", "else", "functionDef", "while"].includes(code[i].opcode)) {
+			indent += 2
+		}
 	}
 
 	codeText += "\nIP STACK:\n"
@@ -34,7 +57,7 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		codeText += padRight(String(sip), 4) + "\n"
 	}
 
-	codeOutput.innerText = codeText;
+	codeOutput.innerHTML = codeText;
 };
 
 const pushStackCallback = (div, value) => {
