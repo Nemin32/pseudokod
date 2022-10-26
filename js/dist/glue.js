@@ -28,14 +28,14 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 	let codeText = ""
 	codeText += "  IP: " + padRight(String(ip), 4) + "\n\n";
 
-	let indent = 0;
+	let indent = 2;
+	let lineNum = 1;
 	for (let i = 0; i < code.length; i++) {
 		if (["endIf", "loop", "functionEnd", "elIf", "else"].includes(code[i].opcode)) {
 			indent -= 2
 		}
 
 		const spaces = " ".repeat(indent)
-		const cursor = i == ip ? ">" : " ";
 		const opcode = code[i].opcode.toUpperCase();
 		const payload = code[i].payload ? `(${code[i].payload})` : ""
 
@@ -47,7 +47,17 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		// codeText += `<span><pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre></span>\n`
 
 		let span = document.createElement("span")
-		span.innerHTML = `<pre>${cursor} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre>`
+
+		if (ip == i) {
+			span.className = "current"
+		}
+
+		if (lineNum != code[i].lineNum) {
+			lineNum = code[i].lineNum
+			span.classList.add("separator")
+		}
+
+		span.innerHTML = `<pre>${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre>`
 		span.addEventListener("mouseenter", () => {
 			highlight(code[i].lineNum - 1, true)
 		})
@@ -107,8 +117,10 @@ const scopeLeaveCallback = (div, variables) => {
 
 const colorSyntax = (input) => {
 	const colors = [
+		[/[0-9]+/g, "#b16286"],
+		[/<-|\+|\-|\*|,/g, "#a0a0a0"],
 		[/ha|akkor|különben|elágazás vége/g, "#fb4934"],
-		[/függvény|függvény vége/g, "#b8bb26"],
+		[/függvény (vége)?/g, "#b8bb26"],
 		[/ciklus (vége)?|amíg/g, "#fe8019"],
 		[/kiir|vissza/g, "#8ec07c"],
 	]
@@ -143,9 +155,8 @@ const highlight = (lineNum, should) => {
 	const syntaxElem = document.getElementById("syntax")
 	const codeOutput = document.getElementById("code")
 
-	syntaxElem.children[lineNum].className = (should) ? "highlight" : ""
-
-	codeOutput.querySelectorAll(`span[line="${lineNum}"]`).forEach(span => span.className = (should) ? "highlight" : "")
+	syntaxElem.children[lineNum].classList.toggle("highlight")
+	codeOutput.querySelectorAll(`span[line="${lineNum}"]`).forEach(span => span.classList.toggle("highlight"))
 }
 
 const outputFunction = (output, wrappedValue) => {

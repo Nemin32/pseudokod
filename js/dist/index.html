@@ -10,227 +10,269 @@
 	<script type="module" src="glue.js"></script>
 
 	<style>
-		h1 {
-			text-align: center;
+		:root {
+			--header: #202020;
+			--output: #242424;
+			--fontColor: #efefef;
+			--internals: #202020;
+
+			/*--border: #424242;*/
+			--border: #545454;
+			--subBorder: #323232;
+
+			--bIdle: #242424;
+			--bHover: #202020;
+			--bActive: #161616;
 		}
 
-		.gray {
-			background-color: #ddd;
-			border: 1px solid #aaa;
-			box-sizing: border-box;
-			width: 100%;
-			padding: 1rem;
-		}
-
-		.gray p {
-			margin: 0;
-		}
-
-		#code {
-			font-family: monospace;
-			margin: 0;
-		}
-
-		#code span {
-			display: flex;
-			gap: 1ch;
-			white-space: pre;
-		}
-
-		#code span.highlight {
-			background-color: white;
-		}
-
-		#code pre {
-			margin: 0;
-		}
-
-		#controls {
+		body {
 			display: grid;
-			grid-template-areas: "a b" "c c";
-			grid-template-columns: 50% 50%;
-			gap: 1rem;
-			width: 95vw;
-			margin: 0 auto;
-		}
+			grid-template-rows: auto 1fr;
 
-		#inputs {
-			grid-area: a;
-		}
-
-		#internals {
-			grid-area: b;
-			display: flex;
-			gap: 0.5rem;
-		}
-
-		#internals>* {
-			flex-basis: 33%;
-		}
-
-		#output_container {
-			grid-area: c;
-			background-color: #eee;
-			border: 1px solid #ddd;
-		}
-
-		#output {
-			overflow: auto;
-			max-height: 300px;
-		}
-
-		textarea {
-			width: 100%;
-			resize: vertical;
-		}
-
-		button {
-			display: block;
-			width: 100%;
-
-			background-color: aliceblue;
-		}
-
-		button.good {
-			background-color: greenyellow;
-		}
-
-		button.bad {
-			background-color: darksalmon;
-		}
-
-
-		@keyframes blink {
-			from {
-				background-color: aqua;
-			}
-
-			to {
-				background-color: #eee;
-			}
-		}
-
-		@keyframes delete {
-			from {
-				background-color: #eee;
-			}
-
-			to {
-				background-color: red;
-			}
-		}
-
-		span {
-			display: block;
-		}
-
-		#vars div>div {
-			display: grid;
-			grid-template-columns: 12ch 15ch;
-		}
-
-		#vars span,
-		#stack span {
-			animation: blink;
-			animation-duration: 0.25s;
-			background-color: #eee;
-
-			display: block;
-			border: 1px solid;
-		}
-
-		#stack span.deleted {
-			animation: delete;
-			animation-duration: 0.25s;
-			background-color: #eee;
-		}
-
-		#codeInput {
-			position: relative;
-		}
-
-		#input {
-			width: 100%;
-			min-height: 200px;
-
-			color: transparent;
-			caret-color: #eee;
-
-			font-family: monospace;
+			margin: 0;
 			padding: 0;
+
+			height: max(100vh, 800px);
+			width: max(100vw, 1200px);
+
+			font-size: 18px;
+
+			background-color: var(--header);
+			color: var(--fontColor);
+		}
+
+		body>p {
 			margin: 0;
+			font-size: 1.5rem;
+		}
 
-			border: none;
+		div {
+			max-height: 100%;
+			min-height: 0;
 			overflow: auto;
-			outline: none;
+		}
 
-			-webkit-box-shadow: none;
-			-moz-box-shadow: none;
-			box-shadow: none;
+		#halfSplit {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: 100%;
 
-			white-space: pre;
-			z-index: 2;
+			border-top: 1px solid var(--border);
+		}
+
+		#leftPane {
+			display: grid;
+			grid-template-rows: 95fr 5fr;
+
+			border-right: 1px solid var(--border);
+		}
+
+		#editorContainer {
 			position: relative;
-			background-color: transparent;
 		}
 
 		#syntax {
+			font-family: monospace;
+			font-size: 1rem;
+
 			position: absolute;
 			top: 0;
 			left: 0;
-
-			font-family: monospace;
 
 			width: 100%;
 			height: 100%;
 
 			pointer-events: none;
-
-			color: #eee;
-			overflow: hidden;
-
 			white-space: pre;
 
 			background-color: #282828;
-			user-select: none;
+			color: #ebdbb2;
 		}
 
-		#syntax span.highlight {
-			background-color: #666;
+		#syntax>span {
+			display: block;
 		}
 
-		#syntax span>span {
+		#syntax>span.highlight {
+			background-color: #484848;
+		}
+
+		#input {
+			font-family: monospace;
+			font-size: 1rem;
+
+			position: absolute;
+			top: 0;
+			left: 0;
+
+			width: 100%;
+			height: 100%;
+
+			margin: 0;
+			padding: 0;
+			border: 0;
+			outline: none;
+			resize: none;
+
+			background-color: transparent;
+			color: transparent;
+			caret-color: white;
+		}
+
+		#buttons {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+		}
+
+		#buttons button {
+			background-color: var(--bIdle);
+			border: 1px solid var(--subBorder);
+			color: var(--fontColor);
+			font-size: 1.25rem;
+		}
+
+		#buttons button:hover {
+			background-color: var(--bHover);
+		}
+
+		#buttons button:active {
+			background-color: var(--bActive);
+		}
+
+		#rightPane {
+			display: grid;
+			grid-template-rows: 4fr 1fr;
+		}
+
+		#twoThirds {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+
+			background-color: var(--internals);
+		}
+
+		#code {
+			overflow: auto;
+
+			border-right: 1px solid var(--border);
+		}
+
+		#code span {
+			display: block;
+
+			padding-left: 0.4rem;
+			padding-right: 0.4rem;
+
+		}
+
+		#code span pre {
 			display: inline;
+			margin: 0;
+		}
+
+		#code span.current {
+			background-color: #424242;
+		}
+
+		#code span.separator {
+			border-top: 1px solid var(--subBorder);
+		}
+
+		#code span.highlight {
+			background-color: #323232;
+		}
+
+		#internalContainer {
+			display: grid;
+			grid-template-rows: 1fr 1fr;
+		}
+
+		#internalContainer p {
+			border-bottom: 1px solid var(--border);
+
+			padding-left: 0.4rem;
+			padding-right: 0.4rem;
+
+			margin: 0;
+		}
+
+		#stack {
+			border-bottom: 1px solid var(--border);
+		}
+
+		#stack span {
+			display: block;
+			border-bottom: 1px solid var(--subBorder);
+
+			padding-left: 0.4rem;
+			padding-right: 0.4rem;
+
+		}
+
+		#vars>div>div {
+			display: grid;
+			grid-template-columns: 2fr 3fr;
+
+			border-bottom: 1px solid var(--subBorder);
+		}
+
+		#vars>div>div span:first-of-type {
+			border-right: 1px solid var(--subBorder);
+		}
+
+		#vars>div>div span {
+			padding-left: 0.4rem;
+			padding-right: 0.4rem;
+		}
+
+		#oneThird {
+			background-color: var(--output);
+			border-top: 1px solid var(--border);
+
+			padding: 0.4rem;
+		}
+
+		#output {
+			margin: 0;
+			padding: 0;
 		}
 	</style>
 </head>
 
 <body>
-	<h1>PszeudoKód Értelmező</h1>
-
-	<div id="controls">
-		<div id="inputs">
-			<div id="codeInput">
+	<p>PSZEUDOKÓD ÉRTELMEZŐ</p>
+	<div id="halfSplit">
+		<div id="leftPane">
+			<div id="editorContainer">
 				<div id="syntax"></div>
 				<textarea id="input" spellcheck="false"></textarea>
 			</div>
-			<button id="compile">Compile</button>
-			<button id="step">Step</button>
-			<button id="run">Run</button>
-		</div>
-		<div id="internals" class="gray">
-			<div id="code"></div>
-			<div id="stack">
-				<p>Verem:</p>
-				<div></div>
-			</div>
-			<div id="vars">
-				<p>Változók:</p>
-				<div></div>
+
+			<div id="buttons">
+				<button id="compile">Compile</button>
+				<button id="step">Step</button>
+				<button id="run">Run</button>
 			</div>
 		</div>
-		<div id="output_container">
-			<p id="output"></p>
+
+		<div id="rightPane">
+			<div id="twoThirds">
+				<div id="code"></div>
+				<div id="internalContainer">
+					<div id="stack">
+						<p>Verem</p>
+						<div></div>
+					</div>
+					<div id="vars">
+						<p>Változók</p>
+						<div></div>
+					</div>
+				</div>
+			</div>
+
+			<div id="oneThird">
+				<p id="output"></p>
+			</div>
 		</div>
 	</div>
 </body>
