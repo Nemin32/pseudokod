@@ -17,7 +17,7 @@
   },
   "scripts": {
     "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
-    "build": "yarn esbuild src/index.js --bundle --format=esm --sourcemap --outfile=dist/esbundle.js",
+    "build": "yarn esbuild src/index.js --bundle --format=esm --sourcemap --outfile=dist/esbundle.js --watch",
     "prod": "yarn esbuild src/index.js --bundle --format=esm --minify --outfile=dist/esbundle.js"
   }
 }

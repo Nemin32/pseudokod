@@ -89,8 +89,6 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT newline 1
         `)
 
-        console.log("eefew")
-
         return {
             name: ctx.variable().getText(),
             reference: ctx.CIMSZERINT() !== null,
@@ -503,7 +501,7 @@ export class LinearExecutor {
                     indices.reverse()
 
                     let val = indices.reduce((prev, index) => { return prev.safe_get(TYPES.array)[index] }, array)
-                    this.pushStack(val.clone())
+                    this.pushStack(val)
                 }
                 break;
 
@@ -580,7 +578,13 @@ export class LinearExecutor {
                 if (parameters) {
                     for (let i = parameters.length - 1; i >= 0; i--) {
                         let paramType = parameters[i]
-                        this.variables.set(paramType.name, this.popStack())
+
+                        if (paramType.reference) {
+                            this.variables.create_reference(paramType.name, this.popStack())
+                        }
+                        else {
+                            this.variables.set(paramType.name, this.popStack())
+                        }
                     }
                 }
 

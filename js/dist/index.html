@@ -168,9 +168,10 @@
 			-moz-box-shadow: none;
 			box-shadow: none;
 
-			background-color: #282828;
-
 			white-space: pre;
+			z-index: 2;
+			position: relative;
+			background-color: transparent;
 		}
 
 		#syntax {
@@ -189,6 +190,9 @@
 			overflow: hidden;
 
 			white-space: pre;
+
+			background-color: #282828;
+			user-select: none;
 		}
 
 		#syntax span.highlight {

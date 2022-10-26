@@ -47,7 +47,7 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		// codeText += `<span><pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre></span>\n`
 
 		let span = document.createElement("span")
-		span.innerHTML = `<pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre>`
+		span.innerHTML = `<pre>${cursor} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre>`
 		span.addEventListener("mouseenter", () => {
 			highlight(code[i].lineNum - 1, true)
 		})
@@ -118,7 +118,25 @@ const colorSyntax = (input) => {
 	}
 
 	// Using NBSP instead of normal space.
-	return input.split("\n").map(line => `<span>${mapLine((line != "") ? line : " ")}</span>`).join("")
+
+	let lineNum = 0;
+	return input.split("\n").map(line => {
+		const span = document.createElement("span")
+
+		if (line != "") {
+			span.innerHTML = mapLine(line)
+
+			let num = lineNum
+			span.addEventListener("mouseenter", () => { highlight(num, true) })
+			span.addEventListener("mouseleave", () => { highlight(num, false) })
+		} else {
+			span.innerHTML = " "
+		}
+
+		lineNum++;
+
+		return span
+	})
 }
 
 const highlight = (lineNum, should) => {
@@ -165,10 +183,12 @@ window.addEventListener("load", () => {
 	}
 
 	inputElem.addEventListener("input", () => {
-		syntaxElem.innerHTML = colorSyntax(inputElem.value)
+		syntaxElem.innerHTML = ""
+		colorSyntax(inputElem.value).forEach(s => syntaxElem.appendChild(s))
 	})
 
-	syntaxElem.innerHTML = colorSyntax(inputElem.value)
+	syntaxElem.innerHTML = ""
+	colorSyntax(inputElem.value).forEach(s => syntaxElem.appendChild(s))
 
 	inputElem.addEventListener("scroll", () => {
 		syntaxElem.scrollTop = inputElem.scrollTop
