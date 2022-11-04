@@ -49,7 +49,7 @@ functionDeclarationStatement:
 
 parameterList:
 	| '()'
-	| '(' parameterWithType (',' parameterWithType)* ')';
+	| '(' parameterWithType (',' WS? parameterWithType)* ')';
 
 parameterWithType:
 	newline? (CIMSZERINT WS)? variable WS? ':' WS? type newline?;

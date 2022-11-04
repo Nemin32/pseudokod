@@ -160,7 +160,8 @@ const highlight = (lineNum, should) => {
 }
 
 const outputFunction = (output, wrappedValue) => {
-	output.innerHTML += wrappedValue?.value + "\n";
+	output.innerText += wrappedValue?.value + "\n";
+	output.scrollIntoView(false)
 };
 
 const compileEnvironment = (input) => {
