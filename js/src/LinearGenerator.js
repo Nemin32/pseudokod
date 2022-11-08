@@ -617,6 +617,14 @@ export class LinearExecutor {
         return true;
     }
 
+    stepLine() {
+        const current_line = this.instructions[this.ip].lineNum
+
+        while (this.ip < this.instructions.length && this.instructions[this.ip].lineNum == current_line) {
+            if (this.step()) return;
+        }
+    }
+
     run() {
         while (this.ip < this.instructions.length) {
             if (this.step()) return;

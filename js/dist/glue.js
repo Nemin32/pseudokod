@@ -37,7 +37,7 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 
 		const spaces = " ".repeat(indent)
 		const opcode = code[i].opcode.toUpperCase();
-		const payload = code[i].payload ? `(${code[i].payload})` : ""
+		const payload = (code[i].payload !== null) ? `${code[i].payload}` : ""
 
 		const colorCode = colors[code[i].opcode]
 
@@ -57,15 +57,10 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 			span.classList.add("separator")
 		}
 
-		span.innerHTML = `<pre>${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre>`
-		span.addEventListener("mouseenter", () => {
-			highlight(code[i].lineNum - 1, true)
-		})
-
-		span.addEventListener("mouseleave", () => {
-			highlight(code[i].lineNum - 1, false)
-		})
-
+		span.innerHTML = `<pre>${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode} ${payload}</pre>`
+		
+		span.addEventListener("mouseenter", () => { highlight(code[i].lineNum - 1, true) })
+		span.addEventListener("mouseleave", () => { highlight(code[i].lineNum - 1, false) })
 		span.setAttribute("line", code[i].lineNum - 1)
 
 		codeOutput.appendChild(span)
@@ -175,6 +170,7 @@ window.addEventListener("load", () => {
 	const syntaxElem = document.getElementById("syntax")
 	const compile = document.getElementById("compile")
 	const step = document.getElementById("step")
+	const stepLine = document.getElementById("stepLine")
 	const run = document.getElementById("run")
 
 	/* Program output */
@@ -226,6 +222,13 @@ window.addEventListener("load", () => {
 	step.addEventListener("click", () => {
 		if (executor) {
 			executor.step()
+			dumpEnvironment(executor, codeOutput, varOutput)
+		}
+	})
+
+	stepLine.addEventListener("click", () => {
+		if (executor) {
+			executor.stepLine()
 			dumpEnvironment(executor, codeOutput, varOutput)
 		}
 	})
