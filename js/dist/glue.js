@@ -114,7 +114,7 @@ const scopeLeaveCallback = (div, variables) => {
 const colorSyntax = (input) => {
 	const colors = [
 		[/[0-9]+/g, "#b16286"],
-		[/<-|\+|\-|\*|,/g, "#a0a0a0"],
+		[/<-|\+|\-|\*|\/|mod/g, "#a0a0a0"],
 		[/ha|akkor|különben|elágazás vége/g, "#fb4934"],
 		[/függvény (vége)?/g, "#b8bb26"],
 		[/ciklus (vége)?|amíg/g, "#fe8019"],
@@ -122,27 +122,30 @@ const colorSyntax = (input) => {
 	]
 
 	// TODO:
-	// Two step transform? függvény -> [<#123456>]függvény[<>] -> <span style="color: #123456">függvény</span>
-	// Osztályokra bontani ezt a fájlt
-	// Befejezni a css-t
-	// Átírható változók (és stack?)
-	// IP stack implementálás
-	// Tömb grammar átírás
-	// Valami szebb color scheme
-	// Algoritmus-választó
-	// Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
-	// Eljárások?
-	// Set-ek? Más adatstruktúrák?
-	// Tutorial - Popup?
-	// Generikus típusok?
-	// Tesztek - Selenium? Branch teszt?
-	// Jobb syntax highlight?
-	// Időutazás?! (Immutable.js? Mekkora overhead?)
-	// Refactoring??
-	// Interpreter???
+	// [X] Two step transform? függvény -> [<#123456>]függvény[<>] -> <span style="color: #123456">függvény</span>
+	// [ ] Osztályokra bontani ezt a fájlt
+	// [?] Befejezni a css-t
+	// [ ] Átírható változók (és stack?)
+	// [ ] IP stack implementálás
+	// [X] Tömb grammar átírás
+	// [ ] Valami szebb color scheme
+	// [ ] Algoritmus-választó
+	// [ ] Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
+	// [ ] Eljárások?
+	// [ ] Set-ek? Más adatstruktúrák?
+	// [ ] Tutorial - Popup?
+	// [ ] Generikus típusok?
+	// [ ] Tesztek - Selenium? Branch teszt?
+	// [ ] Jobb syntax highlight?
+	// [ ] Időutazás?! (Immutable.js? Mekkora overhead?)
+	// [ ] Refactoring??
+	// [ ] Interpreter???
 
 	const mapLine = (line) => {
-		return colors.reduce((line, [rx, color]) => line.replaceAll(rx, `<span style="color: ${color}">$&</span>`), line)
+		const colorTags = colors.reduce((line, [rx, color]) => line.replaceAll(rx, `[<${color}>]$&[<>]`), line)
+
+		return colorTags.replaceAll(/\[<(#.{6})>\]/g, `<span style="color: $1">`)
+			.replaceAll("[<>]", "</span>")
 	}
 
 	let lineNum = 0;

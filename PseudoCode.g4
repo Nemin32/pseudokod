@@ -93,7 +93,7 @@ number: NUMBER;
 bool: BOOL;
 
 arrayShorthand: '(' expression (',' WS? expression)* ')';
-arrayIndex: variable ('[' expression ']')+;
+arrayIndex: variable '[' expression (',' WS? expression)* ']';
 
 variable: VARIABLE;
 
