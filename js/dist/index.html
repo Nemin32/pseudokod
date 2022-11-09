@@ -5,245 +5,16 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Pszeudokód Értelmező</title>
 
 	<script type="module" src="glue.js"></script>
 
-	<style>
-		:root {
-			--header: #181818;
-			--output: #242424;
-			--fontColor: #efefef;
-			--internals: #202020;
-
-			/*--border: #424242;*/
-			--border: #545454;
-			--subBorder: #323232;
-
-			--bIdle: #242424;
-			--bHover: #202020;
-			--bActive: #161616;
-		}
-
-		body {
-			display: grid;
-			grid-template-rows: auto 1fr;
-
-			margin: 0;
-			padding: 0;
-
-			height: max(100vh, 800px);
-			width: max(100vw, 1200px);
-
-			font-size: 18px;
-
-			background-color: var(--header);
-			color: var(--fontColor);
-		}
-
-		body>p {
-			margin: 0;
-			font-size: 1.5rem;
-		}
-
-		div {
-			max-height: 100%;
-			min-height: 0;
-			overflow: auto;
-		}
-
-		#halfSplit {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			grid-template-rows: 100%;
-
-			border-top: 1px solid var(--border);
-		}
-
-		#leftPane {
-			display: grid;
-			grid-template-rows: 95fr 5fr;
-
-			border-right: 1px solid var(--border);
-		}
-
-		#editorContainer {
-			position: relative;
-		}
-
-		#syntax {
-			font-family: monospace;
-			font-size: 1rem;
-
-			position: absolute;
-			top: 0;
-			left: 0;
-
-			width: 100%;
-			height: 100%;
-
-			pointer-events: none;
-			white-space: pre;
-
-			background-color: #282828;
-			color: #ebdbb2;
-		}
-
-		#syntax>span {
-			display: block;
-		}
-
-		#syntax>span.highlight {
-			background-color: #484848;
-		}
-
-		#input {
-			font-family: monospace;
-			font-size: 1rem;
-
-			position: absolute;
-			top: 0;
-			left: 0;
-
-			width: 100%;
-			height: 100%;
-
-			margin: 0;
-			padding: 0;
-			border: 0;
-			outline: none;
-			resize: none;
-
-			background-color: transparent;
-			color: transparent;
-			caret-color: white;
-		}
-
-		#buttons {
-			display: grid;
-			grid-template-columns: repeat(3, 1fr);
-		}
-
-		#buttons button {
-			background-color: var(--bIdle);
-			border: 1px solid var(--subBorder);
-			color: var(--fontColor);
-			font-size: 1.25rem;
-		}
-
-		#buttons button:hover {
-			background-color: var(--bHover);
-		}
-
-		#buttons button:active {
-			background-color: var(--bActive);
-		}
-
-		#rightPane {
-			display: grid;
-			grid-template-rows: 4fr 1fr;
-		}
-
-		#twoThirds {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-
-			background-color: var(--internals);
-		}
-
-		#code {
-			overflow: auto;
-
-			border-right: 1px solid var(--border);
-		}
-
-		#code span {
-			display: block;
-
-			padding-left: 0.4rem;
-			padding-right: 0.4rem;
-
-		}
-
-		#code span pre {
-			display: inline;
-			margin: 0;
-		}
-
-		#code span.current {
-			background-color: #424242;
-		}
-
-		#code span.separator {
-			border-top: 1px solid var(--subBorder);
-		}
-
-		#code span.highlight {
-			background-color: #323232;
-		}
-
-		#internalContainer {
-			display: grid;
-			grid-template-rows: 1fr 1fr;
-		}
-
-		#internalContainer p {
-			border-bottom: 1px solid var(--border);
-
-			padding-left: 0.4rem;
-			padding-right: 0.4rem;
-
-			background-color: var(--header);
-
-			margin: 0;
-		}
-
-		#stack {
-			border-bottom: 1px solid var(--border);
-		}
-
-		#stack span {
-			display: block;
-			border-bottom: 1px solid var(--subBorder);
-
-			padding-left: 0.4rem;
-			padding-right: 0.4rem;
-
-		}
-
-		#vars>div>div {
-			display: grid;
-			grid-template-columns: 2fr 3fr;
-
-			border-bottom: 1px solid var(--subBorder);
-		}
-
-		#vars>div>div span:first-of-type {
-			border-right: 1px solid var(--subBorder);
-		}
-
-		#vars>div>div span {
-			padding-left: 0.4rem;
-			padding-right: 0.4rem;
-		}
-
-		#oneThird {
-			background-color: var(--output);
-			border-top: 1px solid var(--border);
-
-			padding: 0.4rem;
-		}
-
-		#output {
-			margin: 0;
-			padding: 0;
-		}
-	</style>
+	<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 	<p>PSZEUDOKÓD ÉRTELMEZŐ</p>
-	<div id="halfSplit">
+	<div id="halfSplit" class="hhalf">
 		<div id="leftPane">
 			<div id="editorContainer">
 				<div id="syntax"></div>
@@ -251,22 +22,34 @@
 			</div>
 
 			<div id="buttons">
-				<button id="compile">Compile</button>
-				<button id="step">Step Inst.</button>
-				<button id="stepLine">Step Line</button>
-				<button id="run">Run</button>
+				<button id="compile">Fordítás</button>
+				<button id="step">Utasításnyi Lépés</button>
+				<button id="stepLine">Sornyi Lépés</button>
+				<button id="run">Futtatás</button>
 			</div>
 		</div>
 
 		<div id="rightPane">
-			<div id="twoThirds">
-				<div id="code"></div>
-				<div id="internalContainer">
-					<div id="stack">
-						<p>Verem</p>
-						<div></div>
+			<div id="twoThirds" class="hhalf">
+				<div id="code" class="caption">
+					<p>VM Utasítások</p>
+					<div></div>
+				</div>
+
+				<div id="internalContainer" class="vhalf">
+					<div id="stacks" class="hhalf">
+						<div id="stack" class="caption">
+							<p>Verem</p>
+							<div></div>
+						</div>
+
+						<div id="ipStack" class="caption">
+							<p>Hívási Verem</p>
+							<div></div>
+						</div>
 					</div>
-					<div id="vars">
+
+					<div id="vars" class="caption">
 						<p>Változók</p>
 						<div></div>
 					</div>
@@ -274,7 +57,10 @@
 			</div>
 
 			<div id="oneThird">
-				<p id="output"></p>
+				<div id="output" class="caption">
+					<p>Kimenet</p>
+					<div></div>
+				</div>
 			</div>
 		</div>
 	</div>

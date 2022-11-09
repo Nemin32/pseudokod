@@ -353,7 +353,7 @@ export class LinearExecutor {
 
     /**
      * Initializes a new execution context.
-     * @param {Array<{opcode: String}>} instructions The list of instructions to execute.
+     * @param {Array<{opcode: String, payload: String, lineNum: Number}>} instructions The list of instructions to execute.
      */
     constructor(environment, callbacks) {
         this.instructions = environment.code

@@ -22,7 +22,8 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		"pushVar": "red",
 		"functionCall": "green",
 		"functionDef": "green",
-		"functionEnd": "green"
+		"functionEnd": "green",
+		"while": "orange"
 	};
 
 	let codeText = ""
@@ -42,7 +43,7 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 		const colorCode = colors[code[i].opcode]
 
 		// Set back to true.
-		const color = (false && colorCode) ? `style="color: ${colorCode};"` : ""
+		const color = (colorCode) ? `style="color: ${colorCode};"` : ""
 
 		// codeText += `<span><pre>${cursor} ${padRight(String(code[i].lineNum), 3)} ${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}${payload}</pre></span>\n`
 
@@ -57,7 +58,7 @@ const dumpEnvironment = (executor, codeOutput, varOutput) => {
 			span.classList.add("separator")
 		}
 
-		span.innerHTML = `<pre>${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode} ${payload}</pre>`
+		span.innerHTML = `<pre>${padRight(String(i), 4)}</pre> <pre ${color}>${spaces}${opcode}</pre> <pre class="payload"> ${payload}</pre>`
 		
 		span.addEventListener("mouseenter", () => { highlight(code[i].lineNum - 1, true) })
 		span.addEventListener("mouseleave", () => { highlight(code[i].lineNum - 1, false) })
@@ -120,11 +121,29 @@ const colorSyntax = (input) => {
 		[/kiir|vissza/g, "#8ec07c"],
 	]
 
+	// TODO:
+	// Two step transform? függvény -> [<#123456>]függvény[<>] -> <span style="color: #123456">függvény</span>
+	// Osztályokra bontani ezt a fájlt
+	// Befejezni a css-t
+	// Átírható változók (és stack?)
+	// IP stack implementálás
+	// Tömb grammar átírás
+	// Valami szebb color scheme
+	// Algoritmus-választó
+	// Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
+	// Eljárások?
+	// Set-ek? Más adatstruktúrák?
+	// Tutorial - Popup?
+	// Generikus típusok?
+	// Tesztek - Selenium? Branch teszt?
+	// Jobb syntax highlight?
+	// Időutazás?! (Immutable.js? Mekkora overhead?)
+	// Refactoring??
+	// Interpreter???
+
 	const mapLine = (line) => {
 		return colors.reduce((line, [rx, color]) => line.replaceAll(rx, `<span style="color: ${color}">$&</span>`), line)
 	}
-
-	// Using NBSP instead of normal space.
 
 	let lineNum = 0;
 	return input.split("\n").map(line => {
@@ -146,7 +165,7 @@ const colorSyntax = (input) => {
 	})
 }
 
-const highlight = (lineNum, should) => {
+const highlight = (lineNum) => {
 	const syntaxElem = document.getElementById("syntax")
 	const codeOutput = document.getElementById("code")
 
@@ -174,10 +193,11 @@ window.addEventListener("load", () => {
 	const run = document.getElementById("run")
 
 	/* Program output */
-	const output = document.getElementById("output")
-	const codeOutput = document.getElementById("code")
+	const output = document.querySelector("#output div")
+	const codeOutput = document.querySelector("#code div")
 	const varOutput = document.querySelector("#vars div")
 	const stackOutput = document.querySelector("#stack div")
+	const ipStackOutput = document.querySelector("#ipStack div")
 
 	let environment = null;
 	let executor = null;
