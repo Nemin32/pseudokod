@@ -3,8 +3,8 @@ export const TYPES = Object.freeze({
   string: "szöveg",
   boolean: "logikai",
   array: "tömb",
-  reference: "referencia"
-})
+  reference: "referencia",
+});
 
 export class Value {
   #_value = null;
@@ -15,20 +15,20 @@ export class Value {
     this.#_type = t;
   }
 
-  set(value, type) {
+  set(value, type = null) {
     if (this.#_type === TYPES.reference) {
-      this.#_value.set(value, type)
+      this.#_value.set(value, type);
     } else {
       this.#_value = value;
-      this.#_type = type;
+      this.#_type = type !== null ? type : this.#_type;
     }
   }
 
   get value() {
     if (this.#_type === TYPES.reference) {
-      return this.#_value.value
+      return this.#_value.value;
     } else {
-      return this.#_value
+      return this.#_value;
     }
   }
 
@@ -37,24 +37,27 @@ export class Value {
   }
 
   clone() {
-    return new Value(this.#_value, this.#_type)
+    return new Value(this.#_value, this.#_type);
   }
 
   safe_get(expected_type) {
     // FIXME: Make this more robust. Remove part after &&.
     if (this.#_type !== expected_type && this.#_type !== null) {
-      throw new Error(`'${expected_type}' típust vártunk, de a változó '${this.#_type}' típusú volt!`);
+      throw new Error(
+        `'${expected_type}' típust vártunk, de a változó '${
+          this.#_type
+        }' típusú volt!`
+      );
     }
 
-    return this.value
+    return this.value;
   }
 
   convertToJSValue(val = this) {
     if (val.type == TYPES.array) {
-      return val.value.map(innerVal => this.convertToJSValue(innerVal))
-    }
-    else {
-      return val.value
+      return val.value.map((innerVal) => this.convertToJSValue(innerVal));
+    } else {
+      return val.value;
     }
   }
 
@@ -63,7 +66,7 @@ export class Value {
       .replaceAll("[", "(")
       .replaceAll("]", ")")
       .replaceAll("true", "Igaz")
-      .replaceAll("false", "Hamis")
+      .replaceAll("false", "Hamis");
   }
 }
 
@@ -85,14 +88,14 @@ printStack
 */
 
 export class Stack {
-  #scopeBounds = []
+  #scopeBounds = [];
 
   get scopeBounds() {
-    return this.#scopeBounds
+    return this.#scopeBounds;
   }
 
   /** @type {Array<Value>} */
-  variables = []
+  variables = [];
 
   /** @type {Map<string, Array<{name: string, reference: boolean, type: string}>>} */
   parameterTypes = null;
@@ -104,7 +107,7 @@ export class Stack {
    * @param {Map<string, Array<{name: string, reference: boolean, type: string}>>} parameterTypes - A map of all parameters assigned to their functions's names.
    */
   constructor(parameterTypes, callbacks = null) {
-    this.parameterTypes = parameterTypes
+    this.parameterTypes = parameterTypes;
     this.callbacks = callbacks;
   }
 
@@ -115,7 +118,11 @@ export class Stack {
    */
   get(key) {
     for (let i = this.variables.length - 1; i >= 0; i--) {
-      if (this.#scopeBounds.findLast((bound) => bound.isFunctionScope && bound.length == i + 1)) {
+      if (
+        this.#scopeBounds.findLast(
+          (bound) => bound.isFunctionScope && bound.length == i + 1
+        )
+      ) {
         return null;
       }
 
@@ -136,16 +143,16 @@ export class Stack {
     const existing_var = this.get(key);
 
     if (existing_var) {
-      existing_var.set(value.value, value.type)
-      this.callbacks?.variableSet?.({ key, value });
+      existing_var.set(value.value, value.type);
+      this.callbacks?.variableSet?.(this.variables);
     } else {
       const newVar = {
         key: key,
-        value: value
-      }
+        value: value,
+      };
 
-      this.variables.push(newVar)
-      this.callbacks?.variableSet?.(newVar);
+      this.variables.push(newVar);
+      this.callbacks?.variableSet?.(this.variables);
     }
   }
 
@@ -156,271 +163,40 @@ export class Stack {
   enterBasicScope(isFunc = false) {
     this.#scopeBounds.push({
       length: this.variables.length,
-      isFunctionScope: isFunc
-    })
+      isFunctionScope: isFunc,
+    });
   }
 
   leaveBasicScope(isFunc = false) {
-    let current_bound = this.#scopeBounds.pop()
+    let current_bound = this.#scopeBounds.pop();
 
     while (isFunc && !current_bound.isFunctionScope) {
-      current_bound = this.#scopeBounds.pop()
+      current_bound = this.#scopeBounds.pop();
     }
 
     const length_diff = this.variables.length - current_bound.length;
-    this.variables.splice(this.variables.length - length_diff, length_diff)
+    this.variables.splice(this.variables.length - length_diff, length_diff);
 
     this.callbacks?.scopeLeave?.(this.variables);
   }
 
   enterFunctionScope(functionName, parameters) {
-    this.enterBasicScope(true)
+    this.enterBasicScope(true);
 
     const parameterTypes = this.parameterTypes.get(functionName);
 
     parameters.forEach((parameter, index) => {
-      const current_type = parameterTypes[index]
+      const current_type = parameterTypes[index];
 
       if (current_type.reference) {
-        this.create_reference(current_type.name, parameter)
+        this.create_reference(current_type.name, parameter);
       } else {
-        this.set(current_type.name, parameter, current_type.type)
-      }
-    })
-  }
-
-  leaveFunctionScope() {
-    this.leaveBasicScope()
-  }
-}
-
-/*
-let s = new Stack()
-s.set("x", "teszt", TYPES.string);
-
-s.enterBasicScope(false)
-
-s.set("y", "teszt", TYPES.string);
-
-s.enterBasicScope(false)
-s.set("z", "teszt", TYPES.string);
-s.set("d", "teszt", TYPES.string);
-
-s.set("x", "tesztes", TYPES.string);
-
-let x = s.get("x")
-s.enterFunctionScope()
-
-s.create_reference("val", x)
-
-s.set("val", "teszte", TYPES.string);
-
-s.leaveFunctionScope()
-
-s.leaveBasicScope()
-
-s.set("d", "teszt", TYPES.string);
-
-console.log(s.get("x")?.value)
-console.log(s)
-s.leaveBasicScope()
-*/
-
-class OldStack {
-  head = null;
-  previousHeads = [];
-  paramnNames = null;
-
-  constructor(pNames) { this.paramnNames = pNames; }
-
-  #find(key, start = null) {
-    let current = start ?? this.head;
-
-    while (current != null) {
-      // Megnézzük, hogy egy függvény scope-határán vagyunk-e és ha igen akkor megszakítjuk a keresést.
-      const prevHead = this.previousHeads.findLast(([elem, isFunc]) => elem == current && isFunc)
-      if (prevHead) {
-        console.log(prevHead[0])
-        return null;
-      }
-
-      if (current.key == key) {
-        return current;
-      }
-
-
-      current = current.next;
-    }
-
-    return null;
-  }
-
-  #extract(stackValue) {
-    if (Array.isArray(stackValue?.value)) {
-      return stackValue;
-    }
-
-    if (typeof stackValue?.value !== "object") {
-      return stackValue;
-    } else {
-      return this.#extract(stackValue.value)
-    }
-  }
-
-  get(key, start = null) {
-    const value = this.#find(key, start)
-
-    if (value === null) {
-      return null;
-    }
-
-    return this.#extract(value)?.value
-  }
-
-
-  set(key, val, forced = false) {
-    if (forced) {
-      const value = new StackValue(key, val, this.head);
-      this.head = value;
-    } else {
-      const svalue = this.#find(key)
-
-      if (svalue) {
-        this.#extract(svalue).value = val
-      } else {
-        const value = new StackValue(key, val, this.head);
-        this.head = value;
-      }
-    }
-  }
-
-  create_reference(key, variable, start = null) {
-    const value = this.#find(variable, start)
-
-    this.set(key, value, true)
-  }
-
-  enterBasicScope(isFunc = false) { this.previousHeads.push([this.head, isFunc]); }
-  leaveBasicScope() { this.head = this.previousHeads.pop()[0]; }
-
-  enterFunctionScope(funcName, parameters) {
-    this.enterBasicScope(true)
-
-    const paramNames = this.paramnNames.get(funcName);
-    parameters.forEach((parameter, index) => {
-      const currentParamName = paramNames[index]
-
-      if (currentParamName.reference) {
-        this.create_reference(currentParamName.name, parameter, this.previousHeads[Math.max(this.previousHeads.length - 1, 0)])
-      } else {
-        this.set(currentParamName.name, parameter, true)
-      }
-    })
-  }
-
-  leaveFunctionScope() {
-    this.leaveBasicScope()
-  }
-
-  printStack() {
-    let current = this.head;
-
-    console.log("VEREM KEZDETE");
-    while (current != null) {
-      console.log(current.key, " - ", current.value);
-      if (this.previousHeads.includes(current)) { console.log("új scope") }
-      current = current.next;
-    }
-    console.log("VEREM VÉGE");
-  }
-}
-
-class OlderStack {
-  constructor(parameters) {
-    this.previousHead = [];
-    this.head = null;
-    this.paramNames = parameters;
-  }
-
-  newFrame() {
-    this.previousHead.push(this.head);
-  }
-
-  newFunctionFrame(functionName, parameters) {
-    this.newFrame();
-
-    const paramNames = this.paramNames.get(functionName);
-    parameters.forEach((param, idx) => {
-      // Ha nem referencia, akkor új változóként adjuk hozzá, ha az, akkor visszont csak lekérjük az értékét korábbról.
-      if (!paramNames[idx].reference) {
-        this.force_set(paramNames[idx].name, param);
+        this.set(current_type.name, parameter, current_type.type);
       }
     });
   }
 
-  dropFrame() {
-    this.head = this.previousHead.pop();
-  }
-
-  find(key) {
-    let current = this.head;
-
-    while (current != null) {
-      if (current.key == key) {
-        return current;
-      }
-
-      current = current.next;
-    }
-
-    return null;
-  }
-
-  get(key) {
-    const elem = this.find(key);
-
-    if (elem) {
-      return elem.value;
-    } else {
-      return null;
-    }
-  }
-
-  force_set(key, value) {
-    const val = new StackValue(key, value, this.head);
-    this.head = val;
-  }
-
-  set(key, value) {
-    const previous = this.find(key);
-
-    if (previous !== null) {
-      previous.value = value;
-    } else {
-      const val = new StackValue(key, value, this.head);
-      this.head = val;
-    }
-  }
-
-  printStack() {
-    let current = this.head;
-
-    console.log("VEREM KEZDETE");
-    while (current != null) {
-      console.log(current.key, " - ", current.value);
-      current = current.next;
-    }
-    console.log("VEREM VÉGE");
+  leaveFunctionScope() {
+    this.leaveBasicScope();
   }
 }
-
-/*
-const s = new Stack()
-s.set("h", 123)
-s.set("x", 456)
-s.create_reference("hx", "h")
-
-console.log(s.get("hx"))
-s.set("hx", 333)
-console.log(s.get("h"))
-*/
