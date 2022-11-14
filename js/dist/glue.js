@@ -6,10 +6,10 @@ import * as SyntaxHighlight from "./SyntaxHighlight.js";
 // [X] Two step transform? függvény -> [<#123456>]függvény[<>] -> <span style="color: #123456">függvény</span>
 // [X] Osztályokra bontani ezt a fájlt
 // [?] Befejezni a css-t
-// [ ] Átírható változók (és stack?)
-// [ ] IP stack implementálás
+// [?] Átírható változók (és stack?)
+// [X] IP stack implementálás
 // [X] Tömb grammar átírás
-// [ ] Valami szebb color scheme
+// [?] Valami szebb color scheme
 // [ ] Algoritmus-választó
 // [ ] Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
 // [ ] Eljárások?
@@ -51,6 +51,7 @@ window.addEventListener("load", () => {
     elems.standardOutput,
     elems.stackInspector,
     elems.variableInspector,
+    elems.ipStackInspector,
     elems.vmInstructions
   );
 

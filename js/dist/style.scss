@@ -224,6 +224,22 @@ div {
 
   }
 
+  #ipStack>div>div {
+    display: grid;
+    grid-template-columns: 8fr 2fr;
+
+    border-bottom: 1px solid var(--subBorder);
+
+    span {
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
+
+      &:first-of-type {
+        border-right: 1px solid var(--subBorder);
+      }
+    }
+  }
+
   #vars>div>div {
     display: grid;
     grid-template-columns: 2fr 3fr;

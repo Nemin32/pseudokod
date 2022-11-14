@@ -419,7 +419,7 @@ export class LinearExecutor {
     this.callbacks = callbacks;
     this.variables = new Stack(this.parameterTypes, callbacks);
 
-    callbacks?.boot(this.instructions);
+    callbacks?.boot?.(this.instructions);
   }
 
   currentOpcode() {
@@ -620,12 +620,8 @@ export class LinearExecutor {
         }
         break;
 
-      case "else":
-        this.skipTo("endIf", payload);
-        this.ip--;
-        break;
-
       case "jmp":
+      case "else":
         this.skipTo("endIf", payload);
         this.ip--;
         break;
@@ -658,6 +654,7 @@ export class LinearExecutor {
       case "functionEnd":
         this.ip = this.ipStack.pop();
         this.variables.leaveBasicScope(true);
+        this?.callbacks?.funcEnd?.();
         break;
 
       case "functionCall":
@@ -679,6 +676,7 @@ export class LinearExecutor {
           }
         }
 
+        this?.callbacks?.funcCall(payload, this.ip);
         this.fullSeek("functionDef", payload);
         break;
 
@@ -701,7 +699,7 @@ export class LinearExecutor {
       const retval = this.execute(current_instruction);
       this.ip++;
 
-      this?.callbacks?.step(this.ip);
+      this?.callbacks?.step?.(this.ip);
 
       return retval;
     }
