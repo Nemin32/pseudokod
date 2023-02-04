@@ -207,6 +207,34 @@ export class Parser<T> {
 
     return descend(parsers, {});
   }
+
+  static chainl1 = <T, O>(p: Parser<T>, op: Parser<O>): Parser<{ f: O; a: T; b: T } | T> => {
+    return p.bind((a) =>
+      op.maybe().bind((f) => {
+        if (f == null) {
+          return Parser.result<{ f: O; a: T; b: T } | T>(a);
+        } else {
+          return p.bindResult<{ f: O; a: T; b: T } | T>((b) => ({ f, a, b }));
+        }
+      })
+    );
+  };
+
+  static chainl = <T, O, A>(p: Parser<T>, op: Parser<O>, a: Parser<A>) => Parser.chainl1(p, op).or(a);
+
+  static bindChain = <T, O, Q>(p: Parser<T>, op: Parser<O>, fOTT: (val: { f: O; a: T; b: T }) => Q) => {
+    return Parser.chainl1(p, op).bindResult((chain) => {
+      if (chain != null && typeof chain == "object" && "f" in chain) {
+        return fOTT(chain);
+      } else {
+        return chain
+      }
+    });
+  };
+
+  bindChain<O, Q>(op: Parser<O>, f: (val: {f: O, a: T, b: T}) => Q): Parser<T|Q> {
+    return Parser.bindChain(this, op, f)
+  }
 }
 
 /* Can't find a way to make it work.

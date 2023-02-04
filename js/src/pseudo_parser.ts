@@ -21,7 +21,6 @@ const parseBool = Parser.or(
 ).expect("<bool>");
 
 const parseSingleAtom = parseNumber.or(parseString).or(parseBool).expect("<atom>");
-
 const parseArrayComprehension = parseSingleAtom.sepBy(Parser.char(",")).parens().expect("<atom list>");
 
 const parseAtom: Parser<Atom> = parseArrayComprehension.or(parseSingleAtom).bindResult(make_atom).expect("<atom>");
@@ -29,47 +28,10 @@ const parseAtom: Parser<Atom> = parseArrayComprehension.or(parseSingleAtom).bind
 /* Binary Ops */
 
 const parseAddOp: Parser<string> = Parser.char("+").or(Parser.char("-"));
-
 const parseMulOp = Parser.char("*").or(Parser.char("/")).or(Parser.string("mod"));
 
-const chainl1 = <T, O>(p: Parser<T>, op: Parser<O>): Parser<{ f: O; a: T; b: T } | T> => {
-  return p.bind((a) =>
-    op.maybe().bind((f) => {
-      if (f == null) {
-        return Parser.result<{ f: O; a: T; b: T } | T>(a);
-      } else {
-        return p.bindResult<{ f: O; a: T; b: T } | T>((b) => ({ f, a, b }));
-      }
-    })
-  );
-};
-
-const chainl = <T, O, A>(p: Parser<T>, op: Parser<O>, a: Parser<A>) => chainl1(p, op).or(a);
-
-const bindChain = <T, O, Q>(p: Parser<T>, op: Parser<O>, fT: (val: T) => Q, fOTT: (val: { f: O; a: T; b: T }) => Q) => {
-  return chainl1(p, op).bindResult((chain) => {
-    if (chain != null && typeof chain == "object" && "f" in chain) {
-      return fOTT(chain);
-    } else {
-      return fT(chain);
-    }
-  });
-};
-
-const parseBinExp: Parser<Expression> = bindChain<Expression, string, Expression>(
-  Parser.of(() => parseBinTerm),
-  parseAddOp,
-  (a) => a,
-  ({ f, a, b }) => make_binop({ op: f, exp1: a, exp2: b })
-);
-
-const parseBinTerm: Parser<Expression> = bindChain(
-  Parser.of(() => parseBinFactor),
-  parseMulOp,
-  (a) => a,
-  ({ f, a, b }) => make_binop({ op: f, exp1: a, exp2: b })
-);
-
+const parseBinExp: Parser<Expression> = Parser.of(() => parseBinTerm).bindChain(parseAddOp, ({ f, a, b }) => make_binop({ op: f, exp1: a, exp2: b }));
+const parseBinTerm: Parser<Expression> = Parser.of(() => parseBinFactor).bindChain(parseMulOp, ({ f, a, b }) => make_binop({ op: f, exp1: a, exp2: b }));
 const parseBinFactor: Parser<Expression> = Parser.or(parseAtom, Parser.of(() => parseBinExp).parens());
 
 /* Expression */
