@@ -25,19 +25,19 @@ function generateAST(input) {
 }
 
 export function generateLinearEnvironment(input) {
-  const tree = generateAST(input)
-  const generator = new LinearGenerator()
+  const tree = generateAST(input);
+  const generator = new LinearGenerator();
 
-  generator.visit(tree)
+  generator.visit(tree);
 
-  return generator.output
+  return generator.output;
 }
 
 export function runLinear(input, outputFunc) {
-  const env = generateLinearEnvironment(input)
-  const executor = new LinearExecutor(env, outputFunc)
+  const env = generateLinearEnvironment(input);
+  const executor = new LinearExecutor(env, outputFunc);
 
-  executor.run()
+  executor.run();
 }
 
 /*
@@ -48,6 +48,3 @@ export function runText(input, errorFunc, outputFunc, varOutput) {
   visitor.visit(tree)
 }
 */
-
-
-console.log("Hello!")

@@ -42,6 +42,7 @@ div {
 .hhalf,
 .hthirds {
   display: grid;
+  height: 100%;
 }
 
 .vhalf {
@@ -151,6 +152,12 @@ div {
   display: grid;
   grid-template-rows: 4fr 1fr;
 }
+#rightPane input {
+  background-color: #242424;
+  color: var(--fontColor);
+  border: none;
+  width: 100%;
+}
 #rightPane > *:first-child {
   border-bottom: 1px solid var(--border);
 }
@@ -209,6 +216,18 @@ div {
 #rightPane #output {
   margin: 0;
   padding: 0;
+}
+#rightPane #codeSelector > div,
+#rightPane #codeSelector select {
+  flex-basis: 100%;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#rightPane #codeSelector select {
+  background-color: var(--internals);
+  border: none;
+  color: var(--fontColor);
 }
 
 /*# sourceMappingURL=style.css.map */

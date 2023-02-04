@@ -10,6 +10,7 @@ import * as SyntaxHighlight from "./SyntaxHighlight.js";
 // [X] IP stack implementálás
 // [X] Tömb grammar átírás
 // [?] Valami szebb color scheme
+// [ ] Expressionök zárójelbe zárása
 // [ ] Algoritmus-választó
 // [ ] Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
 // [ ] Eljárások?
