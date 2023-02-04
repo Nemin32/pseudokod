@@ -13,6 +13,7 @@ import {
   make_if,
   make_print,
   make_variable,
+  Parameter,
   Print,
   Statement,
   Variable,
@@ -43,7 +44,7 @@ function astToString(ast: AST): string {
       "(" +
       ast.kind +
       " " +
-      (function (ast: Exclude<AST, Block>) {
+      (function (ast: Exclude<AST, Block|Parameter[]>) {
         switch (ast.kind) {
           case "assignment":
             return astToString(ast.variable) + " <- " + astToString(ast.value);
@@ -62,6 +63,39 @@ function astToString(ast: AST): string {
 
           case "variable":
             return ast.value;
+
+          case "arrAssign":
+            return `${astToString(ast.variable)}[${astToString(ast.length)}]`;
+
+          case "arrElemAssign":
+            return `${astToString(ast.array)}[${astToString(ast.index)}] = ${astToString(ast.value)}`;
+
+          case "comparison":
+            return `${astToString(ast.exp1)} ${ast.op} ${astToString(ast.exp2)}`;
+
+          case "doWhile":
+            return `${astToString(ast.pred)} ${astToString(ast.body)}`;
+
+          case "functionCall":
+            return `${ast.functionName}(${astToString(ast.parameters)})`;
+
+          case "functionDecl":
+            return `${ast.name}(${astToString(ast.parameters)}) {${astToString(ast.body)}}`;
+
+          case "logicBinop":
+            return `${astToString(ast.exp1)} ${ast.op} ${astToString(ast.exp2)}`;
+
+          case "not":
+            return astToString(ast.value);
+
+          case "parameter":
+            return `${ast.name} : ${ast.byReference ? "REF" : "VAL"}`;
+
+          case "return":
+            return astToString(ast.value);
+
+          case "while":
+            return `${astToString(ast.pred)} ${astToString(ast.body)}`;
         }
       })(ast) +
       ")"

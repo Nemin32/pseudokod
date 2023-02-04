@@ -56,7 +56,7 @@ export type Parameter = {
 export type While = { kind: "while"; pred: Expression; body: Block };
 export type DoWhile = { kind: "doWhile"; pred: Expression; body: Block };
 export type For = { kind: "for"; variable: Variable; from: Expression; to: Expression; body: Block };
-export type ArrayElementAssignment = { kind: "arrElemAssign"; array: Variable; index: Expression; elem: Expression };
+export type ArrayElementAssignment = { kind: "arrElemAssign"; array: Variable; index: Expression; value: Expression };
 export type ArrayAssignment = { kind: "arrAssign"; variable: Variable; length: Expression };
 export type Return = { kind: "return"; value: Expression };
 export type FunctionDeclaration = { kind: "functionDecl"; name: string; parameters: Array<Parameter>; body: Block };
@@ -64,7 +64,7 @@ export type FunctionDeclaration = { kind: "functionDecl"; name: string; paramete
 export type Block = Array<Statement>;
 export type Statement = ArrayAssignment | ArrayElementAssignment | Assignment | DoWhile | Expression | FunctionDeclaration | If | Print | Return | While;
 
-export type AST = Block | Statement | Expression;
+export type AST = Parameter | Parameter[] | Block | Statement | Expression;
 
 /* = Constructors = */
 
