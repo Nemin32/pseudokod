@@ -1,4 +1,4 @@
-import { Either } from "./error.js";
+import { Either } from "./error.ts";
 
 type Input = {
   text: string;
