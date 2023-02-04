@@ -1,0 +1,9 @@
+függvény Tak(x:egész, y:egész, z:egész)
+  ha ~y < x akkor
+    vissza z
+  különben
+    vissza Tak(Tak(x-1, y, z), Tak(y-1, z, x), Tak(z-1, x, y))
+  elágazás vége
+függvény vége
+
+kiir Tak(18,12,6)

@@ -1,0 +1,70 @@
+(program
+  (statement
+    (functionDeclarationStatement
+      függvény
+      (functionName LNKO)
+      (parameterList
+        ((parameterWithType (variable m) : (type egész))
+         ,(parameterWithType (variable n) : (type egész))))
+      (newline \n)
+      (body (statement
+              (assignmentStatement
+                (variable r)
+                <-
+                (expression
+                  (expression (value (variable m)))
+                  mod
+                  (expression (value (variable n)))))
+              (newline \n \n))
+            (statement
+              (whileStatement
+                ciklus
+                amíg
+                (expression
+                  (expression (value (variable r)))
+                  =/=
+                  (expression (value (atom (number 0)))))
+                (newline \n)
+                (body (statement
+                        (assignmentStatement
+                          (variable m)
+                          <-
+                          (expression (value (variable n))))
+                        (newline \n))
+                      (statement
+                        (assignmentStatement
+                          (variable n)
+                          <-
+                          (expression (value (variable r))))
+                        (newline \n))
+                      (statement
+                        (assignmentStatement
+                          (variable r)
+                          <-
+                          (expression
+                            (expression (value (variable m)))
+                            mod
+                            (expression (value (variable n)))))
+                        (newline \n)))
+                ciklus
+                vége)
+              (newline \n \n))
+            (statement
+              (returnStatement
+                vissza
+                (expression (value (variable n))))
+              (newline \n)))
+      függvény
+      vége)
+    (newline \n \n))
+  (statement
+    (debugPrintStatement
+      kiir
+      (expression
+        (functionCall
+          (functionName LNKO)
+          (parameters
+            ((expression (value (atom (number 15))))
+             ,(expression (value (atom (number 33)))))))))
+    (newline \n)))
+
