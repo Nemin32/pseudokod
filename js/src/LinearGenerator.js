@@ -287,6 +287,16 @@ export class LinearGenerator extends PseudoCodeVisitor {
     this.contextID--;
   }
 
+  visitNotExpression(ctx) {
+    this.assemble(
+      ctx,
+      `
+        VISIT expression
+        not
+      `
+    );
+  }
+
   visitComparisonExpression(ctx) {
     const comparer = ctx.COMPARISON().getText();
 
@@ -506,6 +516,11 @@ export class LinearExecutor {
 
           this.pushStack(new Value(values, TYPES.array));
         }
+        break;
+
+      case "not":
+        const value = this.popStack().safe_get(TYPES.boolean);
+        this.pushStack(new Value(!value, TYPES.boolean));
         break;
 
       case "compare":
