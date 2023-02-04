@@ -1,5 +1,5 @@
 import { jest, test, describe, expect, afterEach } from "@jest/globals";
-import { runLinear } from "./src/index.js";
+import { runLinear } from "./src/old/index.js";
 
 const mockOutput = jest.fn((input) => input.convertToJSValue());
 
