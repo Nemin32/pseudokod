@@ -18,35 +18,54 @@ import {
   Variable,
 } from "./pseudo_types.ts";
 
-const OWS = Parser.char(" ").many();
-const WS = Parser.char(" ").many1();
+const OSPACES = Parser.char(" ").many();
+const SPACES = Parser.char(" ").many1();
+
+const ONL = Parser.char("\n").many();
+const NL = Parser.char("\n").many1();
+
+const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
+const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
+
+function left<L, R>(l: Parser<L>, r: Parser<R>): Parser<L> {
+  return l.bind((lV) => r.bindResult((_) => lV));
+}
+
+function right<L, R>(l: Parser<L>, r: Parser<R>): Parser<R> {
+  return l.bind((_) => r.bindResult((rV) => rV));
+}
 
 function astToString(ast: AST): string {
   if (Array.isArray(ast)) {
-    return ast.map(astToString).join("\n")
+    return ast.map(astToString).join("\n");
   } else {
-    return "(" + ast.kind + " " +
-    (function(ast: Exclude<AST, Block>) {
-      switch (ast.kind) {
-        case "assignment":
-          return astToString(ast.variable) + " <- " + astToString(ast.value)
-        
-        case "atom":
-          return ast.value.toString()
-        
-        case "binop":
-          return `${astToString(ast.value.exp1)} ${ast.value.op} ${astToString(ast.value.exp2)}`
+    return (
+      "(" +
+      ast.kind +
+      " " +
+      (function (ast: Exclude<AST, Block>) {
+        switch (ast.kind) {
+          case "assignment":
+            return astToString(ast.variable) + " <- " + astToString(ast.value);
 
-        case "if":
-          return `T: ${astToString(ast.truePath)} F: ${astToString(ast.falsePath)}`
+          case "atom":
+            return ast.value.toString();
 
-        case "print":
-          return astToString(ast.value)
+          case "binop":
+            return `${astToString(ast.value.exp1)} ${ast.value.op} ${astToString(ast.value.exp2)}`;
 
-        case "variable":
-          return ast.value
-      }
-    })(ast) + ")";
+          case "if":
+            return `T: ${astToString(ast.truePath)} F: ${astToString(ast.falsePath)}`;
+
+          case "print":
+            return astToString(ast.value);
+
+          case "variable":
+            return ast.value;
+        }
+      })(ast) +
+      ")"
+    );
   }
 }
 
@@ -103,31 +122,38 @@ const parseExpression = parseBinExp;
 const parsePrintStatement: Parser<PrintStatement> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => make_print(exp)));
 
 const parseIfStatement: Parser<IfStatement> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
-  ["", Parser.string("ha ")],
+  ["", left(Parser.string("ha"), WS)],
   ["pred", parseExpression],
-  ["", Parser.string(" akkor ")],
+  ["", Parser.string("akkor").bracket(WS, WS)],
   ["tBlock", Parser.of(() => parseBlock)],
-  ["", Parser.string(" különben ")],
+  ["", Parser.string("különben").bracket(WS, WS)],
   ["fBlock", Parser.of(() => parseBlock)],
-  ["", Parser.string(" elágazás vége")],
+  ["", right(WS, Parser.string("elágazás vége"))],
 ]).bindResult(({ pred, tBlock, fBlock }) => make_if(pred, tBlock, fBlock));
 
 const parseAssignmentStatement: Parser<AssignmentStatement> = Parser.doNotation<{ variable: Variable; value: Expression }>([
   ["variable", parseVariable],
-  ["", Parser.string(" <- ")],
+  ["", Parser.string("<-").bracket(OWS, OWS)],
   ["value", parseExpression],
 ]).bindResult(({ variable, value }) => make_assignment(variable, value));
 
 const parseStatement: Parser<Statement> = parseAssignmentStatement.or(parsePrintStatement).or(parseIfStatement);
 const parseBlock = parseStatement.many1();
 
-const input = "ha 1+1 akkor kiír (1, 2, 3) különben x <- 5   + 5 elágazás vége" 
-const ast = parseBlock.run(input)
+const input = `ha 1+1 akkor 
+  kiír (1, 2, 3)
+különben 
+  x <- 5   + 5
+elágazás vége`;
 
-ast.bind(ast => {
-  console.log("S: " + astToString(ast.value));
-  return Either.succeed(null)
-}).bindError(e => {
-  console.error("E: " + e.what)
-  return Either.fail(null)
-})
+const ast = parseBlock.run(input);
+
+ast
+  .bind((ast) => {
+    console.log("S: " + astToString(ast.value));
+    return Either.succeed(null);
+  })
+  .bindError((e) => {
+    console.error("E: " + e.what);
+    return Either.fail(null);
+  });
