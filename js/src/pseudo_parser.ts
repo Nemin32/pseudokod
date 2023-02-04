@@ -1,19 +1,19 @@
 import { Either } from "./parser/error.ts";
 import { Parser } from "./parser/parser.ts";
 import {
-  AssignmentStatement,
+  Assignment,
   AST,
   Atom,
   Block,
   Expression,
-  IfStatement,
+  If,
   make_assignment,
   make_atom,
   make_binop,
   make_if,
   make_print,
   make_variable,
-  PrintStatement,
+  Print,
   Statement,
   Variable,
 } from "./pseudo_types.ts";
@@ -52,7 +52,7 @@ function astToString(ast: AST): string {
             return ast.value.toString();
 
           case "binop":
-            return `${astToString(ast.value.exp1)} ${ast.value.op} ${astToString(ast.value.exp2)}`;
+            return `${astToString(ast.exp1)} ${ast.op} ${astToString(ast.exp2)}`;
 
           case "if":
             return `T: ${astToString(ast.truePath)} F: ${astToString(ast.falsePath)}`;
@@ -119,9 +119,9 @@ const parseExpression = parseBinExp;
 
 /* Statements */
 
-const parsePrintStatement: Parser<PrintStatement> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => make_print(exp)));
+const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => make_print(exp)));
 
-const parseIfStatement: Parser<IfStatement> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
+const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
   ["", left(Parser.string("ha"), WS)],
   ["pred", parseExpression],
   ["", Parser.string("akkor").bracket(WS, WS)],
@@ -131,7 +131,7 @@ const parseIfStatement: Parser<IfStatement> = Parser.doNotation<{ pred: Expressi
   ["", right(WS, Parser.string("elágazás vége"))],
 ]).bindResult(({ pred, tBlock, fBlock }) => make_if(pred, tBlock, fBlock));
 
-const parseAssignmentStatement: Parser<AssignmentStatement> = Parser.doNotation<{ variable: Variable; value: Expression }>([
+const parseAssignmentStatement: Parser<Assignment> = Parser.doNotation<{ variable: Variable; value: Expression }>([
   ["variable", parseVariable],
   ["", Parser.string("<-").bracket(OWS, OWS)],
   ["value", parseExpression],
