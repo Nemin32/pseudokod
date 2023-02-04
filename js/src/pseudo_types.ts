@@ -46,6 +46,8 @@ export type AssignmentStatement = {
 export type Block = Array<Statement>;
 export type Statement = AssignmentStatement | IfStatement | PrintStatement | Expression;
 
+export type AST = Block | Statement | Expression;
+
 /* = Constructors = */
 
 export function make_atom(value: Atom["value"]): Atom {

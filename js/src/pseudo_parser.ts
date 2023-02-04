@@ -1,6 +1,8 @@
+import { Either } from "./parser/error.ts";
 import { Parser } from "./parser/parser.ts";
 import {
   AssignmentStatement,
+  AST,
   Atom,
   Block,
   Expression,
@@ -18,6 +20,35 @@ import {
 
 const OWS = Parser.char(" ").many();
 const WS = Parser.char(" ").many1();
+
+function astToString(ast: AST): string {
+  if (Array.isArray(ast)) {
+    return ast.map(astToString).join("\n")
+  } else {
+    return "(" + ast.kind + " " +
+    (function(ast: Exclude<AST, Block>) {
+      switch (ast.kind) {
+        case "assignment":
+          return astToString(ast.variable) + " <- " + astToString(ast.value)
+        
+        case "atom":
+          return ast.value.toString()
+        
+        case "binop":
+          return `${astToString(ast.value.exp1)} ${ast.value.op} ${astToString(ast.value.exp2)}`
+
+        case "if":
+          return `T: ${astToString(ast.truePath)} F: ${astToString(ast.falsePath)}`
+
+        case "print":
+          return astToString(ast.value)
+
+        case "variable":
+          return ast.value
+      }
+    })(ast) + ")";
+  }
+}
 
 /* Atom */
 
@@ -88,6 +119,15 @@ const parseAssignmentStatement: Parser<AssignmentStatement> = Parser.doNotation<
 ]).bindResult(({ variable, value }) => make_assignment(variable, value));
 
 const parseStatement: Parser<Statement> = parseAssignmentStatement.or(parsePrintStatement).or(parseIfStatement);
-const parseBlock = parseStatement.many();
+const parseBlock = parseStatement.many1();
 
-console.log(parseBlock.run("ha 1+1 akkor kiír (1, 2, 3) különben x <- 5   + 5 elágazás vége").unwrap());
+const input = "ha 1+1 akkor kiír (1, 2, 3) különben x <- 5   + 5 elágazás vége" 
+const ast = parseBlock.run(input)
+
+ast.bind(ast => {
+  console.log("S: " + astToString(ast.value));
+  return Either.succeed(null)
+}).bindError(e => {
+  console.error("E: " + e.what)
+  return Either.fail(null)
+})
