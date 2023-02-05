@@ -90,6 +90,8 @@ export class ASTCompiler {
         return this.visitArithmeticBinOp(ast);
       case "atom":
         return this.visitValue(ast);
+      case "not":
+        return this.visitNot(ast);
     }
   }
 

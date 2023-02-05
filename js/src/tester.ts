@@ -3,7 +3,7 @@ import { ASTCompiler } from "./pseudo_compiler.ts";
 import { parsePrintStatement } from "./pseudo_parser.ts";
 import { VM } from "./vm.ts";
 
-const input = `kiír 5 + 5`
+const input = `kiír ~igaz`
 
 parsePrintStatement.run(input).onSuccess(ast => {
   console.log("AST:\n"+astToString(ast.value)+"\n")
@@ -14,9 +14,11 @@ parsePrintStatement.run(input).onSuccess(ast => {
 
   const vm = new VM(compiler.bytecode);
 
-  console.log("Bytecode:\n",compiler.bytecode,"\n")
+  console.log("Bytecode:")
 
-  console.log("Value:")
+  vm.dump()
+
+  console.log("\nValue:")
   vm.run()
 }).onError(err => {
   console.error("Error: " + err.what);

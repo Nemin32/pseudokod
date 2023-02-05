@@ -6,6 +6,12 @@ export class VM {
 
   constructor(public code: Array<ByteCode>) {}
 
+  dump() {
+    for (const line of this.code) {
+      console.log(`${OpCode[line.opCode]} ${line.payload ?? ""}`)
+    }
+  }
+
   fetch(): ByteCode {
     if (this.ip < this.code.length) {
       return this.code[this.ip];
@@ -26,6 +32,13 @@ export class VM {
 
       case OpCode.CALC:
         this.stack.push(this.stack.pop() + this.stack.pop());
+        break;
+
+      case OpCode.NOT:
+        {
+          const val = this.stack.pop();
+          this.stack.push(!val);
+        }
         break;
       
       default:
