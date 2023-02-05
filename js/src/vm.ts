@@ -27,6 +27,9 @@ export class VM {
       case OpCode.CALC:
         this.stack.push(this.stack.pop() + this.stack.pop());
         break;
+      
+      default:
+        throw new Error(OpCode[opCode] + " is not yet implemented!")
     }
   }
 

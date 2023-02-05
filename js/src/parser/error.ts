@@ -40,12 +40,28 @@ export class Either<T, E> {
     }
   }
 
-  mapError<Q>(f: (err: E) => Q): Either<T,Q> {
+  mapError<Q>(f: (err: E) => Q): Either<T, Q> {
     if (this.value.kind == "right") {
-      return new Either<T,Q>(this.value)
+      return new Either<T, Q>(this.value);
     } else {
-      return Either.fail(f(this.value.value))
+      return Either.fail(f(this.value.value));
     }
+  }
+
+  onSuccess(f: (val: T) => void): this {
+    if (this.value.kind == "right") {
+      f(this.value.value);
+    }
+
+    return this;
+  }
+
+  onError(f: (err: E) => void): this {
+    if (this.value.kind == "left") {
+      f(this.value.value);
+    }
+
+    return this;
   }
 
   isError(): boolean {
