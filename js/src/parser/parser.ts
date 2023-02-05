@@ -165,11 +165,11 @@ export class Parser<T> {
 
   static choice<A, B = never, C = never, D = never, E = never, F = never>(
     p1: Parser<A>,
-    p2: Parser<B>,
-    p3: Parser<C>,
-    p4: Parser<D>,
-    p5: Parser<E>,
-    p6: Parser<F>,
+    p2?: Parser<B>,
+    p3?: Parser<C>,
+    p4?: Parser<D>,
+    p5?: Parser<E>,
+    p6?: Parser<F>,
     // deno-lint-ignore no-explicit-any
     ...prest: Parser<any>[]
   ): Parser<A | B | C | D | E | F> {
@@ -195,7 +195,7 @@ export class Parser<T> {
       return prest.reduce((f, c) => f.or(c), p);
     }
 
-    return p as Parser<A | B | C | D | E | F>;
+    return p;
   }
 
   // deno-lint-ignore no-explicit-any

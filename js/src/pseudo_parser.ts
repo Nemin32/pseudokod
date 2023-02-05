@@ -5,6 +5,7 @@ import {
   Atom,
   Block,
   Expression,
+  FunctionDeclaration,
   If,
   Not,
   Parameter,
@@ -108,5 +109,22 @@ const parseParameter: Parser<Parameter> = Parser.doNotation<{varName: string, is
   ["type", Parser.letter.many1()]
 ]).bindResult(({varName, isRef}) => new Parameter(varName, isRef));
 
-export const parseStatement: Parser<Statement> = parseWhileStatement.or(parseAssignmentStatement).or(parsePrintStatement).or(parseIfStatement);
+const parseFuncName: Parser<string> = Parser.upper.bind(l => Parser.letter.many().bindResult(rest => l + rest.join("")))
+
+export const parseFunctionDecl: Parser<FunctionDeclaration> = Parser.doNotation<{funcName: string, params: Parameter[], body: Block}>([
+  ["", Parser.string("függvény").left(WS)],
+  ["funcName", parseFuncName.left(WS)],
+  ["params", parseParameter.many().parens().left(WS)],
+  ["body", Parser.of(() => parseBlock).left(Parser.string("függvény vége"))],
+]).bindResult(({funcName, params, body}) => new FunctionDeclaration(funcName, params, body));
+
+export const parseStatement: Parser<Statement> = Parser.choice(
+  parseFunctionDecl,
+  parseWhileStatement,
+  parseAssignmentStatement,
+  parsePrintStatement,
+  parseIfStatement
+)
+
+//parseWhileStatement.or(parseAssignmentStatement).or(parsePrintStatement).or(parseIfStatement);
 export const parseBlock = parseStatement.many1();
