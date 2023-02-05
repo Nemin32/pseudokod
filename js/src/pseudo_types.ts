@@ -15,14 +15,14 @@ export type ArithmeticBinOp = {
 
 export type Variable = {
   kind: "variable";
-  value: string;
+  name: string;
 };
 
 export type Value = Atom | Variable;
 
 export type Comparison = { kind: "comparison"; op: string; exp1: Expression; exp2: Expression };
 export type FunctionCall = { kind: "functionCall"; functionName: string; parameters: Array<Expression> };
-export type Not = { kind: "not"; value: Expression };
+export type Not = { kind: "not"; exp: Expression };
 export type LogicBinOp = { kind: "logicBinop"; op: string; exp1: Expression; exp2: Expression };
 
 export type Expression = ArithmeticBinOp | Comparison | FunctionCall | LogicBinOp | Not | Value;
@@ -76,8 +76,8 @@ export function make_binop(op: string, exp1: Expression, exp2: Expression): Arit
   return { kind: "binop", op, exp1, exp2 };
 }
 
-export function make_variable(value: Variable["value"]): Variable {
-  return { kind: "variable", value };
+export function make_variable(name: Variable["name"]): Variable {
+  return { kind: "variable", name };
 }
 
 export function make_print(value: Print["value"]): Print {

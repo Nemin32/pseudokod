@@ -19,14 +19,14 @@ import {
   Variable,
 } from "./pseudo_types.ts";
 
-const OSPACES = Parser.char(" ").many();
-const SPACES = Parser.char(" ").many1();
+export const OSPACES = Parser.char(" ").many();
+export const SPACES = Parser.char(" ").many1();
 
-const ONL = Parser.char("\n").many();
-const NL = Parser.char("\n").many1();
+export const ONL = Parser.char("\n").many();
+export const NL = Parser.char("\n").many1();
 
-const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
-const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
+export const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
+export const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
 
 function left<L, R>(l: Parser<L>, r: Parser<R>): Parser<L> {
   return l.bind((lV) => r.bindResult((_) => lV));
@@ -62,7 +62,7 @@ function astToString(ast: AST): string {
             return astToString(ast.value);
 
           case "variable":
-            return ast.value;
+            return ast.name;
 
           case "arrAssign":
             return `${astToString(ast.variable)}[${astToString(ast.length)}]`;
@@ -86,7 +86,7 @@ function astToString(ast: AST): string {
             return `${astToString(ast.exp1)} ${ast.op} ${astToString(ast.exp2)}`;
 
           case "not":
-            return astToString(ast.value);
+            return astToString(ast.exp);
 
           case "parameter":
             return `${ast.name} : ${ast.byReference ? "REF" : "VAL"}`;
@@ -105,15 +105,15 @@ function astToString(ast: AST): string {
 
 /* Atom */
 
-const parseNumber = Parser.digit.many1().bindResult(Number).expect("<number>");
+export const parseNumber = Parser.digit.many1().bindResult(Number).expect("<number>");
 
-const parseString = Parser.alphanumeric
+export const parseString = Parser.alphanumeric
   .many()
   .bracket(Parser.char('"'), Parser.char('"'))
   .bindResult((chars) => '"' + chars.join("") + '"')
   .expect("<string>");
 
-const parseBool = Parser.or(
+export const parseBool = Parser.or(
   Parser.string("igaz")
     .or(Parser.string("Igaz"))
     .bindResult((_) => true),
@@ -122,40 +122,40 @@ const parseBool = Parser.or(
     .bindResult((_) => false)
 ).expect("<bool>");
 
-const parseSingleAtom = parseNumber.or(parseString).or(parseBool).expect("<atom>");
-const parseArrayComprehension = parseSingleAtom
+export const parseSingleAtom = parseNumber.or(parseString).or(parseBool).expect("<atom>");
+export const parseArrayComprehension = parseSingleAtom
   .sepBy(Parser.char(",").bind((_) => OWS))
   .parens()
   .expect("<atom list>");
 
-const parseAtom: Parser<Atom> = parseArrayComprehension.or(parseSingleAtom).bindResult(make_atom).expect("<atom>");
+export const parseAtom: Parser<Atom> = parseArrayComprehension.or(parseSingleAtom).bindResult(make_atom).expect("<atom>");
 
 /* Variable */
 
-const parseVariable: Parser<Variable> = Parser.letter.bind((l) => Parser.alphanumeric.many().bindResult((rest) => make_variable(l + rest.join(""))));
+export const parseVariable: Parser<Variable> = Parser.letter.bind((l) => Parser.alphanumeric.many().bindResult((rest) => make_variable(l + rest.join(""))));
 
 /* Value */
 
-const parseValue = parseVariable.or(parseAtom);
+export const parseValue = parseVariable.or(parseAtom);
 
 /* Binary Ops */
 
-const parseAddOp: Parser<string> = Parser.char("+").or(Parser.char("-")).bracket(OWS, OWS);
-const parseMulOp = Parser.char("*").or(Parser.char("/")).or(Parser.string("mod")).bracket(OWS, OWS);
+export const parseAddOp: Parser<string> = Parser.char("+").or(Parser.char("-")).bracket(OWS, OWS);
+export const parseMulOp = Parser.char("*").or(Parser.char("/")).or(Parser.string("mod")).bracket(OWS, OWS);
 
-const parseBinExp: Parser<Expression> = Parser.of(() => parseBinTerm).bindChain(parseAddOp, ({ f, a, b }) => make_binop(f, a, b));
-const parseBinTerm: Parser<Expression> = Parser.of(() => parseBinFactor).bindChain(parseMulOp, ({ f, a, b }) => make_binop(f, a, b));
-const parseBinFactor: Parser<Expression> = Parser.or(parseValue, Parser.of(() => parseBinExp).parens());
+export const parseBinExp: Parser<Expression> = Parser.of(() => parseBinTerm).bindChain(parseAddOp, ({ f, a, b }) => make_binop(f, a, b));
+export const parseBinTerm: Parser<Expression> = Parser.of(() => parseBinFactor).bindChain(parseMulOp, ({ f, a, b }) => make_binop(f, a, b));
+export const parseBinFactor: Parser<Expression> = Parser.or(parseValue, Parser.of(() => parseBinExp).parens());
 
 /* Expression */
 
-const parseExpression = parseBinExp;
+export const parseExpression = parseBinExp;
 
 /* Statements */
 
-const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => make_print(exp)));
+export const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => make_print(exp)));
 
-const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
+export const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
   ["", left(Parser.string("ha"), WS)],
   ["pred", parseExpression],
   ["", Parser.string("akkor").bracket(WS, WS)],
@@ -165,15 +165,16 @@ const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression; tBloc
   ["", right(WS, Parser.string("elágazás vége"))],
 ]).bindResult(({ pred, tBlock, fBlock }) => make_if(pred, tBlock, fBlock));
 
-const parseAssignmentStatement: Parser<Assignment> = Parser.doNotation<{ variable: Variable; value: Expression }>([
+export const parseAssignmentStatement: Parser<Assignment> = Parser.doNotation<{ variable: Variable; value: Expression }>([
   ["variable", parseVariable],
   ["", Parser.string("<-").bracket(OWS, OWS)],
   ["value", parseExpression],
 ]).bindResult(({ variable, value }) => make_assignment(variable, value));
 
-const parseStatement: Parser<Statement> = parseAssignmentStatement.or(parsePrintStatement).or(parseIfStatement);
-const parseBlock = parseStatement.many1();
+export const parseStatement: Parser<Statement> = parseAssignmentStatement.or(parsePrintStatement).or(parseIfStatement);
+export const parseBlock = parseStatement.many1();
 
+/*
 const input = `ha 1+1 akkor 
   kiír (1, 2, 3)
 különben 
@@ -191,3 +192,4 @@ ast
     console.error("E: " + e.what);
     return Either.fail(null);
   });
+*/

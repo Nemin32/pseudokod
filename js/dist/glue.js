@@ -2,27 +2,6 @@ import * as PseudoVisitor from "./esbundle.js";
 import * as Callbacks from "./Callbacks.js";
 import * as SyntaxHighlight from "./SyntaxHighlight.js";
 
-// TODO:
-// [X] Two step transform? függvény -> [<#123456>]függvény[<>] -> <span style="color: #123456">függvény</span>
-// [X] Osztályokra bontani ezt a fájlt
-// [?] Befejezni a css-t
-// [?] Átírható változók (és stack?)
-// [X] IP stack implementálás
-// [X] Tömb grammar átírás
-// [?] Valami szebb color scheme
-// [ ] Expressionök zárójelbe zárása
-// [ ] Algoritmus-választó
-// [ ] Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
-// [ ] Eljárások?
-// [ ] Set-ek? Más adatstruktúrák?
-// [ ] Tutorial - Popup?
-// [ ] Generikus típusok?
-// [ ] Tesztek - Selenium? Branch teszt?
-// [ ] Jobb syntax highlight?
-// [ ] Időutazás?! (Immutable.js? Mekkora overhead?)
-// [ ] Refactoring??
-// [ ] Interpreter???
-
 function gatherHTMLElements() {
   const soughtElems = {
     /* User controls */
