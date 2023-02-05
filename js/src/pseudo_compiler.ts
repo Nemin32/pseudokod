@@ -35,11 +35,21 @@ export class ASTCompiler {
     this.createOp(OpCode.CALC, ast.op);
   }
 
-  visitComparison(ast: Comparison) {}
+  visitComparison(ast: Comparison) {
+    this.visitExpression(ast.exp1);
+    this.visitExpression(ast.exp2);
+
+    this.createOp(OpCode.COMP, ast.op);
+  }
+
+  visitLogicBinOp(ast: LogicBinOp) {
+    this.visitExpression(ast.exp1);
+    this.visitExpression(ast.exp2);
+
+    this.createOp(OpCode.LOGIC, ast.op);
+  }
 
   visitFunctionCall(ast: FunctionCall) {}
-
-  visitLogicBinOp(ast: LogicBinOp) {}
 
   visitNot(ast: Not) {
     this.visitExpression(ast.exp);
@@ -50,7 +60,9 @@ export class ASTCompiler {
     this.createOp(OpCode.PUSH, ast.value);
   }
 
-  visitVariable(ast: Variable) {}
+  visitVariable(ast: Variable) {
+    this.createOp(OpCode.GETVAR, ast.name);
+  }
 
   visitValue(ast: Value) {
     switch (ast.kind) {
@@ -64,7 +76,12 @@ export class ASTCompiler {
   /* Statements */
   visitArrayAssignment(ast: ArrayAssignment) {}
   visitArrayElementAssignment(ast: ArrayElementAssignment) {}
-  visitAssignment(ast: Assignment) {}
+
+  visitAssignment(ast: Assignment) {
+    this.visitExpression(ast.value);
+    this.createOp(OpCode.SETVAR, ast.variable.name);
+  }
+
   visitDoWhile(ast: DoWhile) {}
 
   visitExpression(ast: Expression) {
@@ -84,6 +101,10 @@ export class ASTCompiler {
     this.createOp(OpCode.PRINT, null);
   }
 
-  visitReturn(ast: Return) {}
+  visitReturn(ast: Return) {
+    this.visitExpression(ast.value);
+    this.createOp(OpCode.RETURN, null);
+  }
+
   visitWhile(ast: While) {}
 }
