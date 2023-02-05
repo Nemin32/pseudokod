@@ -9,8 +9,10 @@ import {
   make_atom,
   make_binop,
   make_if,
+  make_not,
   make_print,
   make_variable,
+  Not,
   Print,
   Statement,
   Variable,
@@ -24,14 +26,6 @@ export const NL = Parser.char("\n").many1();
 
 export const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
 export const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
-
-function left<L, R>(l: Parser<L>, r: Parser<R>): Parser<L> {
-  return l.bind((lV) => r.bindResult((_) => lV));
-}
-
-function right<L, R>(l: Parser<L>, r: Parser<R>): Parser<R> {
-  return l.bind((_) => r.bindResult((rV) => rV));
-}
 
 /* Atom */
 
@@ -66,7 +60,7 @@ export const parseVariable: Parser<Variable> = Parser.letter.bind((l) => Parser.
 
 /* Value */
 
-export const parseValue = parseVariable.or(parseAtom);
+export const parseValue = parseAtom.or(parseVariable);
 
 /* Binary Ops */
 
@@ -77,22 +71,26 @@ export const parseBinExp: Parser<Expression> = Parser.of(() => parseBinTerm).bin
 export const parseBinTerm: Parser<Expression> = Parser.of(() => parseBinFactor).bindChain(parseMulOp, ({ f, a, b }) => make_binop(f, a, b));
 export const parseBinFactor: Parser<Expression> = Parser.or(parseValue, Parser.of(() => parseBinExp).parens());
 
+/* Not */
+
+export const parseNot: Parser<Not> = Parser.char("~").right(Parser.of(() => parseExpression)).bindResult(make_not);
+
 /* Expression */
 
-export const parseExpression = parseBinExp;
+export const parseExpression = parseBinExp.or(parseNot);
 
 /* Statements */
 
 export const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => make_print(exp)));
 
 export const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
-  ["", left(Parser.string("ha"), WS)],
+  ["", Parser.string("ha").left(WS)],
   ["pred", parseExpression],
   ["", Parser.string("akkor").bracket(WS, WS)],
   ["tBlock", Parser.of(() => parseBlock)],
   ["", Parser.string("különben").bracket(WS, WS)],
   ["fBlock", Parser.of(() => parseBlock)],
-  ["", right(WS, Parser.string("elágazás vége"))],
+  ["", WS.right(Parser.string("elágazás vége"))],
 ]).bindResult(({ pred, tBlock, fBlock }) => make_if(pred, tBlock, fBlock));
 
 export const parseAssignmentStatement: Parser<Assignment> = Parser.doNotation<{ variable: Variable; value: Expression }>([

@@ -55,15 +55,29 @@ export class Parser<T> {
 
   bindResult = <W>(f: (elem: T) => W): Parser<W> => this.bind((val) => Parser.result(f(val)));
 
+  static left<L, R>(l: Parser<L>, r: Parser<R>): Parser<L> {
+    return l.bind((lV) => r.bindResult((_) => lV));
+  }
+
+  left<R>(r: Parser<R>): Parser<T> {
+    return Parser.left(this, r);
+  }
+
+  static right<L, R>(l: Parser<L>, r: Parser<R>): Parser<R> {
+    return l.bind((_) => r.bindResult((rV) => rV));
+  }
+
+  right<R>(r: Parser<R>): Parser<R> {
+    return Parser.right(this, r);
+  }
+
   static sat(p: (char: string) => boolean): Parser<string> {
     return Parser.item().bind((x) => (p(x) ? Parser.result(x) : Parser.zero()).onError((_) => `'${x}'`));
   }
 
   onError(format: (prev: Error) => string): Parser<T> {
     return new Parser<T>((input) => {
-      return this.exec(input).mapError((prevMsg) =>
-        input.index < prevMsg.where.index ? prevMsg : { what: format(prevMsg), where: input }
-      );
+      return this.exec(input).mapError((prevMsg) => (input.index < prevMsg.where.index ? prevMsg : { what: format(prevMsg), where: input }));
     });
   }
 
@@ -122,7 +136,7 @@ export class Parser<T> {
     const [x, xs] = [input[0], input.substring(1)];
 
     return Parser.char(x)
-      .onError(_ => `"${input}"`)
+      .onError((_) => `"${input}"`)
       .bind((_) => Parser.string(xs))
       .bind((_) => Parser.result(x.concat(xs)));
   };
@@ -227,13 +241,13 @@ export class Parser<T> {
       if (chain != null && typeof chain == "object" && "f" in chain) {
         return fOTT(chain);
       } else {
-        return chain
+        return chain;
       }
     });
   };
 
-  bindChain<O, Q>(op: Parser<O>, f: (val: {f: O, a: T, b: T}) => Q): Parser<T|Q> {
-    return Parser.bindChain(this, op, f)
+  bindChain<O, Q>(op: Parser<O>, f: (val: { f: O; a: T; b: T }) => Q): Parser<T | Q> {
+    return Parser.bindChain(this, op, f);
   }
 }
 

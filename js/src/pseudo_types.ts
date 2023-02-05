@@ -91,3 +91,7 @@ export function make_if(pred: Expression, tBlock: Block, fBlock: Block): If {
 export function make_assignment(variable: Variable, value: Expression): Assignment {
   return { kind: "assignment", variable, value };
 }
+
+export function make_not(exp: Expression): Not {
+  return { kind: "not", exp };
+}
