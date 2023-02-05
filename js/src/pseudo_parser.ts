@@ -1,4 +1,4 @@
-import { Parser } from "./parser/parser.ts";
+import { Parser } from "./parser/parser";
 import {
   Assignment,
   Atom,
@@ -18,7 +18,7 @@ import {
   Statement,
   Variable,
   While,
-} from "./pseudo_types.ts";
+} from "./pseudo_types";
 
 export const OSPACES = Parser.char(" ").many();
 export const SPACES = Parser.char(" ").many1();

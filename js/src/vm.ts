@@ -1,4 +1,4 @@
-import { ByteCode, OpCode } from "./opcodes.ts";
+import { ByteCode, OpCode } from "./opcodes";
 
 export class VM {
   ip = 0;

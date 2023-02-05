@@ -1,4 +1,4 @@
-import { Either } from "./error.ts";
+import { Either } from "./error.js";
 
 type Input = {
   text: string;
@@ -151,7 +151,7 @@ export class Parser<T> {
 
   bracket = <O, C>(open: Parser<O>, close: Parser<C>): Parser<T> => open.bind((_) => this).bind((x) => close.bind((_) => Parser.result(x)));
 
-  static of = <T>(func: () => Parser<T>) => new Parser((inp) => func().exec(inp));
+  static of = <T>(func: () => Parser<T>): Parser<T> => new Parser((inp) => func().exec(inp));
 
   parens = () => this.onError((p) => `[${p.what}] in parens`).bracket(Parser.char("("), Parser.char(")"));
   static parens = <T>(p: Parser<T>) => p.parens();

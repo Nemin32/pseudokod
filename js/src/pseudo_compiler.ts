@@ -1,4 +1,4 @@
-import { ByteCode, OpCode } from "./opcodes.ts";
+import { ByteCode, OpCode } from "./opcodes";
 import {
   ArithmeticBinOp,
   Comparison,
@@ -20,7 +20,8 @@ import {
   Atom,
   Block,
   Statement,
-} from "./pseudo_types.ts";
+  ASTKind,
+} from "./pseudo_types";
 
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
@@ -69,10 +70,8 @@ export class ASTCompiler {
 
   visitValue(ast: Value) {
     switch (ast.kind) {
-      case "atom":
-        return this.visitAtom(ast);
-      case "variable":
-        return this.visitVariable(ast);
+      case ASTKind.ATOM:     return this.visitAtom(ast);
+      case ASTKind.VARIABLE: return this.visitVariable(ast);
     }
   }
 
@@ -89,11 +88,14 @@ export class ASTCompiler {
 
   visitExpression(ast: Expression) {
     switch (ast.kind) {
-      case "binop":
+      case ASTKind.CALCBINOP:
         return this.visitArithmeticBinOp(ast);
-      case "atom":
+
+      case ASTKind.VARIABLE:
+      case ASTKind.ATOM:
         return this.visitValue(ast);
-      case "not":
+
+      case ASTKind.NOT:
         return this.visitNot(ast);
     }
   }
@@ -121,6 +123,25 @@ export class ASTCompiler {
   }
 
   visitStatement(ast: Statement) {
+    switch (ast.kind) {
+      case ASTKind.ARRASSIGN:     this.visitArrayAssignment(ast); break;
+      case ASTKind.ARRELEMASSIGN: this.visitArrayElementAssignment(ast); break;
+      case ASTKind.ASSIGNMENT:    this.visitAssignment(ast); break;
+      case ASTKind.ATOM:          this.visitAtom(ast); break;
+      case ASTKind.CALCBINOP:     this.visitArithmeticBinOp(ast); break;
+      case ASTKind.COMPBINOP:     this.visitComparison(ast); break;
+      case ASTKind.DOWHILE:       this.visitDoWhile(ast); break;
+      case ASTKind.FUNCCALL:      this.visitFunctionCall(ast); break;
+      case ASTKind.FUNCDECL:      this.visitFunctionDeclaration(ast); break;
+      case ASTKind.IF:            this.visitIf(ast); break;
+      case ASTKind.LOGICBINOP:    this.visitLogicBinOp(ast); break;
+      case ASTKind.NOT:           this.visitNot(ast); break;
+      case ASTKind.PRINT:         this.visitPrint(ast); break;
+      case ASTKind.RETURN:        this.visitReturn(ast); break;
+      case ASTKind.VARIABLE:      this.visitVariable(ast); break;
+      case ASTKind.WHILE:         this.visitWhile(ast); break;
+      default: break;
+    }
   }
 
   visitPrint(ast: Print) {

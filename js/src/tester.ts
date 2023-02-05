@@ -1,7 +1,7 @@
-import { astToString } from "./ast_printer.ts";
-import { ASTCompiler } from "./pseudo_compiler.ts";
-import { parsePrintStatement, parseStatement, parseWhileStatement } from "./pseudo_parser.ts";
-import { VM } from "./vm.ts";
+import { astToString } from "./ast_printer.js";
+import { ASTCompiler } from "./pseudo_compiler.js";
+import { parseWhileStatement } from "./pseudo_parser.js";
+import { VM } from "./vm";
 
 const input = `ciklus amíg igaz
 kiír ~igaz
