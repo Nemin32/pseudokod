@@ -12,10 +12,12 @@ import {
   make_not,
   make_print,
   make_variable,
+  make_while,
   Not,
   Print,
   Statement,
   Variable,
+  While,
 } from "./pseudo_types.ts";
 
 export const OSPACES = Parser.char(" ").many();
@@ -99,25 +101,10 @@ export const parseAssignmentStatement: Parser<Assignment> = Parser.doNotation<{ 
   ["value", parseExpression],
 ]).bindResult(({ variable, value }) => make_assignment(variable, value));
 
-export const parseStatement: Parser<Statement> = parseAssignmentStatement.or(parsePrintStatement).or(parseIfStatement);
+export const parseWhileStatement: Parser<While> = Parser.doNotation<{pred: Expression, body: Block}>([
+  ["pred", Parser.string("ciklus amíg").right(SPACES).right(parseExpression).left(WS)],
+  ["body", Parser.of(() => parseBlock).left(NL).left(Parser.string("ciklus vége"))]
+]).bindResult(({pred, body}) => make_while(pred, body));
+
+export const parseStatement: Parser<Statement> = parseWhileStatement.or(parseAssignmentStatement).or(parsePrintStatement).or(parseIfStatement);
 export const parseBlock = parseStatement.many1();
-
-/*
-const input = `ha 1+1 akkor 
-  kiír (1, 2, 3)
-különben 
-  x <- 5   + 5
-elágazás vége`;
-
-const ast = parseBlock.run(input);
-
-ast
-  .bind((ast) => {
-    console.log("S: " + astToString(ast.value));
-    return Either.succeed(null);
-  })
-  .bindError((e) => {
-    console.error("E: " + e.what);
-    return Either.fail(null);
-  });
-*/

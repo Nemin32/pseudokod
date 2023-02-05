@@ -1,16 +1,18 @@
 import { astToString } from "./ast_printer.ts";
 import { ASTCompiler } from "./pseudo_compiler.ts";
-import { parsePrintStatement } from "./pseudo_parser.ts";
+import { parsePrintStatement, parseStatement, parseWhileStatement } from "./pseudo_parser.ts";
 import { VM } from "./vm.ts";
 
-const input = `kiír ~igaz`
+const input = `ciklus amíg igaz
+kiír ~igaz
+ciklus vége`
 
-parsePrintStatement.run(input).onSuccess(ast => {
+parseWhileStatement.run(input).onSuccess(ast => {
   console.log("AST:\n"+astToString(ast.value)+"\n")
 
   const compiler = new ASTCompiler();
 
-  compiler.visitPrint(ast.value)
+  compiler.visitWhile(ast.value)
 
   const vm = new VM(compiler.bytecode);
 

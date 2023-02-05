@@ -95,3 +95,7 @@ export function make_assignment(variable: Variable, value: Expression): Assignme
 export function make_not(exp: Expression): Not {
   return { kind: "not", exp };
 }
+
+export function make_while(pred: Expression, body: Block): While {
+  return { kind: "while", pred, body }
+}

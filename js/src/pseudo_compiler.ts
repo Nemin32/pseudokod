@@ -18,10 +18,13 @@ import {
   While,
   Variable,
   Atom,
+  Block,
+  Statement,
 } from "./pseudo_types.ts";
 
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
+  labelId = 0;
 
   createOp(op: OpCode, payload: any) {
     this.bytecode.push({ opCode: op, payload });
@@ -96,7 +99,29 @@ export class ASTCompiler {
   }
 
   visitFunctionDeclaration(ast: FunctionDeclaration) {}
-  visitIf(ast: If) {}
+
+  visitIf(ast: If) {
+    this.labelId++;
+
+    this.visitExpression(ast.pred);
+
+    this.createOp(OpCode.FJMP, "if_" + this.labelId);
+
+    this.visitBody(ast.truePath)
+
+    this.createOp(OpCode.LABEL, "if_" + this.labelId)
+
+    this.visitBody(ast.falsePath)
+  }
+
+  visitBody(ast: Block) {
+    for (const stmt of ast) {
+      this.visitStatement(stmt)
+    }
+  }
+
+  visitStatement(ast: Statement) {
+  }
 
   visitPrint(ast: Print) {
     this.visitExpression(ast.value);
@@ -108,5 +133,19 @@ export class ASTCompiler {
     this.createOp(OpCode.RETURN, null);
   }
 
-  visitWhile(ast: While) {}
+  visitWhile(ast: While) {
+    this.labelId++;
+
+    this.createOp(OpCode.LABEL, "wpred_" + this.labelId)
+
+    this.visitExpression(ast.pred);
+
+    this.createOp(OpCode.FJMP, "wend_" + this.labelId)
+
+    this.visitBody(ast.body)
+
+    this.createOp(OpCode.JMP, "wpred_" + this.labelId)
+
+    this.createOp(OpCode.LABEL, "wend_" + this.labelId)
+  }
 }

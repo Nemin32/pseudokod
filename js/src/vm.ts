@@ -12,6 +12,20 @@ export class VM {
     }
   }
 
+  jmpLabel(label: string) {
+    this.ip = 0;
+
+    while (this.ip < this.code.length) {
+      const row = this.code[this.ip];
+
+      if (row.opCode == OpCode.LABEL && row.payload == label) {
+        return;
+      }
+
+      this.ip++;
+    }
+  }
+
   fetch(): ByteCode {
     if (this.ip < this.code.length) {
       return this.code[this.ip];
@@ -22,6 +36,23 @@ export class VM {
 
   execute({ opCode, payload }: ByteCode) {
     switch (opCode) {
+      case OpCode.LABEL:
+        break;
+
+      case OpCode.JMP:
+        this.jmpLabel(payload as string);
+        break;
+
+      case OpCode.FJMP:
+        {
+          const val = this.stack.pop()
+
+          if (!val) {
+            this.jmpLabel(payload as string);
+          }
+        }
+        break;
+
       case OpCode.PRINT:
         console.log(this.stack.pop());
         break;
