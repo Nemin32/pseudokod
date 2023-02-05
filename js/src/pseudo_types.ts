@@ -1,4 +1,4 @@
-/* = Types = */
+/* = classs = */
 
 export enum ASTKind {
   ARRASSIGN,
@@ -22,158 +22,120 @@ export enum ASTKind {
 }
 
 /* Expressions */
-export type Atom = {
-  kind: ASTKind.ATOM;
-  value: number | string | boolean | Array<number | string | boolean>;
-};
+export class Atom {
+  readonly kind = ASTKind.ATOM;
 
-export type ArithmeticBinOp = {
-  kind: ASTKind.CALCBINOP;
-  op: string;
-  exp1: Expression;
-  exp2: Expression;
-};
+  constructor(public value: number | string | boolean | Array<number | string | boolean>) {}
+}
 
-export type Variable = {
-  kind: ASTKind.VARIABLE;
-  name: string;
-};
+export class ArithmeticBinOp {
+  readonly kind = ASTKind.CALCBINOP;
+
+  constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
+}
+
+export class Variable {
+  readonly kind = ASTKind.VARIABLE;
+
+  constructor(public name: string) {}
+}
 
 export type Value = Atom | Variable;
 
-export type Comparison = {
-  kind: ASTKind.COMPBINOP;
-  op: string;
-  exp1: Expression;
-  exp2: Expression;
-};
+export class Comparison {
+  readonly kind = ASTKind.COMPBINOP;
 
-export type FunctionCall = {
-  kind: ASTKind.FUNCCALL;
-  functionName: string;
-  parameters: Array<Expression>;
-};
+  constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
+}
 
-export type Not = {
-  kind: ASTKind.NOT;
-  exp: Expression;
-};
+export class FunctionCall {
+  readonly kind = ASTKind.FUNCCALL;
 
-export type LogicBinOp = {
-  kind: ASTKind.LOGICBINOP;
-  op: string;
-  exp1: Expression;
-  exp2: Expression;
-};
+  constructor(public functionName: string, public parameters: Array<Expression>) {}
+}
+
+export class Not {
+  readonly kind = ASTKind.NOT;
+  constructor(public exp: Expression) {}
+}
+
+export class LogicBinOp {
+  readonly kind = ASTKind.LOGICBINOP;
+
+  constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
+}
 
 export type Expression = ArithmeticBinOp | Comparison | FunctionCall | LogicBinOp | Not | Value;
 
 /* Statements */
-export type Print = {
-  kind: ASTKind.PRINT;
-  value: Expression;
-};
+export class Print {
+  readonly kind = ASTKind.PRINT;
 
-export type If = {
-  kind: ASTKind.IF;
-  pred: Expression;
-  truePath: Block;
-  falsePath: Block;
-};
+  constructor(public value: Expression) {}
+}
 
-export type Assignment = {
-  kind: ASTKind.ASSIGNMENT;
-  variable: Variable;
-  value: Expression;
-};
+export class If {
+  readonly kind = ASTKind.IF;
 
-export type Parameter = {
-  kind: ASTKind.PARAMETER;
-  name: string;
-  byReference: boolean;
-  /* type: string */
-};
+  constructor(public pred: Expression, public truePath: Block, public falsePath: Block) {}
+}
 
-export type While = {
-  kind: ASTKind.WHILE;
-  pred: Expression;
-  body: Block;
-};
+export class Assignment {
+  readonly kind = ASTKind.ASSIGNMENT;
 
-export type DoWhile = {
-  kind: ASTKind.DOWHILE;
-  pred: Expression;
-  body: Block;
-};
+  constructor(public variable: Variable, public value: Expression) {}
+}
 
-export type For = {
-  kind: ASTKind.FOR;
-  variable: Variable;
-  from: Expression;
-  to: Expression;
-  body: Block;
-};
+export class Parameter {
+  readonly kind = ASTKind.PARAMETER;
 
-export type ArrayElementAssignment = {
-  kind: ASTKind.ARRELEMASSIGN;
-  array: Variable;
-  index: Expression;
-  value: Expression;
-};
+  constructor(public name: string, public byReference: boolean) {}
+  /* class: string */
+}
 
-export type ArrayAssignment = {
-  kind: ASTKind.ARRASSIGN;
+export class While {
+  readonly kind = ASTKind.WHILE;
+
+  constructor(public pred: Expression, public body: Block) {}
+}
+
+export class DoWhile {
+  readonly kind = ASTKind.DOWHILE;
+
+  constructor(public pred: Expression, public body: Block) {}
+}
+
+export class For {
+  readonly kind = ASTKind.FOR;
+
+  constructor(public variable: Variable, public from: Expression, public to: Expression, public body: Block) {}
+}
+
+export class ArrayElementAssignment {
+  readonly kind = ASTKind.ARRELEMASSIGN;
+
+  constructor(public array: Variable, public index: Expression, public value: Expression) {}
+}
+
+export class ArrayAssignment {
+  readonly kind = ASTKind.ARRASSIGN;
   variable: Variable;
   length: Expression;
-};
+}
 
-export type Return = {
-  kind: ASTKind.RETURN;
-  value: Expression;
-};
+export class Return {
+  readonly kind = ASTKind.RETURN;
 
-export type FunctionDeclaration = {
-  kind: ASTKind.FUNCDECL;
-  name: string;
-  parameters: Array<Parameter>;
-  body: Block;
-};
+  constructor(public value: Expression) {}
+}
+
+export class FunctionDeclaration {
+  readonly kind = ASTKind.FUNCDECL;
+
+  constructor(public name: string, public parameters: Array<Parameter>, public body: Block) {}
+}
 
 export type Block = Array<Statement>;
 export type Statement = ArrayAssignment | ArrayElementAssignment | Assignment | DoWhile | Expression | FunctionDeclaration | If | Print | Return | While;
 
 export type AST = Parameter | Parameter[] | Block | Statement | Expression;
-
-/* = Constructors = */
-
-export function make_atom(value: Atom["value"]): Atom {
-  return { kind: ASTKind.ATOM, value };
-}
-
-export function make_binop(op: string, exp1: Expression, exp2: Expression): ArithmeticBinOp {
-  return { kind: ASTKind.CALCBINOP, op, exp1, exp2 };
-}
-
-export function make_variable(name: Variable["name"]): Variable {
-  return { kind: ASTKind.VARIABLE, name };
-}
-
-export function make_print(value: Print["value"]): Print {
-  return { kind: ASTKind.PRINT, value };
-}
-
-export function make_if(pred: Expression, tBlock: Block, fBlock: Block): If {
-  return { kind: ASTKind.IF, pred, truePath: tBlock, falsePath: fBlock };
-}
-
-export function make_assignment(variable: Variable, value: Expression): Assignment {
-  return { kind: ASTKind.ASSIGNMENT, variable, value };
-}
-
-export function make_not(exp: Expression): Not {
-  return { kind: ASTKind.NOT, exp };
-}
-
-export function make_while(pred: Expression, body: Block): While {
-  return { kind: ASTKind.WHILE, pred, body };
-}

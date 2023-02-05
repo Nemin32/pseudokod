@@ -1,18 +1,23 @@
 import { astToString } from "./ast_printer.js";
 import { ASTCompiler } from "./pseudo_compiler.js";
-import { parseWhileStatement } from "./pseudo_parser.js";
+import { parseAtom, parsePrintStatement, parseWhileStatement } from "./pseudo_parser.js";
 import { VM } from "./vm";
 
-const input = `ciklus amíg igaz
+/*const input = `ciklus amíg igaz
 kiír ~igaz
-ciklus vége`
+ciklus vége`*/
 
-parseWhileStatement.run(input).onSuccess(ast => {
+const input = "kiír igaz"
+
+parsePrintStatement.run(input).onSuccess(ast => {
   console.log("AST:\n"+astToString(ast.value)+"\n")
 
   const compiler = new ASTCompiler();
 
-  compiler.visitWhile(ast.value)
+
+  console.log(ast.value)
+
+  compiler.visitPrint(ast.value)
 
   const vm = new VM(compiler.bytecode);
 
