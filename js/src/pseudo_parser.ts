@@ -11,6 +11,7 @@ import {
   Not,
   Parameter,
   Print,
+  Return,
   Statement,
   Variable,
   While,
@@ -24,6 +25,18 @@ export const NL = Parser.char("\n").many1();
 
 export const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
 export const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
+
+const parseFuncName: Parser<string> = Parser.upper.bind((l) => Parser.letter.many().bindResult((rest) => l + rest.join("")));
+
+/* Groupings */
+
+export const parseStatement: Parser<Statement> = Parser.of(() =>
+  Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
+);
+
+export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseBinExp));
+
+export const parseBlock = parseStatement.sepBy(NL);
 
 /* Atom */
 
@@ -50,12 +63,15 @@ export const parseArrayComprehension = parseSingleAtom
   .parens()
   .expect("<atom list>");
 
-export const parseAtom: Parser<Atom> = parseArrayComprehension.or(parseSingleAtom).bindResult(v => new Atom(v)).expect("<atom>");
+export const parseAtom: Parser<Atom> = parseArrayComprehension
+  .or(parseSingleAtom)
+  .bindResult((v) => new Atom(v))
+  .expect("<atom>");
 
 /* Variable */
 
 const parseVarName: Parser<string> = Parser.letter.bind((l) => Parser.alphanumeric.many().bindResult((rest) => l + rest.join("")));
-export const parseVariable: Parser<Variable> = parseVarName.bindResult(name => new Variable(name));
+export const parseVariable: Parser<Variable> = parseVarName.bindResult((name) => new Variable(name));
 
 /* Value */
 
@@ -72,17 +88,36 @@ export const parseBinFactor: Parser<Expression> = Parser.or(parseValue, Parser.o
 
 /* Not */
 
-export const parseNot: Parser<Not> = Parser.char("~").right(Parser.of(() => parseExpression)).bindResult(e => new Not(e));
+export const parseNot: Parser<Not> = Parser.char("~")
+  .right(parseExpression)
+  .bindResult((e) => new Not(e));
+
+/* Function Call */
+
+const parseExpressionList = parseExpression.sepBy(Parser.char(",").left(OWS)).parens();
+
+export const parseFuncCall: Parser<FunctionCall> = Parser.do()
+  .bind("name", parseFuncName.left(OWS))
+  .bind("params", parseExpressionList)
+  .bindResult(({ name, params }) => new FunctionCall(name, params));
 
 /* Expression */
-
-export const parseExpression = parseNot.or(parseBinExp)
 
 /* Statements */
 
 export const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => new Print(exp)));
 
-export const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
+export const parseIfStatement: Parser<If> = Parser.do()
+  .ignore(Parser.string("ha").left(WS))
+  .bind("pred", parseExpression)
+  .ignore(Parser.string("akkor").bracket(WS, WS))
+  .bind("tBlock", parseBlock)
+  .ignore(Parser.string("különben").bracket(WS, WS))
+  .bind("fBlock", parseBlock)
+  .ignore(WS.right(Parser.string("elágazás vége")))
+  .bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock));
+
+/*Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
   ["", Parser.string("ha").left(WS)],
   ["pred", parseExpression],
   ["", Parser.string("akkor").bracket(WS, WS)],
@@ -90,49 +125,55 @@ export const parseIfStatement: Parser<If> = Parser.doNotation<{ pred: Expression
   ["", Parser.string("különben").bracket(WS, WS)],
   ["fBlock", Parser.of(() => parseBlock)],
   ["", WS.right(Parser.string("elágazás vége"))],
-]).bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock));
+]).bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock)*/
 
-export const parseAssignmentStatement: Parser<Assignment> = Parser.doNotation<{ variable: Variable; value: Expression }>([
+export const parseAssignmentStatement: Parser<Assignment> = Parser.do()
+  .bind("variable", parseVariable)
+  .ignore(Parser.string("<-").bracket(OWS, OWS))
+  .bind("value", parseExpression)
+  .bindResult(({ variable, value }) => new Assignment(variable, value));
+
+/*Parser.doNotation<{ variable: Variable; value: Expression }>([
   ["variable", parseVariable],
   ["", Parser.string("<-").bracket(OWS, OWS)],
   ["value", parseExpression],
-]).bindResult(({ variable, value }) => new Assignment(variable, value));
+]).bindResult(({ variable, value }) => new Assignment(variable, value));*/
 
-export const parseWhileStatement: Parser<While> = Parser.doNotation<{pred: Expression, body: Block}>([
-  ["pred", Parser.string("ciklus amíg").right(SPACES).right(parseExpression).left(WS)],
-  ["body", Parser.of(() => parseBlock).left(NL).left(Parser.string("ciklus vége"))]
-]).bindResult(({pred, body}) => new While(pred, body));
+export const parseWhileStatement: Parser<While> = Parser.do()
+  .ignore(Parser.string("ciklus amíg").right(WS))
+  .bind("pred", parseExpression.left(WS))
+  .bind("body", parseBlock.left(WS))
+  .ignore(Parser.string("ciklus vége"))
+  .bindResult(({ pred, body }) => new While(pred, body));
 
-const parseParameter: Parser<Parameter> = Parser.doNotation<{varName: string, isRef: boolean}>([
-  ["isRef", Parser.string("címszerint").left(OWS).maybe()],
-  ["varName", parseVarName],
-  ["", Parser.char(":").bracket(OWS, OWS)],
-  ["type", Parser.letter.many1()]
-]).bindResult(({varName, isRef}) => new Parameter(varName, isRef));
+/*Parser.doNotation<{ pred: Expression; body: Block }>([
+  ["pred", .right(parseExpression).left(WS)],
+  [
+    "body",
+    Parser.of(() => parseBlock)
+      .left(NL)
+      .left(Parser.string("ciklus vége")),
+  ],
+]).bindResult(({ pred, body }) => new While(pred, body));*/
 
-const parseFuncName: Parser<string> = Parser.upper.bind(l => Parser.letter.many().bindResult(rest => l + rest.join("")))
-const parseFuncList = parseParameter.many().parens()
+const parseParameter: Parser<Parameter> = Parser.do()
+  .bind("isRef", Parser.string("címszerint").left(OWS).maybe())
+  .bind("varName", parseVarName)
+  .ignore(Parser.char(":").bracket(OWS, OWS))
+  .bind("type", Parser.letter.many1())
+  .bindResult(({ varName, isRef }) => new Parameter(varName, isRef != null));
 
-export const parseFunctionDecl: Parser<FunctionDeclaration> = Parser.doNotation<{funcName: string, params: Parameter[], body: Block}>([
-  ["", Parser.string("függvény").left(WS)],
-  ["funcName", parseFuncName.left(OWS)],
-  ["params", parseFuncList.left(WS)],
-  ["body", Parser.of(() => parseBlock).left(WS).left(Parser.string("függvény vége"))],
-]).bindResult(({funcName, params, body}) => new FunctionDeclaration(funcName, params, body));
+const parseFuncList = parseParameter.sepBy(Parser.char(",").left(OWS)).parens();
 
-export const parseFuncCall: Parser<FunctionCall> = Parser.doNotation<{name: string, params: Expression[]}>([
-  ["name", parseFuncName.left(OWS)],
-  ["params", parseExpression.many().parens()]
-]).bindResult(({name, params}) => new FunctionCall(name, params))
+export const parseFunctionDecl: Parser<FunctionDeclaration> = Parser.do()
+  .ignore(Parser.string("függvény").left(WS))
+  .bind("funcName", parseFuncName.left(OWS))
+  .bind("params", parseFuncList.left(WS))
+  .bind("body", parseBlock.left(WS))
+  .ignore(Parser.string("függvény vége"))
+  .bindResult(({ funcName, params, body }) => new FunctionDeclaration(funcName, params, body));
 
-export const parseStatement: Parser<Statement> = Parser.choice(
-  parseFuncCall,
-  parseFunctionDecl,
-  parseWhileStatement,
-  parseAssignmentStatement,
-  parsePrintStatement,
-  parseIfStatement
-)
-
-//parseWhileStatement.or(parseAssignmentStatement).or(parsePrintStatement).or(parseIfStatement);
-export const parseBlock = parseStatement.sepBy(NL);
+export const parseReturn: Parser<Return> = Parser.string("vissza")
+  .left(SPACES)
+  .right(parseExpression)
+  .bindResult((e) => new Return(e));

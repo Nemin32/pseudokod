@@ -18,16 +18,16 @@ type Error = {
 // A Record is Either...
 // - A successful parse.
 // - A parsing error.
-type Record<T> = Either<Capture<T>, Error>;
+type PRecord<T> = Either<Capture<T>, Error>;
 
 export class Parser<T> {
-  constructor(private func: (input: Input) => Record<T>) {}
+  constructor(private func: (input: Input) => PRecord<T>) {}
 
-  private exec(input: Input): Record<T> {
+  private exec(input: Input): PRecord<T> {
     return this.func(input);
   }
 
-  public run(input: string): Record<T> {
+  public run(input: string): PRecord<T> {
     return this.exec(Parser.wrap(input));
   }
 
@@ -87,7 +87,7 @@ export class Parser<T> {
 
   static or = <T, Q>(p: Parser<T>, q: Parser<Q>): Parser<T | Q> =>
     new Parser<T | Q>((inp) => {
-      return (p.exec(inp) as Record<T | Q>).bindError((pErr) =>
+      return (p.exec(inp) as PRecord<T | Q>).bindError((pErr) =>
         q.exec(inp).bindError((qErr) => {
           const [p, q] = [pErr.where.index, qErr.where.index];
 
@@ -199,9 +199,10 @@ export class Parser<T> {
   }
 
   // deno-lint-ignore no-explicit-any
-  static doNotation<Obj = any>(parsers: Array<[string, Parser<any>]>): Parser<Obj> {
+  /** @internal */
+  static __doNotation<Obj = any>(parsers: Array<[string, Parser<any>]>): Parser<Obj> {
     // deno-lint-ignore no-explicit-any
-    const descend = (list: Array<[string, Parser<any>]>, obj: any): Parser<any> => {
+    const descend = (list: Array<[string, Parser<any>]>, obj: Record<string, any>): Parser<any> => {
       if (list.length == 0) {
         return Parser.result(obj);
       } else {
@@ -248,6 +249,27 @@ export class Parser<T> {
 
   bindChain<O, Q>(op: Parser<O>, f: (val: { f: O; a: T; b: T }) => Q): Parser<T | Q> {
     return Parser.bindChain(this, op, f);
+  }
+
+  static do() {
+    return new Do([],[]);
+  }
+}
+
+class Do<B extends {}> {
+  constructor(public parsers: Parser<any>[], public names: string[]) {}
+
+  bind<BindName extends string, BindType extends any>(name: BindName, parser: Parser<BindType>): Do<B & Record<BindName, BindType>> {
+    return new Do(this.parsers.concat([parser]), this.names.concat([name]));
+  }
+
+  ignore(parser: Parser<any>): Do<B> {
+    return new Do(this.parsers.concat([parser]), this.names.concat([""]));
+  }
+
+  bindResult<T>(f: (val: B) => T): Parser<T> {
+    const zipped: Array<[string, Parser<any>]> = this.parsers.map((p, idx) => [this.names[idx], p]);
+    return Parser.__doNotation<B>(zipped).bindResult(f);
   }
 }
 
