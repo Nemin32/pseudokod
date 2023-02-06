@@ -3,6 +3,7 @@ import { ByteCode, OpCode } from "./opcodes";
 export class VM {
   ip = 0;
   stack: Array<any> = [];
+  ipStack: Array<number> = [];
   vars: Map<string, any> = new Map();
 
   constructor(public code: Array<ByteCode>) {}
@@ -59,6 +60,25 @@ export class VM {
           if (!val) {
             this.jmpLabel(payload as string);
           }
+        }
+        break;
+
+      case OpCode.CALL:
+        this.ipStack.push(this.ip);
+        this.jmpLabel(payload as string);
+        break;
+
+      case OpCode.RETURN:
+        {
+        if (payload != null) {
+          this.stack.push(payload);
+        } 
+
+        const newIp = this.ipStack.pop()
+
+        if (!newIp) throw new Error("IP Stack is empty!");
+
+        this.ip = newIp
         }
         break;
 

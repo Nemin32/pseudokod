@@ -21,6 +21,7 @@ import {
   Block,
   Statement,
   ASTKind,
+  Parameter,
 } from "./pseudo_types";
 
 export class ASTCompiler {
@@ -53,7 +54,10 @@ export class ASTCompiler {
     this.createOp(OpCode.LOGIC, ast.op);
   }
 
-  visitFunctionCall(ast: FunctionCall) {}
+  visitFunctionCall(ast: FunctionCall) {
+    ast.parameters.forEach((e) => this.visitExpression(e));
+    this.createOp(OpCode.CALL, ast.functionName);
+  }
 
   visitNot(ast: Not) {
     this.visitExpression(ast.exp);
@@ -88,19 +92,36 @@ export class ASTCompiler {
 
   visitExpression(ast: Expression) {
     switch (ast.kind) {
-      case ASTKind.CALCBINOP:
-        return this.visitArithmeticBinOp(ast);
+      case ASTKind.ATOM:       return this.visitValue(ast);
+      case ASTKind.CALCBINOP:  return this.visitArithmeticBinOp(ast);
+      case ASTKind.COMPBINOP:  break;
+      case ASTKind.FUNCCALL:   return this.visitFunctionCall(ast);
+      case ASTKind.LOGICBINOP: break;
+      case ASTKind.NOT:        return this.visitNot(ast);
+      case ASTKind.VARIABLE:   return this.visitValue(ast);
 
-      case ASTKind.VARIABLE:
-      case ASTKind.ATOM:
-        return this.visitValue(ast);
-
-      case ASTKind.NOT:
-        return this.visitNot(ast);
+      default: break;
     }
   }
 
-  visitFunctionDeclaration(ast: FunctionDeclaration) {}
+  visitParameter(ast: Parameter) {
+    this.createOp(OpCode.SETVAR, ast.name);
+  }
+
+  visitFunctionDeclaration(ast: FunctionDeclaration) {
+    this.createOp(OpCode.JMP, ast.name + "_end");
+    this.createOp(OpCode.LABEL, ast.name);
+
+    Array.from(ast.parameters)
+      .reverse()
+      .forEach((p) => this.visitParameter(p));
+
+    this.visitBlock(ast.body);
+
+    this.createOp(OpCode.RETURN, null);
+
+    this.createOp(OpCode.LABEL, ast.name + "_end");
+  }
 
   visitIf(ast: If) {
     this.labelId++;
@@ -109,16 +130,16 @@ export class ASTCompiler {
 
     this.createOp(OpCode.FJMP, "if_" + this.labelId);
 
-    this.visitBlock(ast.truePath)
+    this.visitBlock(ast.truePath);
 
-    this.createOp(OpCode.LABEL, "if_" + this.labelId)
+    this.createOp(OpCode.LABEL, "if_" + this.labelId);
 
-    this.visitBlock(ast.falsePath)
+    this.visitBlock(ast.falsePath);
   }
 
   visitBlock(ast: Block) {
     for (const stmt of ast) {
-      this.visitStatement(stmt)
+      this.visitStatement(stmt);
     }
   }
 
@@ -157,16 +178,16 @@ export class ASTCompiler {
   visitWhile(ast: While) {
     this.labelId++;
 
-    this.createOp(OpCode.LABEL, "wpred_" + this.labelId)
+    this.createOp(OpCode.LABEL, "wpred_" + this.labelId);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.FJMP, "wend_" + this.labelId)
+    this.createOp(OpCode.FJMP, "wend_" + this.labelId);
 
-    this.visitBlock(ast.body)
+    this.visitBlock(ast.body);
 
-    this.createOp(OpCode.JMP, "wpred_" + this.labelId)
+    this.createOp(OpCode.JMP, "wpred_" + this.labelId);
 
-    this.createOp(OpCode.LABEL, "wend_" + this.labelId)
+    this.createOp(OpCode.LABEL, "wend_" + this.labelId);
   }
 }

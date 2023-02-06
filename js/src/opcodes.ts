@@ -2,6 +2,7 @@ import { Atom } from "./pseudo_types";
 
 export enum OpCode {
   CALC,
+  CALL,
   COMP,
   FJMP,
   GETVAR,

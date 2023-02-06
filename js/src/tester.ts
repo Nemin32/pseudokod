@@ -1,18 +1,17 @@
 import { astToString } from "./ast_printer.js";
 import { ASTCompiler } from "./pseudo_compiler.js";
-import { parseBlock, parseStatement } from "./pseudo_parser.js";
+import { parseBlock } from "./pseudo_parser.js";
 import { VM } from "./vm";
 
-/*const input = `függvény Teszt(címszerint x : egesz)
-ciklus amíg hamis
-kiír ~igaz + 5
-ciklus vége
+const input = `függvény Teszt(címszerint x : egesz, y : egesz)
+vissza x + y
 függvény vége
-Teszt(5)`*/
-
-const input = `x <- 5+5
-kiír "ekcske"
+x <- Teszt(5, 6)
 kiír x`
+
+/*const input = `x <- 5+5
+kiír "ekcske"
+kiír x`*/
 
 parseBlock.run(input).onSuccess(ast => {
   console.log("AST:\n"+astToString(ast.value)+"\n")
