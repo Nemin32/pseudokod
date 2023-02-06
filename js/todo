@@ -1,8 +1,11 @@
 TODO:
 
-- [ ] Enum az AST-hez
-- [ ] assemble utasítás?
+- [X] Enum az AST-hez
+- [ ] assemble utasítás? - Kell egyáltalán?
 - [ ] stack portolása TS-re
+- [ ] Függvények - Stack space?
+- [ ] if/else if
+- [ ] regression testek
 
 Régi:
 - [X] Two step transform? függvény -> [<#123456>]függvény[<>] -> <span style="color: #123456">függvény</span>

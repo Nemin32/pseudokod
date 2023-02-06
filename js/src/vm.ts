@@ -3,6 +3,7 @@ import { ByteCode, OpCode } from "./opcodes";
 export class VM {
   ip = 0;
   stack: Array<any> = [];
+  vars: Map<string, any> = new Map();
 
   constructor(public code: Array<ByteCode>) {}
 
@@ -37,6 +38,14 @@ export class VM {
   execute({ opCode, payload }: ByteCode) {
     switch (opCode) {
       case OpCode.LABEL:
+        break;
+
+      case OpCode.GETVAR:
+        this.stack.push(this.vars.get(payload as string));
+        break;
+
+      case OpCode.SETVAR:
+        this.vars.set(payload as string, this.stack.pop())
         break;
 
       case OpCode.JMP:

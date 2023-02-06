@@ -5,6 +5,7 @@ import {
   Atom,
   Block,
   Expression,
+  FunctionCall,
   FunctionDeclaration,
   If,
   Not,
@@ -75,7 +76,7 @@ export const parseNot: Parser<Not> = Parser.char("~").right(Parser.of(() => pars
 
 /* Expression */
 
-export const parseExpression = parseBinExp.or(parseNot);
+export const parseExpression = parseNot.or(parseBinExp)
 
 /* Statements */
 
@@ -110,15 +111,22 @@ const parseParameter: Parser<Parameter> = Parser.doNotation<{varName: string, is
 ]).bindResult(({varName, isRef}) => new Parameter(varName, isRef));
 
 const parseFuncName: Parser<string> = Parser.upper.bind(l => Parser.letter.many().bindResult(rest => l + rest.join("")))
+const parseFuncList = parseParameter.many().parens()
 
 export const parseFunctionDecl: Parser<FunctionDeclaration> = Parser.doNotation<{funcName: string, params: Parameter[], body: Block}>([
   ["", Parser.string("függvény").left(WS)],
-  ["funcName", parseFuncName.left(WS)],
-  ["params", parseParameter.many().parens().left(WS)],
-  ["body", Parser.of(() => parseBlock).left(Parser.string("függvény vége"))],
+  ["funcName", parseFuncName.left(OWS)],
+  ["params", parseFuncList.left(WS)],
+  ["body", Parser.of(() => parseBlock).left(WS).left(Parser.string("függvény vége"))],
 ]).bindResult(({funcName, params, body}) => new FunctionDeclaration(funcName, params, body));
 
+export const parseFuncCall: Parser<FunctionCall> = Parser.doNotation<{name: string, params: Expression[]}>([
+  ["name", parseFuncName.left(OWS)],
+  ["params", parseExpression.many().parens()]
+]).bindResult(({name, params}) => new FunctionCall(name, params))
+
 export const parseStatement: Parser<Statement> = Parser.choice(
+  parseFuncCall,
   parseFunctionDecl,
   parseWhileStatement,
   parseAssignmentStatement,
@@ -127,4 +135,4 @@ export const parseStatement: Parser<Statement> = Parser.choice(
 )
 
 //parseWhileStatement.or(parseAssignmentStatement).or(parsePrintStatement).or(parseIfStatement);
-export const parseBlock = parseStatement.many1();
+export const parseBlock = parseStatement.sepBy(NL);

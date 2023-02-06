@@ -109,14 +109,14 @@ export class ASTCompiler {
 
     this.createOp(OpCode.FJMP, "if_" + this.labelId);
 
-    this.visitBody(ast.truePath)
+    this.visitBlock(ast.truePath)
 
     this.createOp(OpCode.LABEL, "if_" + this.labelId)
 
-    this.visitBody(ast.falsePath)
+    this.visitBlock(ast.falsePath)
   }
 
-  visitBody(ast: Block) {
+  visitBlock(ast: Block) {
     for (const stmt of ast) {
       this.visitStatement(stmt)
     }
@@ -163,7 +163,7 @@ export class ASTCompiler {
 
     this.createOp(OpCode.FJMP, "wend_" + this.labelId)
 
-    this.visitBody(ast.body)
+    this.visitBlock(ast.body)
 
     this.createOp(OpCode.JMP, "wpred_" + this.labelId)
 
