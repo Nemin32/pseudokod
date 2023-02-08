@@ -38,6 +38,8 @@ export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, pars
 
 export const parseBlock = parseStatement.sepBy(NL);
 
+/* = Expressions = */
+
 /* Atom */
 
 export const parseNumber = Parser.digit.many1().bindResult(Number).expect("<number>");
@@ -101,9 +103,7 @@ export const parseFuncCall: Parser<FunctionCall> = Parser.do()
   .bind("params", parseExpressionList)
   .bindResult(({ name, params }) => new FunctionCall(name, params));
 
-/* Expression */
-
-/* Statements */
+/* = Statements = */
 
 export const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => new Print(exp)));
 
@@ -117,27 +117,11 @@ export const parseIfStatement: Parser<If> = Parser.do()
   .ignore(WS.right(Parser.string("elágazás vége")))
   .bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock));
 
-/*Parser.doNotation<{ pred: Expression; tBlock: Block; fBlock: Block }>([
-  ["", Parser.string("ha").left(WS)],
-  ["pred", parseExpression],
-  ["", Parser.string("akkor").bracket(WS, WS)],
-  ["tBlock", Parser.of(() => parseBlock)],
-  ["", Parser.string("különben").bracket(WS, WS)],
-  ["fBlock", Parser.of(() => parseBlock)],
-  ["", WS.right(Parser.string("elágazás vége"))],
-]).bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock)*/
-
 export const parseAssignmentStatement: Parser<Assignment> = Parser.do()
   .bind("variable", parseVariable)
   .ignore(Parser.string("<-").bracket(OWS, OWS))
   .bind("value", parseExpression)
   .bindResult(({ variable, value }) => new Assignment(variable, value));
-
-/*Parser.doNotation<{ variable: Variable; value: Expression }>([
-  ["variable", parseVariable],
-  ["", Parser.string("<-").bracket(OWS, OWS)],
-  ["value", parseExpression],
-]).bindResult(({ variable, value }) => new Assignment(variable, value));*/
 
 export const parseWhileStatement: Parser<While> = Parser.do()
   .ignore(Parser.string("ciklus amíg").right(WS))
@@ -145,16 +129,6 @@ export const parseWhileStatement: Parser<While> = Parser.do()
   .bind("body", parseBlock.left(WS))
   .ignore(Parser.string("ciklus vége"))
   .bindResult(({ pred, body }) => new While(pred, body));
-
-/*Parser.doNotation<{ pred: Expression; body: Block }>([
-  ["pred", .right(parseExpression).left(WS)],
-  [
-    "body",
-    Parser.of(() => parseBlock)
-      .left(NL)
-      .left(Parser.string("ciklus vége")),
-  ],
-]).bindResult(({ pred, body }) => new While(pred, body));*/
 
 const parseParameter: Parser<Parameter> = Parser.do()
   .bind("isRef", Parser.string("címszerint").left(OWS).maybe())

@@ -15,7 +15,7 @@ type Error = {
   where: Input;
 };
 
-// A Record is Either...
+// A PRecord is Either...
 // - A successful parse.
 // - A parsing error.
 type PRecord<T> = Either<Capture<T>, Error>;
@@ -156,13 +156,6 @@ export class Parser<T> {
   parens = () => this.onError((p) => `[${p.what}] in parens`).bracket(Parser.char("("), Parser.char(")"));
   static parens = <T>(p: Parser<T>) => p.parens();
 
-  /*
-  static choice = <T>(parsers: Parser<any>[]): Parser<T> => {
-    if (parsers.length == 0) return this.zero();
-    return Parser.or(parsers[0], this.choice(parsers.slice(1)));
-  };
-  */
-
   static choice<A, B = never, C = never, D = never, E = never, F = never>(
     p1: Parser<A>,
     p2?: Parser<B>,
@@ -252,7 +245,7 @@ export class Parser<T> {
   }
 
   static do() {
-    return new Do([],[]);
+    return new Do([], []);
   }
 }
 
@@ -272,14 +265,3 @@ class Do<B extends {}> {
     return Parser.__doNotation<B>(zipped).bindResult(f);
   }
 }
-
-/* Can't find a way to make it work.
-type TMap<M extends Parser<any>[], A = never> =
-  M extends [Parser<infer H>]
-  ? Parser<H | A>
-  : M extends [Parser<infer H>, ...infer T]
-    ? T extends Parser<any>[]
-      ? TMap<T, H | A>
-      : A
-    : A;
-*/
