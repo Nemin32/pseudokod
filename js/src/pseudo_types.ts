@@ -119,8 +119,8 @@ export class ArrayElementAssignment {
 
 export class ArrayAssignment {
   readonly kind = ASTKind.ARRASSIGN;
-  variable: Variable;
-  length: Expression;
+
+  constructor(public variable: Variable, public type: string, public length: Expression) {}
 }
 
 export class Return {

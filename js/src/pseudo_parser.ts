@@ -3,7 +3,6 @@ import {
   ArithmeticBinOp,
   Assignment,
   Atom,
-  Block,
   Expression,
   FunctionCall,
   FunctionDeclaration,
@@ -16,6 +15,8 @@ import {
   Statement,
   Variable,
   While,
+  ArrayAssignment,
+  ArrayElementAssignment,
 } from "./pseudo_types";
 
 export const OSPACES = Parser.char(" ").many();
@@ -29,10 +30,15 @@ export const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
 
 const parseFuncName: Parser<string> = Parser.upper.bind((l) => Parser.letter.many().bindResult((rest) => l + rest.join("")));
 
+const parseType: Parser<string> = Parser.choice(
+  Parser.string("egész"),
+  Parser.string("szöveg")
+)
+
 /* Groupings */
 
 export const parseStatement: Parser<Statement> = Parser.of(() =>
-  Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
+  Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseArrayAssignment, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
 );
 
 export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseLogicExp, parseBinExp));
@@ -125,6 +131,14 @@ export const parseIfStatement: Parser<If> = Parser.do()
   .ignore(WS.right(Parser.string("elágazás vége")))
   .bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock));
 
+const parseArrayAssignment: Parser<ArrayAssignment> = Parser.do()
+  .bind("variable", parseVariable)
+  .ignore(Parser.string("<-").bracket(OWS, OWS))
+  .ignore(Parser.string("Létrehoz"))
+  .bind("type", parseType.bracket(Parser.char("["), Parser.char("]")))
+  .bind("length", parseExpression.parens())
+  .bindResult(({variable, type, length}) => new ArrayAssignment(variable, type, length))
+
 export const parseAssignmentStatement: Parser<Assignment> = Parser.do()
   .bind("variable", parseVariable)
   .ignore(Parser.string("<-").bracket(OWS, OWS))
@@ -159,3 +173,10 @@ export const parseReturn: Parser<Return> = Parser.string("vissza")
   .left(SPACES)
   .right(parseExpression)
   .bindResult((e) => new Return(e));
+
+export const parseArrayElementAssignment: Parser<ArrayElementAssignment> = Parser.do()
+  .bind("variable", parseVariable)
+  .bind("index", parseExpression.bracket(Parser.char("["), Parser.char("]")))
+  .ignore(Parser.string("<-").bracket(OWS, OWS))
+  .bind("expression", parseExpression)
+  .bindResult(({variable, index, expression}) => new ArrayElementAssignment(variable, index, expression))
