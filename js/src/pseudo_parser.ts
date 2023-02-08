@@ -7,6 +7,7 @@ import {
   Expression,
   FunctionCall,
   FunctionDeclaration,
+  LogicBinOp,
   If,
   Not,
   Parameter,
@@ -34,7 +35,7 @@ export const parseStatement: Parser<Statement> = Parser.of(() =>
   Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
 );
 
-export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseBinExp));
+export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseLogicExp, parseBinExp));
 
 export const parseBlock = parseStatement.sepBy(NL);
 
@@ -87,6 +88,13 @@ export const parseMulOp = Parser.char("*").or(Parser.char("/")).or(Parser.string
 export const parseBinExp: Parser<Expression> = Parser.of(() => parseBinTerm).bindChain(parseAddOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
 export const parseBinTerm: Parser<Expression> = Parser.of(() => parseBinFactor).bindChain(parseMulOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
 export const parseBinFactor: Parser<Expression> = Parser.or(parseValue, Parser.of(() => parseBinExp).parens());
+
+/* Logic Ops */
+
+export const parseLogicOp: Parser<string> = Parser.or(Parser.string("&&"), Parser.string("||")).bracket(OWS, OWS)
+
+export const parseLogicExp: Parser<Expression> = Parser.of(() => parseLogicFactor).bindChain(parseLogicOp, ({f,a,b}) => new LogicBinOp(f, a, b))
+export const parseLogicFactor: Parser<Expression> = Parser.or(parseValue, parseLogicExp.parens())
 
 /* Not */
 

@@ -94,6 +94,22 @@ export class VM {
         this.stack.push(this.stack.pop() + this.stack.pop());
         break;
 
+      case OpCode.LOGIC:
+        {
+          const exp2 = this.stack.pop();
+          const exp1 = this.stack.pop();
+          const op = payload
+
+          if (payload == "&&") {
+            this.stack.push(exp1 && exp2)
+          } else if (payload == "||") {
+            this.stack.push(exp1 || exp2)
+          } else {
+            throw new Error("Logic payload was bad!")
+          }
+        }
+        break;
+
       case OpCode.NOT:
         {
           const val = this.stack.pop();

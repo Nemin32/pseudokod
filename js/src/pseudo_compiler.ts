@@ -81,6 +81,7 @@ export class ASTCompiler {
 
   /* Statements */
   visitArrayAssignment(ast: ArrayAssignment) {}
+
   visitArrayElementAssignment(ast: ArrayElementAssignment) {}
 
   visitAssignment(ast: Assignment) {
@@ -96,7 +97,7 @@ export class ASTCompiler {
       case ASTKind.CALCBINOP:  return this.visitArithmeticBinOp(ast);
       case ASTKind.COMPBINOP:  break;
       case ASTKind.FUNCCALL:   return this.visitFunctionCall(ast);
-      case ASTKind.LOGICBINOP: break;
+      case ASTKind.LOGICBINOP: return this.visitLogicBinOp(ast);
       case ASTKind.NOT:        return this.visitNot(ast);
       case ASTKind.VARIABLE:   return this.visitValue(ast);
 
