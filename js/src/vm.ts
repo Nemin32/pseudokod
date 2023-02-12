@@ -100,12 +100,27 @@ export class VM {
           const exp1 = this.stack.pop();
           const op = payload
 
-          if (payload == "&&") {
-            this.stack.push(exp1 && exp2)
-          } else if (payload == "||") {
-            this.stack.push(exp1 || exp2)
-          } else {
-            throw new Error("Logic payload was bad!")
+          switch (op) {
+            case "&&": this.stack.push(exp1 && exp2); break;
+            case "||": this.stack.push(exp1 || exp2); break;
+            default: throw new Error("Logic payload was bad!")
+          }
+        }
+        break;
+
+      case OpCode.COMP:
+        {
+          const exp2 = this.stack.pop();
+          const exp1 = this.stack.pop();
+          const op = payload
+
+          switch (op) {
+            case "=/=": this.stack.push(exp1 != exp2); break;
+            case "==": this.stack.push(exp1 == exp2); break;
+            case "<=": this.stack.push(exp1 <= exp2); break;
+            case ">=": this.stack.push(exp1 >= exp2); break;
+            case "<": this.stack.push(exp1 < exp2); break;
+            case ">": this.stack.push(exp1 > exp2); break;
           }
         }
         break;
@@ -116,7 +131,7 @@ export class VM {
           this.stack.push(!val);
         }
         break;
-      
+
       default:
         throw new Error(OpCode[opCode] + " is not yet implemented!")
     }

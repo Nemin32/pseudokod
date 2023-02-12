@@ -95,7 +95,7 @@ export class ASTCompiler {
     switch (ast.kind) {
       case ASTKind.ATOM:       return this.visitValue(ast);
       case ASTKind.CALCBINOP:  return this.visitArithmeticBinOp(ast);
-      case ASTKind.COMPBINOP:  break;
+      case ASTKind.COMPBINOP:  return this.visitComparison(ast);
       case ASTKind.FUNCCALL:   return this.visitFunctionCall(ast);
       case ASTKind.LOGICBINOP: return this.visitLogicBinOp(ast);
       case ASTKind.NOT:        return this.visitNot(ast);

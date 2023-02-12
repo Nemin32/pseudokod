@@ -93,7 +93,7 @@ export const parseCompOp: Parser<string> = Parser.choice(
   Parser.string("=="),
   Parser.string("=/="),
   Parser.string("<="),
-  Parser.string("=>"),
+  Parser.string(">="),
   Parser.char("<"),
   Parser.char(">"),
 ).bracket(OWS, OWS)
