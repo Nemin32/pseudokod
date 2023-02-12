@@ -17,6 +17,7 @@ import {
   While,
   ArrayAssignment,
   ArrayElementAssignment,
+  Comparison,
 } from "./pseudo_types";
 
 export const OSPACES = Parser.char(" ").many();
@@ -41,7 +42,7 @@ export const parseStatement: Parser<Statement> = Parser.of(() =>
   Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseArrayAssignment, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
 );
 
-export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseLogicExp, parseBinExp));
+export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseComp));
 
 export const parseBlock = parseStatement.sepBy(NL);
 
@@ -88,19 +89,32 @@ export const parseValue = parseAtom.or(parseVariable);
 
 /* Binary Ops */
 
-export const parseAddOp: Parser<string> = Parser.char("+").or(Parser.char("-")).bracket(OWS, OWS);
-export const parseMulOp = Parser.char("*").or(Parser.char("/")).or(Parser.string("mod")).bracket(OWS, OWS);
-
-export const parseBinExp: Parser<Expression> = Parser.of(() => parseBinTerm).bindChain(parseAddOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
-export const parseBinTerm: Parser<Expression> = Parser.of(() => parseBinFactor).bindChain(parseMulOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
-export const parseBinFactor: Parser<Expression> = Parser.or(parseValue, Parser.of(() => parseBinExp).parens());
-
-/* Logic Ops */
+export const parseCompOp: Parser<string> = Parser.choice(
+  Parser.string("=="),
+  Parser.string("=/="),
+  Parser.string("<="),
+  Parser.string("=>"),
+  Parser.char("<"),
+  Parser.char(">"),
+).bracket(OWS, OWS)
 
 export const parseLogicOp: Parser<string> = Parser.or(Parser.string("&&"), Parser.string("||")).bracket(OWS, OWS)
+export const parseMulOp: Parser<string> = Parser.char("*").or(Parser.char("/")).or(Parser.string("mod")).bracket(OWS, OWS);
+export const parseAddOp: Parser<string> = Parser.char("+").or(Parser.char("-")).bracket(OWS, OWS);
 
-export const parseLogicExp: Parser<Expression> = Parser.of(() => parseLogicFactor).bindChain(parseLogicOp, ({f,a,b}) => new LogicBinOp(f, a, b))
-export const parseLogicFactor: Parser<Expression> = Parser.or(parseValue, parseLogicExp.parens())
+const parseFactor: Parser<Expression> = parseValue.or(Parser.of(() => parseLogic).parens());
+
+const parseArithmAdd: Parser<Expression> = parseFactor
+  .bindChain(parseAddOp, ({f,a,b}) => new ArithmeticBinOp(f,a,b));
+
+const parseArithmMul: Parser<Expression> = parseArithmAdd
+  .bindChain(parseMulOp, ({f,a,b}) => new ArithmeticBinOp(f,a,b));
+
+const parseComp: Parser<Expression> = parseArithmMul
+  .bindChain(parseCompOp, ({f,a,b}) => new Comparison(f,a,b));
+
+const parseLogic: Parser<Expression> = parseComp
+  .bindChain(parseLogicOp, ({f,a,b}) => new LogicBinOp(f,a,b));
 
 /* Not */
 
