@@ -125,6 +125,28 @@ export class VM {
         }
         break;
 
+      case OpCode.MAKEARR:
+        {
+          const length = this.stack.pop();
+          this.stack.push(Array(length).fill(0))
+        }
+        break;
+
+      case OpCode.SETARR:
+        {
+          const idx = this.stack.pop()
+          const val = this.stack.pop()
+
+          if (typeof payload != "string") throw new Error("Varname must be string!")
+        
+          const arr = this.vars.get(payload);
+
+          if (arr) {
+            arr[idx] = val;
+          }
+        }
+        break;
+
       case OpCode.NOT:
         {
           const val = this.stack.pop();

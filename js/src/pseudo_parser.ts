@@ -39,7 +39,7 @@ const parseType: Parser<string> = Parser.choice(
 /* Groupings */
 
 export const parseStatement: Parser<Statement> = Parser.of(() =>
-  Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseArrayAssignment, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
+  Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseArrayAssignment, parseArrayElementAssignment, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
 );
 
 export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseComp));

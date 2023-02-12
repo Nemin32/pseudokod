@@ -80,9 +80,17 @@ export class ASTCompiler {
   }
 
   /* Statements */
-  visitArrayAssignment(ast: ArrayAssignment) {}
+  visitArrayAssignment(ast: ArrayAssignment) {
+    this.visitExpression(ast.length)
+    this.createOp(OpCode.MAKEARR, null)
+    this.createOp(OpCode.SETVAR, ast.variable.name)
+  }
 
-  visitArrayElementAssignment(ast: ArrayElementAssignment) {}
+  visitArrayElementAssignment(ast: ArrayElementAssignment) {
+    this.visitExpression(ast.value)
+    this.visitExpression(ast.index)
+    this.createOp(OpCode.SETARR, ast.array.name)
+  }
 
   visitAssignment(ast: Assignment) {
     this.visitExpression(ast.value);

@@ -4,6 +4,7 @@ export enum OpCode {
   CALC,
   CALL,
   COMP,
+  MAKEARR,
   FJMP,
   GETVAR,
   JMP,
@@ -13,6 +14,7 @@ export enum OpCode {
   PRINT,
   PUSH,
   RETURN,
+  SETARR,
   SETVAR,
 }
 
