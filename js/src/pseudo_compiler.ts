@@ -132,10 +132,12 @@ export class ASTCompiler {
     this.createOp(OpCode.FJMP, "if_" + this.labelId);
 
     this.visitBlock(ast.truePath);
+    this.createOp(OpCode.JMP, "if_end_" + this.labelId);
 
     this.createOp(OpCode.LABEL, "if_" + this.labelId);
 
     this.visitBlock(ast.falsePath);
+    this.createOp(OpCode.LABEL, "if_end_" + this.labelId);
   }
 
   visitBlock(ast: Block) {
