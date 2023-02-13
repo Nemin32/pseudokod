@@ -4,18 +4,20 @@ export enum OpCode {
   CALC,
   CALL,
   COMP,
-  MAKEARR,
   FJMP,
   GETVAR,
   JMP,
   LABEL,
   LOGIC,
+  MAKEARR,
   NOT,
   PRINT,
   PUSH,
   RETURN,
   SETARR,
   SETVAR,
+  TJMP,
+  VALARR,
 }
 
 export type ByteCode = {

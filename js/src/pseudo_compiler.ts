@@ -22,6 +22,7 @@ import {
   Statement,
   ASTKind,
   Parameter,
+  ArrayComprehension,
 } from "./pseudo_types";
 
 export class ASTCompiler {
@@ -52,6 +53,11 @@ export class ASTCompiler {
     this.visitExpression(ast.exp2);
 
     this.createOp(OpCode.LOGIC, ast.op);
+  }
+
+  visitArrayComprehension(ast: ArrayComprehension) {
+    ast.exps.forEach(e => this.visitExpression(e))
+    this.createOp(OpCode.VALARR, ast.exps.length)
   }
 
   visitFunctionCall(ast: FunctionCall) {
@@ -97,7 +103,17 @@ export class ASTCompiler {
     this.createOp(OpCode.SETVAR, ast.variable.name);
   }
 
-  visitDoWhile(ast: DoWhile) {}
+  visitDoWhile(ast: DoWhile) {
+    this.labelId++;
+
+    this.createOp(OpCode.LABEL, "do_while_" + this.labelId)
+
+    this.visitBlock(ast.body);
+
+    this.visitExpression(ast.pred);
+
+    this.createOp(OpCode.TJMP, "do_while_" + this.labelId)
+  }
 
   visitExpression(ast: Expression) {
     switch (ast.kind) {
@@ -108,6 +124,7 @@ export class ASTCompiler {
       case ASTKind.LOGICBINOP: return this.visitLogicBinOp(ast);
       case ASTKind.NOT:        return this.visitNot(ast);
       case ASTKind.VARIABLE:   return this.visitValue(ast);
+      case ASTKind.COMPREHENSION: return this.visitArrayComprehension(ast);
 
       default: break;
     }
@@ -172,6 +189,7 @@ export class ASTCompiler {
       case ASTKind.RETURN:        this.visitReturn(ast); break;
       case ASTKind.VARIABLE:      this.visitVariable(ast); break;
       case ASTKind.WHILE:         this.visitWhile(ast); break;
+      case ASTKind.COMPREHENSION: this.visitArrayComprehension(ast); break;
       default: break;
     }
   }

@@ -49,11 +49,34 @@ export class VM {
         this.vars.set(payload as string, this.stack.pop())
         break;
 
+      case OpCode.VALARR:
+        {
+          const length = payload;
+          let arr: Array<any> = []
+
+          for (let i = 0; i < length; i++) {
+            arr.push(this.stack.pop())
+          }
+
+          this.stack.push(arr.reverse())
+        }
+        break;
+
       case OpCode.JMP:
         this.jmpLabel(payload as string);
         break;
 
       case OpCode.FJMP:
+        {
+          const val = this.stack.pop()
+
+          if (!val) {
+            this.jmpLabel(payload as string);
+          }
+        }
+        break;
+
+      case OpCode.TJMP:
         {
           const val = this.stack.pop()
 

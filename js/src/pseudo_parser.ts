@@ -18,6 +18,7 @@ import {
   ArrayAssignment,
   ArrayElementAssignment,
   Comparison,
+  ArrayComprehension,
 } from "./pseudo_types";
 
 export const OSPACES = Parser.char(" ").many();
@@ -38,15 +39,35 @@ const parseType: Parser<string> = Parser.choice(
 
 /* Groupings */
 
-export const parseStatement: Parser<Statement> = Parser.of(() =>
-  Parser.choice(parseReturn, parseFunctionDecl, parseWhileStatement, parseArrayAssignment, parseArrayElementAssignment, parseAssignmentStatement, parsePrintStatement, parseIfStatement)
-);
+export const parseStatement: Parser<Statement> = Parser.of(() => Parser.choice(
+  parseReturn,
+  parseFunctionDecl,
+  parseWhileStatement,
+  parseArrayAssignment,
+  parseArrayElementAssignment,
+  parseAssignmentStatement,
+  parsePrintStatement,
+  parseIfStatement
+));
 
-export const parseExpression = Parser.of(() => Parser.choice(parseFuncCall, parseNot, parseComp));
+export const parseExpression: Parser<Expression> = Parser.of(() => Parser.choice(
+  parseArrayComprehension, 
+  parseFuncCall, 
+  parseNot, 
+  parseComp
+));
 
 export const parseBlock = parseStatement.sepBy(NL);
 
 /* = Expressions = */
+
+/* Comprehension */
+
+export const parseArrayComprehension = parseExpression
+  .sepBy(Parser.char(",").left(OWS))
+  .parens()
+  .bindResult((exps: Expression[]) => new ArrayComprehension(exps))
+  .expect("<expression list>");
 
 /* Atom */
 
@@ -67,15 +88,10 @@ export const parseBool = Parser.or(
     .bindResult((_) => false)
 ).expect("<bool>");
 
-export const parseSingleAtom = parseNumber.or(parseString).or(parseBool).expect("<atom>");
-export const parseArrayComprehension = parseSingleAtom
-  .sepBy(Parser.char(",").bind((_) => OWS))
-  .parens()
-  .expect("<atom list>");
-
-export const parseAtom: Parser<Atom> = parseArrayComprehension
-  .or(parseSingleAtom)
-  .bindResult((v) => new Atom(v))
+export const parseAtom: Parser<Atom> = parseNumber
+  .or(parseString)
+  .or(parseBool)
+  .bindResult(v => new Atom(v))
   .expect("<atom>");
 
 /* Variable */
@@ -133,7 +149,8 @@ export const parseFuncCall: Parser<FunctionCall> = Parser.do()
 
 /* = Statements = */
 
-export const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((_) => parseExpression.bindResult((exp) => new Print(exp)));
+export const parsePrintStatement: Parser<Print> = Parser.string("kiír ")
+  .bind((_) => parseExpression.bindResult((exp: Expression) => new Print(exp)));
 
 export const parseIfStatement: Parser<If> = Parser.do()
   .ignore(Parser.string("ha").left(WS))

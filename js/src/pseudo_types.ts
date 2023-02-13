@@ -2,6 +2,7 @@
 
 export enum ASTKind {
   ARRASSIGN,
+  COMPREHENSION,
   ARRELEMASSIGN,
   ASSIGNMENT,
   ATOM,
@@ -26,6 +27,12 @@ export class Atom {
   readonly kind = ASTKind.ATOM;
 
   constructor(public value: number | string | boolean | Array<number | string | boolean>) {}
+}
+
+export class ArrayComprehension {
+  readonly kind = ASTKind.COMPREHENSION;
+
+  constructor(public exps: Expression[]) {}
 }
 
 export class ArithmeticBinOp {
@@ -65,7 +72,14 @@ export class LogicBinOp {
   constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
 }
 
-export type Expression = ArithmeticBinOp | Comparison | FunctionCall | LogicBinOp | Not | Value;
+export type Expression = 
+  | ArrayComprehension 
+  | ArithmeticBinOp 
+  | Comparison 
+  | FunctionCall 
+  | LogicBinOp 
+  | Not 
+  | Value;
 
 /* Statements */
 export class Print {
