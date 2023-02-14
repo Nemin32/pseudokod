@@ -26,7 +26,9 @@ export enum ASTKind {
 export class Atom {
   readonly kind = ASTKind.ATOM;
 
-  constructor(public value: number | string | boolean | Array<number | string | boolean>) {}
+  constructor(
+    public value: number | string | boolean | Array<number | string | boolean>,
+  ) {}
 }
 
 export class ArrayComprehension {
@@ -38,7 +40,11 @@ export class ArrayComprehension {
 export class ArithmeticBinOp {
   readonly kind = ASTKind.CALCBINOP;
 
-  constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
+  constructor(
+    public op: string,
+    public exp1: Expression,
+    public exp2: Expression,
+  ) {}
 }
 
 export class Variable {
@@ -52,13 +58,20 @@ export type Value = Atom | Variable;
 export class Comparison {
   readonly kind = ASTKind.COMPBINOP;
 
-  constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
+  constructor(
+    public op: string,
+    public exp1: Expression,
+    public exp2: Expression,
+  ) {}
 }
 
 export class FunctionCall {
   readonly kind = ASTKind.FUNCCALL;
 
-  constructor(public functionName: string, public parameters: Array<Expression>) {}
+  constructor(
+    public functionName: string,
+    public parameters: Array<Expression>,
+  ) {}
 }
 
 export class Not {
@@ -69,16 +82,20 @@ export class Not {
 export class LogicBinOp {
   readonly kind = ASTKind.LOGICBINOP;
 
-  constructor(public op: string, public exp1: Expression, public exp2: Expression) {}
+  constructor(
+    public op: string,
+    public exp1: Expression,
+    public exp2: Expression,
+  ) {}
 }
 
-export type Expression = 
-  | ArrayComprehension 
-  | ArithmeticBinOp 
-  | Comparison 
-  | FunctionCall 
-  | LogicBinOp 
-  | Not 
+export type Expression =
+  | ArrayComprehension
+  | ArithmeticBinOp
+  | Comparison
+  | FunctionCall
+  | LogicBinOp
+  | Not
   | Value;
 
 /* Statements */
@@ -91,7 +108,11 @@ export class Print {
 export class If {
   readonly kind = ASTKind.IF;
 
-  constructor(public pred: Expression, public truePath: Block, public falsePath: Block) {}
+  constructor(
+    public pred: Expression,
+    public truePath: Block,
+    public falsePath: Block,
+  ) {}
 }
 
 export class Assignment {
@@ -122,19 +143,32 @@ export class DoWhile {
 export class For {
   readonly kind = ASTKind.FOR;
 
-  constructor(public variable: Variable, public from: Expression, public to: Expression, public body: Block) {}
+  constructor(
+    public variable: Variable,
+    public from: Expression,
+    public to: Expression,
+    public body: Block,
+  ) {}
 }
 
 export class ArrayElementAssignment {
   readonly kind = ASTKind.ARRELEMASSIGN;
 
-  constructor(public array: Variable, public index: Expression, public value: Expression) {}
+  constructor(
+    public array: Variable,
+    public index: Expression,
+    public value: Expression,
+  ) {}
 }
 
 export class ArrayAssignment {
   readonly kind = ASTKind.ARRASSIGN;
 
-  constructor(public variable: Variable, public type: string, public length: Expression) {}
+  constructor(
+    public variable: Variable,
+    public type: string,
+    public length: Expression,
+  ) {}
 }
 
 export class Return {
@@ -146,10 +180,24 @@ export class Return {
 export class FunctionDeclaration {
   readonly kind = ASTKind.FUNCDECL;
 
-  constructor(public name: string, public parameters: Array<Parameter>, public body: Block) {}
+  constructor(
+    public name: string,
+    public parameters: Array<Parameter>,
+    public body: Block,
+  ) {}
 }
 
 export type Block = Array<Statement>;
-export type Statement = ArrayAssignment | ArrayElementAssignment | Assignment | DoWhile | Expression | FunctionDeclaration | If | Print | Return | While;
+export type Statement =
+  | ArrayAssignment
+  | ArrayElementAssignment
+  | Assignment
+  | DoWhile
+  | Expression
+  | FunctionDeclaration
+  | If
+  | Print
+  | Return
+  | While;
 
 export type AST = Parameter | Parameter[] | Block | Statement | Expression;

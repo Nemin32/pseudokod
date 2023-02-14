@@ -1,16 +1,17 @@
-import { ByteCode, OpCode } from "./opcodes";
+import { ByteCode, OpCode } from "./opcodes.ts";
+import { Environment } from "./variables.ts";
 
 export class VM {
   ip = 0;
   stack: Array<any> = [];
   ipStack: Array<number> = [];
-  vars: Map<string, any> = new Map();
+  vars: Environment<any> = new Environment();
 
   constructor(public code: Array<ByteCode>) {}
 
   dump() {
     for (const line of this.code) {
-      console.log(`${OpCode[line.opCode]} ${line.payload ?? ""}`)
+      console.log(`${OpCode[line.opCode]} ${line.payload ?? ""}`);
     }
   }
 
@@ -42,23 +43,23 @@ export class VM {
         break;
 
       case OpCode.GETVAR:
-        this.stack.push(this.vars.get(payload as string));
+        this.stack.push(this.vars.getVar(payload as string));
         break;
 
       case OpCode.SETVAR:
-        this.vars.set(payload as string, this.stack.pop())
+        this.vars.setVar(payload as string, this.stack.pop());
         break;
 
       case OpCode.VALARR:
         {
           const length = payload;
-          let arr: Array<any> = []
+          const arr: Array<any> = [];
 
           for (let i = 0; i < length; i++) {
-            arr.push(this.stack.pop())
+            arr.push(this.stack.pop());
           }
 
-          this.stack.push(arr.reverse())
+          this.stack.push(arr.reverse());
         }
         break;
 
@@ -68,7 +69,7 @@ export class VM {
 
       case OpCode.FJMP:
         {
-          const val = this.stack.pop()
+          const val = this.stack.pop();
 
           if (!val) {
             this.jmpLabel(payload as string);
@@ -78,7 +79,7 @@ export class VM {
 
       case OpCode.TJMP:
         {
-          const val = this.stack.pop()
+          const val = this.stack.pop();
 
           if (!val) {
             this.jmpLabel(payload as string);
@@ -93,15 +94,15 @@ export class VM {
 
       case OpCode.RETURN:
         {
-        if (payload != null) {
-          this.stack.push(payload);
-        } 
+          if (payload != null) {
+            this.stack.push(payload);
+          }
 
-        const newIp = this.ipStack.pop()
+          const newIp = this.ipStack.pop();
 
-        if (!newIp) throw new Error("IP Stack is empty!");
+          if (!newIp) throw new Error("IP Stack is empty!");
 
-        this.ip = newIp
+          this.ip = newIp;
         }
         break;
 
@@ -121,12 +122,19 @@ export class VM {
         {
           const exp2 = this.stack.pop();
           const exp1 = this.stack.pop();
-          const op = payload
+          const op = payload;
 
           switch (op) {
-            case "&&": this.stack.push(exp1 && exp2); break;
-            case "||": this.stack.push(exp1 || exp2); break;
-            default: throw new Error("Logic payload was bad!")
+            case "&&":
+              this.stack.push(exp1 && exp2);
+              break;
+
+            case "||":
+              this.stack.push(exp1 || exp2);
+              break;
+
+            default:
+              throw new Error("Logic payload was bad!");
           }
         }
         break;
@@ -135,15 +143,32 @@ export class VM {
         {
           const exp2 = this.stack.pop();
           const exp1 = this.stack.pop();
-          const op = payload
+          const op = payload;
 
           switch (op) {
-            case "=/=": this.stack.push(exp1 != exp2); break;
-            case "==": this.stack.push(exp1 == exp2); break;
-            case "<=": this.stack.push(exp1 <= exp2); break;
-            case ">=": this.stack.push(exp1 >= exp2); break;
-            case "<": this.stack.push(exp1 < exp2); break;
-            case ">": this.stack.push(exp1 > exp2); break;
+            case "=/=":
+              this.stack.push(exp1 != exp2);
+              break;
+
+            case "==":
+              this.stack.push(exp1 == exp2);
+              break;
+
+            case "<=":
+              this.stack.push(exp1 <= exp2);
+              break;
+
+            case ">=":
+              this.stack.push(exp1 >= exp2);
+              break;
+
+            case "<":
+              this.stack.push(exp1 < exp2);
+              break;
+
+            case ">":
+              this.stack.push(exp1 > exp2);
+              break;
           }
         }
         break;
@@ -151,18 +176,20 @@ export class VM {
       case OpCode.MAKEARR:
         {
           const length = this.stack.pop();
-          this.stack.push(Array(length).fill(0))
+          this.stack.push(Array(length).fill(0));
         }
         break;
 
       case OpCode.SETARR:
         {
-          const idx = this.stack.pop()
-          const val = this.stack.pop()
+          const idx = this.stack.pop();
+          const val = this.stack.pop();
 
-          if (typeof payload != "string") throw new Error("Varname must be string!")
-        
-          const arr = this.vars.get(payload);
+          if (typeof payload != "string") {
+            throw new Error("Varname must be string!");
+          }
+
+          const arr = this.vars.getVar(payload);
 
           if (arr) {
             arr[idx] = val;
@@ -178,7 +205,7 @@ export class VM {
         break;
 
       default:
-        throw new Error(OpCode[opCode] + " is not yet implemented!")
+        throw new Error(OpCode[opCode] + " is not yet implemented!");
     }
   }
 
@@ -193,14 +220,3 @@ export class VM {
     }
   }
 }
-
-/*
-const testVM = new VM([
-  {opCode: OpCode.PUSH, payload: 5},
-  {opCode: OpCode.PUSH, payload: 5},
-  {opCode: OpCode.CALC, payload: null},
-  {opCode: OpCode.PRINT, payload: null},
-])
-
-testVM.run()
-*/

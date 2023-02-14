@@ -1,29 +1,29 @@
-import { ByteCode, OpCode } from "./opcodes";
+import { ByteCode, OpCode } from "./opcodes.ts";
 import {
   ArithmeticBinOp,
-  Comparison,
-  FunctionCall,
-  LogicBinOp,
-  Not,
-  Value,
   ArrayAssignment,
+  ArrayComprehension,
   ArrayElementAssignment,
   Assignment,
-  DoWhile,
-  Expression,
-  FunctionDeclaration,
-  If,
-  Print,
-  Return,
-  While,
-  Variable,
+  ASTKind,
   Atom,
   Block,
-  Statement,
-  ASTKind,
+  Comparison,
+  DoWhile,
+  Expression,
+  FunctionCall,
+  FunctionDeclaration,
+  If,
+  LogicBinOp,
+  Not,
   Parameter,
-  ArrayComprehension,
-} from "./pseudo_types";
+  Print,
+  Return,
+  Statement,
+  Value,
+  Variable,
+  While,
+} from "./pseudo_types.ts";
 
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
@@ -56,8 +56,8 @@ export class ASTCompiler {
   }
 
   visitArrayComprehension(ast: ArrayComprehension) {
-    ast.exps.forEach(e => this.visitExpression(e))
-    this.createOp(OpCode.VALARR, ast.exps.length)
+    ast.exps.forEach((e) => this.visitExpression(e));
+    this.createOp(OpCode.VALARR, ast.exps.length);
   }
 
   visitFunctionCall(ast: FunctionCall) {
@@ -80,22 +80,24 @@ export class ASTCompiler {
 
   visitValue(ast: Value) {
     switch (ast.kind) {
-      case ASTKind.ATOM:     return this.visitAtom(ast);
-      case ASTKind.VARIABLE: return this.visitVariable(ast);
+      case ASTKind.ATOM:
+        return this.visitAtom(ast);
+      case ASTKind.VARIABLE:
+        return this.visitVariable(ast);
     }
   }
 
   /* Statements */
   visitArrayAssignment(ast: ArrayAssignment) {
-    this.visitExpression(ast.length)
-    this.createOp(OpCode.MAKEARR, null)
-    this.createOp(OpCode.SETVAR, ast.variable.name)
+    this.visitExpression(ast.length);
+    this.createOp(OpCode.MAKEARR, null);
+    this.createOp(OpCode.SETVAR, ast.variable.name);
   }
 
   visitArrayElementAssignment(ast: ArrayElementAssignment) {
-    this.visitExpression(ast.value)
-    this.visitExpression(ast.index)
-    this.createOp(OpCode.SETARR, ast.array.name)
+    this.visitExpression(ast.value);
+    this.visitExpression(ast.index);
+    this.createOp(OpCode.SETARR, ast.array.name);
   }
 
   visitAssignment(ast: Assignment) {
@@ -106,27 +108,36 @@ export class ASTCompiler {
   visitDoWhile(ast: DoWhile) {
     this.labelId++;
 
-    this.createOp(OpCode.LABEL, "do_while_" + this.labelId)
+    this.createOp(OpCode.LABEL, "do_while_" + this.labelId);
 
     this.visitBlock(ast.body);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.TJMP, "do_while_" + this.labelId)
+    this.createOp(OpCode.TJMP, "do_while_" + this.labelId);
   }
 
   visitExpression(ast: Expression) {
     switch (ast.kind) {
-      case ASTKind.ATOM:       return this.visitValue(ast);
-      case ASTKind.CALCBINOP:  return this.visitArithmeticBinOp(ast);
-      case ASTKind.COMPBINOP:  return this.visitComparison(ast);
-      case ASTKind.FUNCCALL:   return this.visitFunctionCall(ast);
-      case ASTKind.LOGICBINOP: return this.visitLogicBinOp(ast);
-      case ASTKind.NOT:        return this.visitNot(ast);
-      case ASTKind.VARIABLE:   return this.visitValue(ast);
-      case ASTKind.COMPREHENSION: return this.visitArrayComprehension(ast);
+      case ASTKind.ATOM:
+        return this.visitValue(ast);
+      case ASTKind.CALCBINOP:
+        return this.visitArithmeticBinOp(ast);
+      case ASTKind.COMPBINOP:
+        return this.visitComparison(ast);
+      case ASTKind.FUNCCALL:
+        return this.visitFunctionCall(ast);
+      case ASTKind.LOGICBINOP:
+        return this.visitLogicBinOp(ast);
+      case ASTKind.NOT:
+        return this.visitNot(ast);
+      case ASTKind.VARIABLE:
+        return this.visitValue(ast);
+      case ASTKind.COMPREHENSION:
+        return this.visitArrayComprehension(ast);
 
-      default: break;
+      default:
+        break;
     }
   }
 
@@ -173,24 +184,59 @@ export class ASTCompiler {
 
   visitStatement(ast: Statement) {
     switch (ast.kind) {
-      case ASTKind.ARRASSIGN:     this.visitArrayAssignment(ast); break;
-      case ASTKind.ARRELEMASSIGN: this.visitArrayElementAssignment(ast); break;
-      case ASTKind.ASSIGNMENT:    this.visitAssignment(ast); break;
-      case ASTKind.ATOM:          this.visitAtom(ast); break;
-      case ASTKind.CALCBINOP:     this.visitArithmeticBinOp(ast); break;
-      case ASTKind.COMPBINOP:     this.visitComparison(ast); break;
-      case ASTKind.DOWHILE:       this.visitDoWhile(ast); break;
-      case ASTKind.FUNCCALL:      this.visitFunctionCall(ast); break;
-      case ASTKind.FUNCDECL:      this.visitFunctionDeclaration(ast); break;
-      case ASTKind.IF:            this.visitIf(ast); break;
-      case ASTKind.LOGICBINOP:    this.visitLogicBinOp(ast); break;
-      case ASTKind.NOT:           this.visitNot(ast); break;
-      case ASTKind.PRINT:         this.visitPrint(ast); break;
-      case ASTKind.RETURN:        this.visitReturn(ast); break;
-      case ASTKind.VARIABLE:      this.visitVariable(ast); break;
-      case ASTKind.WHILE:         this.visitWhile(ast); break;
-      case ASTKind.COMPREHENSION: this.visitArrayComprehension(ast); break;
-      default: break;
+      case ASTKind.ARRASSIGN:
+        this.visitArrayAssignment(ast);
+        break;
+      case ASTKind.ARRELEMASSIGN:
+        this.visitArrayElementAssignment(ast);
+        break;
+      case ASTKind.ASSIGNMENT:
+        this.visitAssignment(ast);
+        break;
+      case ASTKind.ATOM:
+        this.visitAtom(ast);
+        break;
+      case ASTKind.CALCBINOP:
+        this.visitArithmeticBinOp(ast);
+        break;
+      case ASTKind.COMPBINOP:
+        this.visitComparison(ast);
+        break;
+      case ASTKind.DOWHILE:
+        this.visitDoWhile(ast);
+        break;
+      case ASTKind.FUNCCALL:
+        this.visitFunctionCall(ast);
+        break;
+      case ASTKind.FUNCDECL:
+        this.visitFunctionDeclaration(ast);
+        break;
+      case ASTKind.IF:
+        this.visitIf(ast);
+        break;
+      case ASTKind.LOGICBINOP:
+        this.visitLogicBinOp(ast);
+        break;
+      case ASTKind.NOT:
+        this.visitNot(ast);
+        break;
+      case ASTKind.PRINT:
+        this.visitPrint(ast);
+        break;
+      case ASTKind.RETURN:
+        this.visitReturn(ast);
+        break;
+      case ASTKind.VARIABLE:
+        this.visitVariable(ast);
+        break;
+      case ASTKind.WHILE:
+        this.visitWhile(ast);
+        break;
+      case ASTKind.COMPREHENSION:
+        this.visitArrayComprehension(ast);
+        break;
+      default:
+        break;
     }
   }
 
