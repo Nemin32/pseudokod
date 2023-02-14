@@ -29,7 +29,7 @@ export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
   labelId = 0;
 
-  createOp(op: OpCode, payload: any) {
+  createOp(op: OpCode, payload: ByteCode["payload"]) {
     this.bytecode.push({ opCode: op, payload });
   }
 
@@ -177,9 +177,13 @@ export class ASTCompiler {
   }
 
   visitBlock(ast: Block) {
+    this.createOp(OpCode.ESCOPE, null)
+
     for (const stmt of ast) {
       this.visitStatement(stmt);
     }
+
+    this.createOp(OpCode.LSCOPE, null)
   }
 
   visitStatement(ast: Statement) {

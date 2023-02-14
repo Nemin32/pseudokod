@@ -1,11 +1,15 @@
 import { ByteCode, OpCode } from "./opcodes.ts";
+import { Atom } from "./pseudo_types.ts";
+import { Stack } from "./stack.ts";
 import { Environment } from "./variables.ts";
+
+type Value = NonNullable<Atom["value"]>;
 
 export class VM {
   ip = 0;
-  stack: Array<any> = [];
+  stack: Stack<Value> = new Stack();
   ipStack: Array<number> = [];
-  vars: Environment<any> = new Environment();
+  vars: Environment<Value> = new Environment();
 
   constructor(public code: Array<ByteCode>) {}
 
@@ -42,8 +46,24 @@ export class VM {
       case OpCode.LABEL:
         break;
 
+      case OpCode.ESCOPE:
+        this.vars.makeScope();
+        break;
+
+      case OpCode.LSCOPE:
+        this.vars.leaveScope();
+        break;
+
       case OpCode.GETVAR:
-        this.stack.push(this.vars.getVar(payload as string));
+        {
+          const variable = this.vars.getVar(payload as string);
+
+          if (variable == null) {
+            throw new Error(`Variable '${variable}' doesn't exist!`);
+          }
+
+          this.stack.push(variable);
+        }
         break;
 
       case OpCode.SETVAR:
@@ -52,10 +72,15 @@ export class VM {
 
       case OpCode.VALARR:
         {
-          const length = payload;
-          const arr: Array<any> = [];
+          if (payload == null || typeof payload != "number") {
+            throw new Error(
+              "VALARR: Payload must be number, but it was " + typeof payload,
+            );
+          }
 
-          for (let i = 0; i < length; i++) {
+          const arr: Array<Value> = [];
+
+          for (let i = 0; i < payload; i++) {
             arr.push(this.stack.pop());
           }
 
@@ -115,7 +140,33 @@ export class VM {
         break;
 
       case OpCode.CALC:
-        this.stack.push(this.stack.pop() + this.stack.pop());
+        {
+          const exp2 = this.stack.pop();
+          const exp1 = this.stack.pop();
+          const op = payload;
+
+          switch (op) {
+            case "+":
+              this.stack.push(exp1 + exp2);
+              break;
+
+            case "-":
+              this.stack.push(exp1 + exp2);
+              break;
+
+            case "/":
+              this.stack.push(exp1 + exp2);
+              break;
+
+            case "*":
+              this.stack.push(exp1 + exp2);
+              break;
+
+            case "mod":
+              this.stack.push(exp1 % exp2);
+              break;
+          }
+        }
         break;
 
       case OpCode.LOGIC:
@@ -176,7 +227,8 @@ export class VM {
       case OpCode.MAKEARR:
         {
           const length = this.stack.pop();
-          this.stack.push(Array(length).fill(0));
+          const arr: Value = Array(length).fill(0);
+          this.stack.push(arr);
         }
         break;
 

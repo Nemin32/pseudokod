@@ -23,11 +23,13 @@ export enum ASTKind {
 }
 
 /* Expressions */
+type AtomValue = number | string | boolean | Array<AtomValue>;
+
 export class Atom {
   readonly kind = ASTKind.ATOM;
 
   constructor(
-    public value: number | string | boolean | Array<number | string | boolean>,
+    public value: AtomValue,
   ) {}
 }
 

@@ -4,11 +4,13 @@ export enum OpCode {
   CALC,
   CALL,
   COMP,
+  ESCOPE,
   FJMP,
   GETVAR,
   JMP,
   LABEL,
   LOGIC,
+  LSCOPE,
   MAKEARR,
   NOT,
   PRINT,
@@ -22,5 +24,5 @@ export enum OpCode {
 
 export type ByteCode = {
   opCode: OpCode;
-  payload: Atom["value"];
+  payload: Atom["value"] | null;
 };
