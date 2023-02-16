@@ -39,3 +39,17 @@ parseBlock.run(input).onSuccess((ast) => {
 }).onError((err) => {
   console.error("Error: " + err.what);
 });
+
+export function execute(input: string, outputFn: (val: any) => void) {
+  parseBlock.run(input)
+    .onError((err) => {
+      throw new Error(err.what);
+    })
+    .onSuccess((ast) => {
+      const compiler = new ASTCompiler();
+      compiler.visitBlock(ast.value);
+
+      const vm = new VM(compiler.bytecode, outputFn);
+      vm.run();
+    });
+}
