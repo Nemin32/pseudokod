@@ -4,8 +4,10 @@ import {
   ArrayAssignment,
   ArrayComprehension,
   ArrayElementAssignment,
+  ArrayIndex,
   Assignment,
   Atom,
+  Block,
   Comparison,
   Expression,
   FunctionCall,
@@ -21,14 +23,33 @@ import {
   While,
 } from "./pseudo_types.ts";
 
-export const OSPACES = Parser.char(" ").many();
-export const SPACES = Parser.char(" ").many1();
+// const OSPACES = Parser.char(" ").many();
+const SPACES = Parser.char(" ").many1();
 
-export const ONL = Parser.char("\n").many();
-export const NL = Parser.char("\n").many1();
+// const ONL = Parser.char("\n").many();
+// const NL = Parser.char("\n").many1();
 
-export const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
-export const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
+const WS = Parser.or(Parser.char(" "), Parser.char("\n")).many1();
+const OWS = Parser.or(Parser.char(" "), Parser.char("\n")).many();
+
+/*
+const tokenize = (words: string | string[]): Parser<string> => {
+  if (typeof words === "string") {
+    return OWS.right(Parser.string(words));
+  } else if (words.length === 1) {
+    return OWS.right(Parser.string(words[0]));
+  } else if (words.length === 0) {
+    throw new Error("Length must be more than one");
+  } else {
+    return OWS.right(
+      words.slice(1).reduce(
+        (p, str) => p.left(WS).bind((_) => Parser.string(str)),
+        Parser.string(words[0]),
+      ),
+    );
+  }
+};
+*/
 
 const parseFuncName: Parser<string> = Parser.upper.bind((l) =>
   Parser.letter.many().bindResult((rest) => l + rest.join(""))
@@ -41,29 +62,35 @@ const parseType: Parser<string> = Parser.choice(
 
 /* Groupings */
 
-export const parseStatement: Parser<Statement> = Parser.of(() =>
-  Parser.choice(
-    parseReturn,
-    parseFunctionDecl,
-    parseWhileStatement,
-    parseArrayAssignment,
-    parseArrayElementAssignment,
-    parseAssignmentStatement,
-    parsePrintStatement,
-    parseIfStatement,
-  )
+export const parseStatement: Parser<Statement> = OWS.right(
+  Parser.of(() =>
+    Parser.choice(
+      parseReturn,
+      parseFuncCall,
+      parseFunctionDecl,
+      parseWhileStatement,
+      parseArrayAssignment,
+      parseArrayElementAssignment,
+      parseAssignmentStatement,
+      parsePrintStatement,
+      parseIfStatement,
+    )
+  ),
 );
 
-export const parseExpression: Parser<Expression> = Parser.of(() =>
-  Parser.choice(
-    parseArrayComprehension,
-    parseFuncCall,
-    parseNot,
-    parseComp,
-  )
+export const parseExpression: Parser<Expression> = OWS.right(
+  Parser.of(() =>
+    Parser.choice(
+      parseArrayComprehension,
+      parseArrayIndex,
+      parseFuncCall,
+      parseNot,
+      parseComp,
+    )
+  ),
 );
 
-export const parseBlock = parseStatement.sepBy(NL);
+export const parseBlock: Parser<Block> = OWS.right(parseStatement).sepBy(WS);
 
 /* = Expressions = */
 
@@ -77,14 +104,16 @@ export const parseArrayComprehension = parseExpression
 
 /* Atom */
 
-export const parseNumber = Parser.digit.many1().bindResult(Number).expect(
+export const parseNumber = Parser.digit.many1().bindResult((digits) =>
+  Number(digits.join(""))
+).expect(
   "<number>",
 );
 
-export const parseString = Parser.alphanumeric
+export const parseString = Parser.sat((c) => c != '"')
   .many()
   .bracket(Parser.char('"'), Parser.char('"'))
-  .bindResult((chars) => '"' + chars.join("") + '"')
+  .bindResult((chars) => chars.join(""))
   .expect("<string>");
 
 export const parseBool = Parser.or(
@@ -111,6 +140,13 @@ export const parseVariable: Parser<Variable> = parseVarName.bindResult((name) =>
   new Variable(name)
 );
 
+/* Array Indexing */
+
+export const parseArrayIndex: Parser<ArrayIndex> = Parser.do()
+  .bind("variable", parseVariable)
+  .bind("index", parseExpression.bracket(Parser.char("["), Parser.char("]")))
+  .bindResult(({ variable, index }) => new ArrayIndex(variable, index));
+
 /* Value */
 
 export const parseValue = parseAtom.or(parseVariable);
@@ -118,10 +154,10 @@ export const parseValue = parseAtom.or(parseVariable);
 /* Binary Ops */
 
 export const parseCompOp: Parser<string> = Parser.choice(
-  Parser.string("=="),
   Parser.string("=/="),
   Parser.string("<="),
   Parser.string(">="),
+  Parser.char("="),
   Parser.char("<"),
   Parser.char(">"),
 ).bracket(OWS, OWS);
@@ -159,8 +195,11 @@ export const parseNot: Parser<Not> = Parser.char("~")
 
 /* Function Call */
 
-const parseExpressionList = parseExpression.sepBy(Parser.char(",").left(OWS))
-  .parens();
+const parseExpressionList = Parser.or(
+  OWS.parens().bindResult((_) => []),
+  parseExpression.sepBy(Parser.char(",").left(OWS))
+    .parens(),
+);
 
 export const parseFuncCall: Parser<FunctionCall> = Parser.do()
   .bind("name", parseFuncName.left(OWS))
@@ -169,18 +208,34 @@ export const parseFuncCall: Parser<FunctionCall> = Parser.do()
 
 /* = Statements = */
 
+/* Print */
+
 export const parsePrintStatement: Parser<Print> = Parser.string("kiír ")
   .bind((_) => parseExpression.bindResult((exp: Expression) => new Print(exp)));
 
-export const parseIfStatement: Parser<If> = Parser.do()
+/* If */
+
+const parseIfHead: Parser<{ pred: Expression; body: Block }> = Parser.do()
   .ignore(Parser.string("ha").left(WS))
   .bind("pred", parseExpression)
   .ignore(Parser.string("akkor").bracket(WS, WS))
-  .bind("tBlock", parseBlock)
-  .ignore(Parser.string("különben").bracket(WS, WS))
-  .bind("fBlock", parseBlock)
-  .ignore(WS.right(Parser.string("elágazás vége")))
-  .bindResult(({ pred, tBlock, fBlock }) => new If(pred, tBlock, fBlock));
+  .bind("body", parseBlock)
+  .toParser();
+
+const parseElse: Parser<Block> = Parser.string("különben").bracket(WS, WS)
+  .right(parseBlock);
+
+const parseElseIf: Parser<Array<{ pred: Expression; body: Block }>> = Parser
+  .string("különben").bracket(WS, WS).right(parseIfHead).many();
+
+export const parseIfStatement: Parser<If> = Parser.do()
+  .bind("head", parseIfHead)
+  .bind("elIf", parseElseIf)
+  .bind("elseBranch", parseElse.maybe())
+  .ignore(OWS.right(Parser.string("elágazás vége")))
+  .bindResult(({ head, elIf, elseBranch }) => new If(head, elIf, elseBranch));
+
+/* Arrays */
 
 const parseArrayAssignment: Parser<ArrayAssignment> = Parser.do()
   .bind("variable", parseVariable)
@@ -209,10 +264,13 @@ const parseParameter: Parser<Parameter> = Parser.do()
   .bind("isRef", Parser.string("címszerint").left(OWS).maybe())
   .bind("varName", parseVarName)
   .ignore(Parser.char(":").bracket(OWS, OWS))
-  .bind("type", Parser.letter.many1())
+  .bind("type", parseType)
   .bindResult(({ varName, isRef }) => new Parameter(varName, isRef != null));
 
-const parseFuncList = parseParameter.sepBy(Parser.char(",").left(OWS)).parens();
+const parseFuncList = Parser.or(
+  OWS.parens().bindResult((_) => []),
+  parseParameter.sepBy(Parser.char(",").left(OWS)).parens(),
+);
 
 export const parseFunctionDecl: Parser<FunctionDeclaration> = Parser.do()
   .ignore(Parser.string("függvény").left(WS))
@@ -231,10 +289,9 @@ export const parseReturn: Parser<Return> = Parser.string("vissza")
 
 export const parseArrayElementAssignment: Parser<ArrayElementAssignment> =
   Parser.do()
-    .bind("variable", parseVariable)
-    .bind("index", parseExpression.bracket(Parser.char("["), Parser.char("]")))
+    .bind("arrayIndex", parseArrayIndex)
     .ignore(Parser.string("<-").bracket(OWS, OWS))
     .bind("expression", parseExpression)
-    .bindResult(({ variable, index, expression }) =>
-      new ArrayElementAssignment(variable, index, expression)
+    .bindResult(({ arrayIndex, expression }) =>
+      new ArrayElementAssignment(arrayIndex, expression)
     );

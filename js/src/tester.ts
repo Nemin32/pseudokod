@@ -3,15 +3,12 @@ import { ASTCompiler } from "./pseudo_compiler.ts";
 import { parseBlock } from "./pseudo_parser.ts";
 import { VM } from "./vm.ts";
 
-const ainput = `függvény Teszt(címszerint x : egesz, y : egesz)
-vissza x + y
-függvény vége
-x <- Teszt(5, 6)
-kiír x`;
-
-const input = `a <- Létrehoz[egész](3+5)
-a[5] <- 3
-kiír a`;
+const input = `
+            x<-3
+            függvény Teszt(x : egész)
+                vissza x * 2
+            függvény vége
+            kiír Teszt(x)`
 
 // const input = "kiír igaz || hamis"
 
@@ -28,7 +25,7 @@ parseBlock.run(input).onSuccess((ast) => {
 
   compiler.visitBlock(ast.value);
 
-  const vm = new VM(compiler.bytecode);
+  const vm = new VM(compiler.bytecode, console.log);
 
   console.log("Bytecode:");
 
@@ -37,7 +34,7 @@ parseBlock.run(input).onSuccess((ast) => {
   console.log("\nValue:");
   vm.run();
 }).onError((err) => {
-  console.error("Error: " + err.what);
+  console.error(err.where.index + ". Error: " + err.what);
 });
 
 export function execute(input: string, outputFn: (val: any) => void) {

@@ -4,6 +4,7 @@ import {
   ArrayAssignment,
   ArrayComprehension,
   ArrayElementAssignment,
+  ArrayIndex,
   Assignment,
   ASTKind,
   Atom,
@@ -60,6 +61,12 @@ export class ASTCompiler {
     this.createOp(OpCode.VALARR, ast.exps.length);
   }
 
+  visitArrayIndex(ast: ArrayIndex) {
+    this.visitVariable(ast.variable);
+    this.visitExpression(ast.index);
+    this.createOp(OpCode.GETARR, null);
+  }
+
   visitFunctionCall(ast: FunctionCall) {
     ast.parameters.forEach((e) => this.visitExpression(e));
     this.createOp(OpCode.CALL, ast.functionName);
@@ -96,8 +103,8 @@ export class ASTCompiler {
 
   visitArrayElementAssignment(ast: ArrayElementAssignment) {
     this.visitExpression(ast.value);
-    this.visitExpression(ast.index);
-    this.createOp(OpCode.SETARR, ast.array.name);
+    this.visitExpression(ast.arrayIndex.index);
+    this.createOp(OpCode.SETARR, ast.arrayIndex.variable.name);
   }
 
   visitAssignment(ast: Assignment) {
@@ -135,6 +142,8 @@ export class ASTCompiler {
         return this.visitValue(ast);
       case ASTKind.COMPREHENSION:
         return this.visitArrayComprehension(ast);
+      case ASTKind.ARRINDEX:
+        return this.visitArrayIndex(ast);
 
       default:
         break;
@@ -149,11 +158,19 @@ export class ASTCompiler {
     this.createOp(OpCode.JMP, ast.name + "_end");
     this.createOp(OpCode.LABEL, ast.name);
 
+    this.createOp(OpCode.ESCOPE, null);
+
     Array.from(ast.parameters)
       .reverse()
       .forEach((p) => this.visitParameter(p));
 
-    this.visitBlock(ast.body);
+    // this.visitBlock(ast.body);
+
+    for (const stmt of ast.body) {
+      this.visitStatement(stmt);
+    }
+
+    this.createOp(OpCode.LSCOPE, null);
 
     this.createOp(OpCode.RETURN, null);
 
@@ -161,29 +178,45 @@ export class ASTCompiler {
   }
 
   visitIf(ast: If) {
-    this.labelId++;
+    const headId = ++this.labelId;
 
-    this.visitExpression(ast.pred);
+    // Head
+    this.visitExpression(ast.headBranch.pred);
+    this.createOp(OpCode.FJMP, "else_" + headId);
 
-    this.createOp(OpCode.FJMP, "if_" + this.labelId);
+    this.visitBlock(ast.headBranch.body);
+    this.createOp(OpCode.JMP, "if_end_" + headId);
 
-    this.visitBlock(ast.truePath);
-    this.createOp(OpCode.JMP, "if_end_" + this.labelId);
+    // Else If
+    this.createOp(OpCode.LABEL, "else_" + headId);
+    for (const elIf of ast.elIfs) {
+      this.labelId++;
 
-    this.createOp(OpCode.LABEL, "if_" + this.labelId);
+      this.visitExpression(elIf.pred);
+      this.createOp(OpCode.FJMP, "if_else_" + this.labelId);
 
-    this.visitBlock(ast.falsePath);
-    this.createOp(OpCode.LABEL, "if_end_" + this.labelId);
+      this.visitBlock(elIf.body);
+
+      this.createOp(OpCode.JMP, "if_end_" + headId);
+      this.createOp(OpCode.LABEL, "if_else_" + this.labelId);
+    }
+
+    // Else
+    if (ast.elseBranch) {
+      this.visitBlock(ast.elseBranch);
+    }
+
+    this.createOp(OpCode.LABEL, "if_end_" + headId);
   }
 
   visitBlock(ast: Block) {
-    this.createOp(OpCode.ESCOPE, null)
+    this.createOp(OpCode.ESCOPE, null);
 
     for (const stmt of ast) {
       this.visitStatement(stmt);
     }
 
-    this.createOp(OpCode.LSCOPE, null)
+    this.createOp(OpCode.LSCOPE, null);
   }
 
   visitStatement(ast: Statement) {
@@ -211,6 +244,7 @@ export class ASTCompiler {
         break;
       case ASTKind.FUNCCALL:
         this.visitFunctionCall(ast);
+        this.createOp(OpCode.VOID, null);
         break;
       case ASTKind.FUNCDECL:
         this.visitFunctionDeclaration(ast);

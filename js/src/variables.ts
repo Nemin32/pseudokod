@@ -4,13 +4,18 @@ type Value<T> = { kind: "value"; key: string; value: T };
 export class Environment<T> {
   static readonly sentinel: Sentinel = { kind: "sentinel" };
   private variables: Array<Value<T> | Sentinel> = [];
-  private references: Map<string, string> = new Map();
+  private references: Array<Map<string, string>> = [];
+
+  get length() {return {vLength: this.variables.length, rLength: this.references.length}}
 
   private dereference(varName: string): [string, boolean] {
-    return [
-      this.references.get(varName) ?? varName,
-      this.references.has(varName),
-    ];
+    for (let i = this.references.length; i >= 0; i--) {
+      if (this.references[i].has(varName)) {
+        return [this.references[i].get(varName)!, true]
+      }
+    }
+
+    return [varName, false]
   }
 
   private isSentinel(elem: Value<T> | Sentinel): elem is Sentinel {
@@ -45,7 +50,7 @@ export class Environment<T> {
     const idx: number = this.variables.findLastIndex((e: Value<T> | Sentinel) =>
       this.isSentinel(e)
     );
-    this.variables = this.variables.slice(0, Math.max(0, idx - 1));
+    this.variables = this.variables.slice(0, Math.max(0, idx));
   }
 
   getVar(varName: string): T | null {
@@ -60,7 +65,7 @@ export class Environment<T> {
 
   makeReference(oldName: string, newName: string): void {
     if (this.findVar(oldName, true)) {
-      this.references.set(oldName, newName);
+      this.references[this.references.length-1].set(oldName, newName);
     } else {
       throw new Error("Trying to make reference for non-existent variable.");
     }

@@ -3,19 +3,22 @@ import { Atom } from "./pseudo_types.ts";
 import { Stack } from "./stack.ts";
 import { Environment } from "./variables.ts";
 
-type Value = NonNullable<Atom["value"]>;
+type Value = Atom["value"];
 
 export class VM {
   ip = 0;
   stack: Stack<Value> = new Stack();
-  ipStack: Array<number> = [];
+  ipStack: Array<{ip: number, lengths: {vLength: number, rLength: number}}> = [];
   vars: Environment<Value> = new Environment();
 
-  constructor(public code: Array<ByteCode>) {}
+  constructor(
+    public code: Array<ByteCode>,
+    private outputFn: (value: Value) => void,
+  ) {}
 
   dump() {
     for (const line of this.code) {
-      console.log(`${OpCode[line.opCode]} ${line.payload ?? ""}`);
+      this.outputFn(`${OpCode[line.opCode]} ${line.payload ?? ""}`);
     }
   }
 
@@ -54,12 +57,30 @@ export class VM {
         this.vars.leaveScope();
         break;
 
+      case OpCode.GETARR:
+        {
+          const index = this.stack.pop();
+          const variable = this.stack.pop();
+
+          if (typeof index != "number") {
+            throw new Error("GETARR: Index must be a number!");
+          }
+
+          if (!Array.isArray(variable)) {
+            throw new Error("GETARR: Variable must be an array!");
+          }
+
+          // Pseudocode is 1-indexed.
+          this.stack.push(variable[index - 1]);
+        }
+        break;
+
       case OpCode.GETVAR:
         {
           const variable = this.vars.getVar(payload as string);
 
           if (variable == null) {
-            throw new Error(`Variable '${variable}' doesn't exist!`);
+            throw new Error(`Variable '${payload}' doesn't exist!`);
           }
 
           this.stack.push(variable);
@@ -113,29 +134,35 @@ export class VM {
         break;
 
       case OpCode.CALL:
-        this.ipStack.push(this.ip);
+        this.ipStack.push({ip: this.ip, lengths: this.vars.length });
         this.jmpLabel(payload as string);
         break;
 
       case OpCode.RETURN:
         {
-          if (payload != null) {
+          if (payload !== null) {
             this.stack.push(payload);
+          } else {
+            this.stack.push("void");
           }
 
           const newIp = this.ipStack.pop();
 
           if (!newIp) throw new Error("IP Stack is empty!");
 
-          this.ip = newIp;
+          this.ip = newIp.ip;
         }
         break;
 
       case OpCode.PRINT:
-        console.log(this.stack.pop());
+        this.outputFn(this.stack.pop());
         break;
 
       case OpCode.PUSH:
+        if (payload === null) {
+          throw new Error("PUSH: Payload is null!");
+        }
+
         this.stack.push(payload);
         break;
 
@@ -145,21 +172,29 @@ export class VM {
           const exp1 = this.stack.pop();
           const op = payload;
 
+          if (typeof exp1 != "number") {
+            throw new Error("CALC: Exp1 must be number!");
+          }
+
+          if (typeof exp2 != "number") {
+            throw new Error("CALC: Exp2 must be number!");
+          }
+
           switch (op) {
             case "+":
               this.stack.push(exp1 + exp2);
               break;
 
             case "-":
-              this.stack.push(exp1 + exp2);
+              this.stack.push(exp1 - exp2);
               break;
 
             case "/":
-              this.stack.push(exp1 + exp2);
+              this.stack.push(exp1 / exp2);
               break;
 
             case "*":
-              this.stack.push(exp1 + exp2);
+              this.stack.push(exp1 * exp2);
               break;
 
             case "mod":
@@ -201,7 +236,7 @@ export class VM {
               this.stack.push(exp1 != exp2);
               break;
 
-            case "==":
+            case "=":
               this.stack.push(exp1 == exp2);
               break;
 
@@ -238,13 +273,22 @@ export class VM {
           const val = this.stack.pop();
 
           if (typeof payload != "string") {
-            throw new Error("Varname must be string!");
+            throw new Error("SETARR: Varname must be string!");
+          }
+
+          if (typeof idx != "number") {
+            throw new Error("SETARR: Idx must be number!");
           }
 
           const arr = this.vars.getVar(payload);
 
+          if (!Array.isArray(arr)) {
+            throw new Error("SETARR: Arr must be an array!");
+          }
+
           if (arr) {
-            arr[idx] = val;
+            // Pseudocode is a 1-indexed lang.
+            arr[idx - 1] = val;
           }
         }
         break;
@@ -254,6 +298,10 @@ export class VM {
           const val = this.stack.pop();
           this.stack.push(!val);
         }
+        break;
+
+      case OpCode.VOID:
+        this.stack.pop();
         break;
 
       default:

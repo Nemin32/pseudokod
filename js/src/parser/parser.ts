@@ -319,4 +319,8 @@ class Do<B extends {}> {
     ) => [this.names[idx], p]);
     return Parser.__doNotation<B>(zipped).bindResult(f);
   }
+
+  toParser(): Parser<B> {
+    return this.bindResult<B>(val => val);
+  }
 }

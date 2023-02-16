@@ -6,6 +6,7 @@ export enum OpCode {
   COMP,
   ESCOPE,
   FJMP,
+  GETARR,
   GETVAR,
   JMP,
   LABEL,
@@ -20,6 +21,7 @@ export enum OpCode {
   SETVAR,
   TJMP,
   VALARR,
+  VOID,
 }
 
 export type ByteCode = {

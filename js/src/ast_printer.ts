@@ -13,7 +13,7 @@ export function astToString(ast: AST): string {
           case ASTKind.ARRASSIGN:
             return `${astToString(ast.variable)}[${astToString(ast.length)}]`;
           case ASTKind.ARRELEMASSIGN:
-            return `${astToString(ast.array)}[${astToString(ast.index)}] = ${
+            return `${astToString(ast.arrayIndex.variable)}[${astToString(ast.arrayIndex.index)}] = ${
               astToString(ast.value)
             }`;
           case ASTKind.ASSIGNMENT:
@@ -36,10 +36,21 @@ export function astToString(ast: AST): string {
             return `${ast.name}(${astToString(ast.parameters)}) {${
               astToString(ast.body)
             }}`;
-          case ASTKind.IF:
-            return `T: ${astToString(ast.truePath)} F: ${
-              astToString(ast.falsePath)
-            }`;
+          case ASTKind.IF: {
+            const head = `(${astToString(ast.headBranch.pred)} => ${
+              astToString(ast.headBranch.body)
+            })`;
+
+            const elifs = ast.elIfs.map((elIf) =>
+              `(${astToString(elIf.pred)} => ${astToString(elIf.body)})`
+            ).join(" ");
+
+            const elseBranch = ast.elseBranch
+              ? ` (else => ${astToString(ast.elseBranch)}`
+              : "";
+
+            return `${head} ${elifs}${elseBranch}`;
+          }
           case ASTKind.LOGICBINOP:
             return `${astToString(ast.exp1)} ${ast.op} ${
               astToString(ast.exp2)

@@ -2,12 +2,13 @@
 
 export enum ASTKind {
   ARRASSIGN,
-  COMPREHENSION,
   ARRELEMASSIGN,
+  ARRINDEX,
   ASSIGNMENT,
   ATOM,
   CALCBINOP,
   COMPBINOP,
+  COMPREHENSION,
   DOWHILE,
   FOR,
   FUNCCALL,
@@ -22,8 +23,16 @@ export enum ASTKind {
   WHILE,
 }
 
+enum ValueTypes {
+  NUMBER,
+  STRING,
+  BOOLEAN,
+  ARRAY,
+  NIL,
+}
+
 /* Expressions */
-type AtomValue = number | string | boolean | Array<AtomValue>;
+export type AtomValue = number | string | boolean | Array<AtomValue>;
 
 export class Atom {
   readonly kind = ASTKind.ATOM;
@@ -37,6 +46,12 @@ export class ArrayComprehension {
   readonly kind = ASTKind.COMPREHENSION;
 
   constructor(public exps: Expression[]) {}
+}
+
+export class ArrayIndex {
+  readonly kind = ASTKind.ARRINDEX;
+
+  constructor(public variable: Variable, public index: Expression) {}
 }
 
 export class ArithmeticBinOp {
@@ -93,6 +108,7 @@ export class LogicBinOp {
 
 export type Expression =
   | ArrayComprehension
+  | ArrayIndex
   | ArithmeticBinOp
   | Comparison
   | FunctionCall
@@ -111,9 +127,9 @@ export class If {
   readonly kind = ASTKind.IF;
 
   constructor(
-    public pred: Expression,
-    public truePath: Block,
-    public falsePath: Block,
+    public headBranch: { pred: Expression; body: Block },
+    public elIfs: Array<{ pred: Expression; body: Block }>,
+    public elseBranch: Block | null,
   ) {}
 }
 
@@ -157,8 +173,7 @@ export class ArrayElementAssignment {
   readonly kind = ASTKind.ARRELEMASSIGN;
 
   constructor(
-    public array: Variable,
-    public index: Expression,
+    public arrayIndex: ArrayIndex,
     public value: Expression,
   ) {}
 }
