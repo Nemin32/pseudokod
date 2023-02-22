@@ -158,13 +158,11 @@ export class ASTCompiler {
     this.createOp(OpCode.JMP, ast.name + "_end");
     this.createOp(OpCode.LABEL, ast.name);
 
-    this.createOp(OpCode.ESCOPE, null);
+    this.createOp(OpCode.ESCOPE, "func");
 
     Array.from(ast.parameters)
       .reverse()
       .forEach((p) => this.visitParameter(p));
-
-    // this.visitBlock(ast.body);
 
     for (const stmt of ast.body) {
       this.visitStatement(stmt);
@@ -285,7 +283,7 @@ export class ASTCompiler {
 
   visitReturn(ast: Return) {
     this.visitExpression(ast.value);
-    this.createOp(OpCode.RETURN, null);
+    this.createOp(OpCode.RETURN, "exp");
   }
 
   visitWhile(ast: While) {

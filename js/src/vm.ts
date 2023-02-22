@@ -1,15 +1,15 @@
 import { ByteCode, OpCode } from "./opcodes.ts";
 import { Atom } from "./pseudo_types.ts";
 import { Stack } from "./stack.ts";
-import { Environment } from "./variables.ts";
+import { Environment, IEnvironment } from "./variables.ts";
 
 type Value = Atom["value"];
 
 export class VM {
   ip = 0;
   stack: Stack<Value> = new Stack();
-  ipStack: Array<{ip: number, lengths: {vLength: number, rLength: number}}> = [];
-  vars: Environment<Value> = new Environment();
+  ipStack: Array<number> = [];
+  vars: IEnvironment<Value> = new Environment();
 
   constructor(
     public code: Array<ByteCode>,
@@ -50,7 +50,7 @@ export class VM {
         break;
 
       case OpCode.ESCOPE:
-        this.vars.makeScope();
+        this.vars.enterScope(payload !== null);
         break;
 
       case OpCode.LSCOPE:
@@ -83,7 +83,7 @@ export class VM {
             throw new Error(`Variable '${payload}' doesn't exist!`);
           }
 
-          this.stack.push(variable);
+          this.stack.push(variable.value);
         }
         break;
 
@@ -134,15 +134,13 @@ export class VM {
         break;
 
       case OpCode.CALL:
-        this.ipStack.push({ip: this.ip, lengths: this.vars.length });
+        this.ipStack.push(this.ip);
         this.jmpLabel(payload as string);
         break;
 
       case OpCode.RETURN:
         {
-          if (payload !== null) {
-            this.stack.push(payload);
-          } else {
+          if (payload == null) {
             this.stack.push("void");
           }
 
@@ -150,7 +148,7 @@ export class VM {
 
           if (!newIp) throw new Error("IP Stack is empty!");
 
-          this.ip = newIp.ip;
+          this.ip = newIp
         }
         break;
 
@@ -280,7 +278,7 @@ export class VM {
             throw new Error("SETARR: Idx must be number!");
           }
 
-          const arr = this.vars.getVar(payload);
+          const arr = this.vars.getVar(payload)?.value;
 
           if (!Array.isArray(arr)) {
             throw new Error("SETARR: Arr must be an array!");

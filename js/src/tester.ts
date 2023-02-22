@@ -4,11 +4,16 @@ import { parseBlock } from "./pseudo_parser.ts";
 import { VM } from "./vm.ts";
 
 const input = `
-            x<-3
-            függvény Teszt(x : egész)
-                vissza x * 2
-            függvény vége
-            kiír Teszt(x)`
+            x <- 5
+            ha x =/= 5 akkor
+                kiír "HIBA"
+            elágazás vége
+
+            x <- 6
+
+            ha x = 6 akkor
+                kiír "OK"
+            elágazás vége`
 
 // const input = "kiír igaz || hamis"
 
