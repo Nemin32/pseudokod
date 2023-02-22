@@ -4,6 +4,7 @@ export enum OpCode {
   CALC,
   CALL,
   COMP,
+  DEBUG,
   ESCOPE,
   FJMP,
   GETARR,

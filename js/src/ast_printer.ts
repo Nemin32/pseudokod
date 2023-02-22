@@ -13,9 +13,9 @@ export function astToString(ast: AST): string {
           case ASTKind.ARRASSIGN:
             return `${astToString(ast.variable)}[${astToString(ast.length)}]`;
           case ASTKind.ARRELEMASSIGN:
-            return `${astToString(ast.arrayIndex.variable)}[${astToString(ast.arrayIndex.index)}] = ${
-              astToString(ast.value)
-            }`;
+            return `${astToString(ast.arrayIndex.variable)}[${
+              astToString(ast.arrayIndex.index)
+            }] = ${astToString(ast.value)}`;
           case ASTKind.ASSIGNMENT:
             return astToString(ast.variable) + " <- " + astToString(ast.value);
           case ASTKind.ATOM:

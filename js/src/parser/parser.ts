@@ -321,6 +321,6 @@ class Do<B extends {}> {
   }
 
   toParser(): Parser<B> {
-    return this.bindResult<B>(val => val);
+    return this.bindResult<B>((val) => val);
   }
 }

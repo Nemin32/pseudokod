@@ -9,6 +9,7 @@ export enum ASTKind {
   CALCBINOP,
   COMPBINOP,
   COMPREHENSION,
+  DEBUG,
   DOWHILE,
   FOR,
   FUNCCALL,
@@ -29,6 +30,10 @@ enum ValueTypes {
   BOOLEAN,
   ARRAY,
   NIL,
+}
+
+export class Debug {
+  readonly kind = ASTKind.DEBUG;
 }
 
 /* Expressions */
@@ -209,6 +214,7 @@ export type Statement =
   | ArrayAssignment
   | ArrayElementAssignment
   | Assignment
+  | Debug
   | DoWhile
   | Expression
   | FunctionDeclaration

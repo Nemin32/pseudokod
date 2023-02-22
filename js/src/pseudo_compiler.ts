@@ -10,6 +10,7 @@ import {
   Atom,
   Block,
   Comparison,
+  Debug,
   DoWhile,
   Expression,
   FunctionCall,
@@ -32,6 +33,10 @@ export class ASTCompiler {
 
   createOp(op: OpCode, payload: ByteCode["payload"]) {
     this.bytecode.push({ opCode: op, payload });
+  }
+
+  visitDebug(_ast: Debug) {
+    this.createOp(OpCode.DEBUG, null);
   }
 
   /* Expressions */
@@ -220,59 +225,45 @@ export class ASTCompiler {
   visitStatement(ast: Statement) {
     switch (ast.kind) {
       case ASTKind.ARRASSIGN:
-        this.visitArrayAssignment(ast);
-        break;
+        return this.visitArrayAssignment(ast);
       case ASTKind.ARRELEMASSIGN:
-        this.visitArrayElementAssignment(ast);
-        break;
+        return this.visitArrayElementAssignment(ast);
       case ASTKind.ASSIGNMENT:
-        this.visitAssignment(ast);
-        break;
+        return this.visitAssignment(ast);
       case ASTKind.ATOM:
-        this.visitAtom(ast);
-        break;
+        return this.visitAtom(ast);
       case ASTKind.CALCBINOP:
-        this.visitArithmeticBinOp(ast);
-        break;
+        return this.visitArithmeticBinOp(ast);
       case ASTKind.COMPBINOP:
-        this.visitComparison(ast);
-        break;
+        return this.visitComparison(ast);
+      case ASTKind.DEBUG:
+        return this.visitDebug(ast);
       case ASTKind.DOWHILE:
-        this.visitDoWhile(ast);
-        break;
-      case ASTKind.FUNCCALL:
+        return this.visitDoWhile(ast);
+      case ASTKind.FUNCCALL: {
         this.visitFunctionCall(ast);
-        this.createOp(OpCode.VOID, null);
-        break;
+        return this.createOp(OpCode.VOID, null);
+      }
       case ASTKind.FUNCDECL:
-        this.visitFunctionDeclaration(ast);
-        break;
+        return this.visitFunctionDeclaration(ast);
       case ASTKind.IF:
-        this.visitIf(ast);
-        break;
+        return this.visitIf(ast);
       case ASTKind.LOGICBINOP:
-        this.visitLogicBinOp(ast);
-        break;
+        return this.visitLogicBinOp(ast);
       case ASTKind.NOT:
-        this.visitNot(ast);
-        break;
+        return this.visitNot(ast);
       case ASTKind.PRINT:
-        this.visitPrint(ast);
-        break;
+        return this.visitPrint(ast);
       case ASTKind.RETURN:
-        this.visitReturn(ast);
-        break;
+        return this.visitReturn(ast);
       case ASTKind.VARIABLE:
-        this.visitVariable(ast);
-        break;
+        return this.visitVariable(ast);
       case ASTKind.WHILE:
-        this.visitWhile(ast);
-        break;
+        return this.visitWhile(ast);
       case ASTKind.COMPREHENSION:
-        this.visitArrayComprehension(ast);
-        break;
+        return this.visitArrayComprehension(ast);
       default:
-        break;
+        throw new Error("Unhandled kind: " + ASTKind[ast.kind]);
     }
   }
 

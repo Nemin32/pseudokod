@@ -9,6 +9,7 @@ import {
   Atom,
   Block,
   Comparison,
+  Debug,
   Expression,
   FunctionCall,
   FunctionDeclaration,
@@ -65,6 +66,7 @@ const parseType: Parser<string> = Parser.choice(
 export const parseStatement: Parser<Statement> = OWS.right(
   Parser.of(() =>
     Parser.choice(
+      parseDebug,
       parseReturn,
       parseFuncCall,
       parseFunctionDecl,
@@ -208,6 +210,12 @@ export const parseFuncCall: Parser<FunctionCall> = Parser.do()
 
 /* = Statements = */
 
+/* Debug */
+
+export const parseDebug: Parser<Debug> = Parser.string("debug").bindResult(
+  (_) => new Debug(),
+);
+
 /* Print */
 
 export const parsePrintStatement: Parser<Print> = Parser.string("kiír ")
@@ -225,23 +233,25 @@ const parseIfHead: Parser<{ pred: Expression; body: Block }> = Parser.do()
 const parseElse: Parser<Block> = Parser.string("különben").bracket(WS, WS)
   .right(parseBlock);
 
-const parseElseIfBranches: Parser<Array<{ pred: Expression; body: Block }>> = Parser.do()
-  .ignore(Parser.string("különben ha").bracket(WS,WS))
-  .bind("pred", parseExpression)
-  .ignore(Parser.string("akkor").bracket(WS, WS))
-  .bind("body", parseBlock)
-  .toParser().many1();
+const parseElseIfBranches: Parser<Array<{ pred: Expression; body: Block }>> =
+  Parser.do()
+    .ignore(Parser.string("különben ha").bracket(WS, WS))
+    .bind("pred", parseExpression)
+    .ignore(Parser.string("akkor").bracket(WS, WS))
+    .bind("body", parseBlock)
+    .toParser().many1();
 
 // if ...
-const parseIf: Parser<If> = parseIfHead.left(OWS.right(Parser.string("elágazás vége"))).bindResult(head => new If(head, [], null))
-  
+const parseIf: Parser<If> = parseIfHead.left(
+  OWS.right(Parser.string("elágazás vége")),
+).bindResult((head) => new If(head, [], null));
 
 // if ... else ...
 const parseIfElse: Parser<If> = Parser.do()
   .bind("head", parseIfHead)
   .bind("elseBranch", parseElse)
   .ignore(OWS.right(Parser.string("elágazás vége")))
-  .bindResult(({head, elseBranch}) => new If(head, [], elseBranch))
+  .bindResult(({ head, elseBranch }) => new If(head, [], elseBranch));
 
 // if ... (else if...)* else ...
 const parseElseIfStatement: Parser<If> = Parser.do()

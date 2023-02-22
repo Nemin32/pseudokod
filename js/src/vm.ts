@@ -44,8 +44,11 @@ export class VM {
     throw new Error("IP ran out of tape.");
   }
 
-  execute({ opCode, payload }: ByteCode) {
+  execute({ opCode, payload }: ByteCode): boolean {
     switch (opCode) {
+      case OpCode.DEBUG:
+        return true;
+
       case OpCode.LABEL:
         break;
 
@@ -148,7 +151,7 @@ export class VM {
 
           if (!newIp) throw new Error("IP Stack is empty!");
 
-          this.ip = newIp
+          this.ip = newIp;
         }
         break;
 
@@ -305,16 +308,20 @@ export class VM {
       default:
         throw new Error(OpCode[opCode] + " is not yet implemented!");
     }
+
+    return false;
   }
 
-  step() {
-    this.execute(this.fetch());
+  step(): boolean {
+    const val = this.execute(this.fetch());
     this.ip++;
+
+    return val;
   }
 
   run() {
     while (this.ip < this.code.length) {
-      this.step();
+      if (this.step()) return;
     }
   }
 }

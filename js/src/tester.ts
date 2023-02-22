@@ -13,7 +13,7 @@ const input = `
 
             ha x = 6 akkor
                 kiír "OK"
-            elágazás vége`
+            elágazás vége`;
 
 // const input = "kiír igaz || hamis"
 
