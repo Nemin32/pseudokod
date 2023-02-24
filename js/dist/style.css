@@ -128,7 +128,7 @@ div {
 }
 #leftPane #editorContainer #input {
   background-color: transparent;
-  color: transparent;
+  color: white;
   caret-color: white;
 }
 #leftPane #buttons {
