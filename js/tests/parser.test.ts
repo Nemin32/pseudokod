@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import * as testCases from "./testcases.ts";
-import { execute } from "./src/debug/tester.ts";
-import { AtomValue } from "./src/compiler/pseudo_types.ts";
+import { execute } from "../src/debug/tester.ts";
+import { AtomValue } from "../src/compiler/pseudo_types.ts";
 
 class MockOutput {
   values: AtomValue[] = [];
