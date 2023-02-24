@@ -11,6 +11,7 @@ import {
   Comparison,
   Debug,
   Expression,
+  For,
   FunctionCall,
   FunctionDeclaration,
   If,
@@ -70,6 +71,7 @@ export const parseStatement: Parser<Statement> = OWS.right(
       parseReturn,
       parseFuncCall,
       parseFunctionDecl,
+      parseFor,
       parseWhileStatement,
       parseArrayAssignment,
       parseArrayElementAssignment,
@@ -262,6 +264,18 @@ const parseElseIfStatement: Parser<If> = Parser.do()
   .bindResult(({ head, elIf, elseBranch }) => new If(head, elIf, elseBranch));
 
 const parseIfStatement = parseElseIfStatement.or(parseIfElse).or(parseIf);
+
+/* For */
+
+export const parseFor: Parser<For> = Parser.do()
+  .ignore(Parser.string("ciklus").left(WS))
+  .bind("variable", parseVariable)
+  .ignore(Parser.string("<-").bracket(OWS, OWS))
+  .bind("from", parseExpression.left(Parser.or(Parser.string("-tól"), Parser.string("-től")).left(WS)))
+  .bind("to", parseExpression.left(Parser.string("-ig")))
+  .bind("body", parseBlock)
+  .ignore(Parser.string("ciklus vége"))
+  .bindResult(({variable, from, to, body}) => new For(variable, from, to, body))
 
 /* Arrays */
 

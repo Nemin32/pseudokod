@@ -5,3 +5,4 @@ node_modules/
 **/dist/esbundle.js.map
 build/
 .vscode
+newglue.js*

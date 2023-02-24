@@ -14,6 +14,7 @@ import {
   Debug,
   DoWhile,
   Expression,
+  For,
   FunctionCall,
   FunctionDeclaration,
   If,
@@ -42,7 +43,7 @@ export class ASTCompiler {
     const vAST = mAST.getValue()
 
     if (vAST.next.index != input.length) {
-      throw new Error("Couldn't parse entire input: " + vAST.next.index);
+      throw new Error("Couldn't parse entire input: " + input.slice(vAST.next.index));
     }
 
     const AST = vAST.value;
@@ -135,6 +136,30 @@ export class ASTCompiler {
   visitAssignment(ast: Assignment) {
     this.visitExpression(ast.value);
     this.createOp(OpCode.SETVAR, ast.variable.name);
+  }
+
+  visitFor(ast: For) {
+    const varName = ast.variable.name;
+
+    this.createOp(OpCode.ESCOPE, null);
+
+    // From...
+    this.visitExpression(ast.from);
+    this.createOp(OpCode.SETVAR, varName);
+
+
+    // var := var + 1
+    this.createOp(OpCode.GETVAR, varName);
+    this.createOp(OpCode.PUSH, 1);
+    this.createOp(OpCode.CALC, "+");
+    this.createOp(OpCode.SETVAR, varName);
+
+    // To...
+    this.createOp(OpCode.GETVAR, varName);
+    this.visitExpression(ast.to);
+    this.createOp(OpCode.COMP, "<=");
+
+    this.createOp(OpCode.LSCOPE, null);
   }
 
   visitDoWhile(ast: DoWhile) {
@@ -260,6 +285,8 @@ export class ASTCompiler {
         return this.visitDebug(ast);
       case ASTKind.DOWHILE:
         return this.visitDoWhile(ast);
+      case ASTKind.FOR:
+        return this.visitFor(ast);
       case ASTKind.FUNCCALL: {
         this.visitFunctionCall(ast);
         return this.createOp(OpCode.VOID, null);

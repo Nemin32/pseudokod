@@ -218,6 +218,7 @@ export type Statement =
   | DoWhile
   | Expression
   | FunctionDeclaration
+  | For
   | If
   | Print
   | Return
