@@ -1,4 +1,5 @@
 import { ByteCode, OpCode } from "./opcodes.ts";
+import { parseBlock } from "./pseudo_parser.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -30,6 +31,25 @@ import {
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
   labelId = 0;
+
+  public static compile(input: string): ByteCode[] {
+    const compiler = new this();
+
+    const mAST = parseBlock.run(input);
+
+    mAST.onError(e => {throw new Error("Error parsing input: " + e.what); })
+
+    const vAST = mAST.getValue()
+
+    if (vAST.next.index != input.length) {
+      throw new Error("Couldn't parse entire input: " + vAST.next.index);
+    }
+
+    const AST = vAST.value;
+    compiler.visitBlock(AST);
+
+    return compiler.bytecode;
+  }
 
   createOp(op: OpCode, payload: ByteCode["payload"]) {
     this.bytecode.push({ opCode: op, payload });

@@ -1,5 +1,5 @@
-import { ByteCode, OpCode } from "./opcodes.ts";
-import { Atom } from "./pseudo_types.ts";
+import { ByteCode, OpCode } from "../compiler/opcodes.ts";
+import { Atom } from "../compiler/pseudo_types.ts";
 import { Stack } from "./stack.ts";
 import { Environment, IEnvironment } from "./variables.ts";
 

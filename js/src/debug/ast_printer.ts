@@ -1,4 +1,4 @@
-import { AST, ASTKind, Block, Parameter } from "./pseudo_types.ts";
+import { AST, ASTKind, Block, Parameter } from "../compiler/pseudo_types.ts";
 
 export function astToString(ast: AST): string {
   if (Array.isArray(ast)) {

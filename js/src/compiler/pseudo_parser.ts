@@ -1,4 +1,4 @@
-import { Parser } from "./parser/parser.ts";
+import { Parser } from "../parser/parser.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,

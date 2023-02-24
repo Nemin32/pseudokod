@@ -1,7 +1,7 @@
 import { astToString } from "./ast_printer.ts";
-import { ASTCompiler } from "./pseudo_compiler.ts";
-import { parseBlock } from "./pseudo_parser.ts";
-import { VM } from "./vm.ts";
+import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
+import { parseBlock } from "../compiler/pseudo_parser.ts";
+import { VM } from "../runtime/vm.ts";
 
 const input = `
             x <- 5
@@ -43,15 +43,8 @@ parseBlock.run(input).onSuccess((ast) => {
 });
 
 export function execute(input: string, outputFn: (val: any) => void) {
-  parseBlock.run(input)
-    .onError((err) => {
-      throw new Error(err.what);
-    })
-    .onSuccess((ast) => {
-      const compiler = new ASTCompiler();
-      compiler.visitBlock(ast.value);
+  const bc = ASTCompiler.compile(input);
+  const vm = new VM(bc, outputFn);
 
-      const vm = new VM(compiler.bytecode, outputFn);
-      vm.run();
-    });
+  vm.run();
 }

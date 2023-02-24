@@ -4,3 +4,4 @@ node_modules/
 **/dist/esbundle.js
 **/dist/esbundle.js.map
 build/
+.vscode
