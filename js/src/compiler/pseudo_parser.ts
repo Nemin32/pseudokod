@@ -57,16 +57,16 @@ const parseFuncName: Parser<string> = Parser.upper.bind((l) =>
   Parser.letter.many().bindResult((rest) => l + rest.join(""))
 );
 
-const parseType: Parser<string> = Parser.choice(
+const parseType: Parser<string> = Parser.choice([
   Parser.string("egész"),
   Parser.string("szöveg"),
-);
+]);
 
 /* Groupings */
 
 export const parseStatement: Parser<Statement> = OWS.right(
   Parser.of(() =>
-    Parser.choice(
+    Parser.choice([
       parseDebug,
       parseReturn,
       parseFuncCall,
@@ -78,19 +78,19 @@ export const parseStatement: Parser<Statement> = OWS.right(
       parseAssignmentStatement,
       parsePrintStatement,
       parseIfStatement,
-    )
+    ])
   ),
 );
 
 export const parseExpression: Parser<Expression> = OWS.right(
   Parser.of(() =>
-    Parser.choice(
+    Parser.choice([
       parseArrayComprehension,
       parseArrayIndex,
       parseFuncCall,
       parseNot,
       parseComp,
-    )
+    ])
   ),
 );
 
@@ -157,14 +157,14 @@ export const parseValue = parseAtom.or(parseVariable);
 
 /* Binary Ops */
 
-export const parseCompOp: Parser<string> = Parser.choice(
+export const parseCompOp: Parser<string> = Parser.choice([
   Parser.string("=/="),
   Parser.string("<="),
   Parser.string(">="),
   Parser.char("="),
   Parser.char("<"),
   Parser.char(">"),
-).bracket(OWS, OWS);
+]).bracket(OWS, OWS);
 
 export const parseLogicOp: Parser<string> = Parser.or(
   Parser.string("&&"),

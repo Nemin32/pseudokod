@@ -41,8 +41,7 @@ export class Parser<T> {
       })
     );
 
-  static result = <T>(v: T) =>
-    new Parser<T>((input) => Either.succeed({ value: v, next: input }));
+  static result = <T>(v: T) => new Parser<T>((input) => Either.succeed({ value: v, next: input }));
 
   static item = () => {
     return new Parser<string>((input) => {
@@ -60,13 +59,10 @@ export class Parser<T> {
   };
 
   bind<W>(f: (elem: T) => Parser<W>): Parser<W> {
-    return new Parser((inp) =>
-      this.exec(inp).bind(({ value, next }) => f(value).exec(next))
-    );
+    return new Parser((inp) => this.exec(inp).bind(({ value, next }) => f(value).exec(next)));
   }
 
-  bindResult = <W>(f: (elem: T) => W): Parser<W> =>
-    this.bind((val) => Parser.result(f(val)));
+  bindResult = <W>(f: (elem: T) => W): Parser<W> => this.bind((val) => Parser.result(f(val)));
 
   static left<L, R>(l: Parser<L>, r: Parser<R>): Parser<L> {
     return l.bind((lV) => r.bindResult((_) => lV));
@@ -85,19 +81,12 @@ export class Parser<T> {
   }
 
   static sat(p: (char: string) => boolean): Parser<string> {
-    return Parser.item().bind((x) =>
-      (p(x) ? Parser.result(x) : Parser.zero()).onError((_) => `'${x}'`)
-    );
+    return Parser.item().bind((x) => (p(x) ? Parser.result(x) : Parser.zero()).onError((_) => `'${x}'`));
   }
 
   onError(format: (prev: Error) => string): Parser<T> {
     return new Parser<T>((input) => {
-      return this.exec(input).mapError((
-        prevMsg,
-      ) => (input.index < prevMsg.where.index
-        ? prevMsg
-        : { what: format(prevMsg), where: input })
-      );
+      return this.exec(input).mapError((prevMsg) => (input.index < prevMsg.where.index ? prevMsg : { what: format(prevMsg), where: input }));
     });
   }
 
@@ -127,9 +116,7 @@ export class Parser<T> {
 
   or = <Q>(q: Parser<Q>): Parser<T | Q> => Parser.or(this, q);
 
-  many1 = (): Parser<T[]> =>
-    this.bind((x) => this.many().bind((xs) => Parser.result([x].concat(xs))))
-      .onError((p) => `at least one [${p.what}]`);
+  many1 = (): Parser<T[]> => this.bind((x) => this.many().bind((xs) => Parser.result([x].concat(xs)))).onError((p) => `at least one [${p.what}]`);
   static many1 = <T>(p: Parser<T>): Parser<T[]> => p.many1();
 
   many = (): Parser<T[]> =>
@@ -139,8 +126,7 @@ export class Parser<T> {
   static many = <T>(p: Parser<T>): Parser<T[]> => p.many();
 
   maybe = (): Parser<T | null> => Parser.maybe(this);
-  static maybe = <T>(p: Parser<T>): Parser<T | null> =>
-    new Parser<T | null>((input) => p.or(Parser.result(null)).exec(input));
+  static maybe = <T>(p: Parser<T>): Parser<T | null> => new Parser<T | null>((input) => p.or(Parser.result(null)).exec(input));
 
   static char = (c: string) => Parser.sat((x) => x == c).expect(`'${c}'`);
   static lower = Parser.sat((c) => c >= "a" && c <= "z").expect("a-z");
@@ -151,9 +137,7 @@ export class Parser<T> {
 
   static spaces = Parser.char(" ").many1().expect("space(s)");
 
-  static word: Parser<string> = Parser.letter.bind((x) =>
-    Parser.word.bind((xs) => Parser.result(x.concat(xs)))
-  ).or(Parser.result(""));
+  static word: Parser<string> = Parser.letter.bind((x) => Parser.word.bind((xs) => Parser.result(x.concat(xs)))).or(Parser.result(""));
 
   static string = (input: string): Parser<string> => {
     if (input == "") return Parser.result("");
@@ -171,93 +155,21 @@ export class Parser<T> {
     const sepBind = separator.bind(valueBind);
 
     const resultConcat = (x: T, xs: T[]) => Parser.result([x].concat(xs));
-    return this.bind((x) =>
-      Parser.many(sepBind).bind((xs) => resultConcat(x, xs))
-    );
+    return this.bind((x) => Parser.many(sepBind).bind((xs) => resultConcat(x, xs)));
   };
 
-  bracket = <O, C>(open: Parser<O>, close: Parser<C>): Parser<T> =>
-    open.bind((_) => this).bind((x) => close.bind((_) => Parser.result(x)));
+  bracket = <O, C>(open: Parser<O>, close: Parser<C>): Parser<T> => open.bind((_) => this).bind((x) => close.bind((_) => Parser.result(x)));
 
-  static of = <T>(func: () => Parser<T>): Parser<T> =>
-    new Parser((inp) => func().exec(inp));
+  static of = <T>(func: () => Parser<T>): Parser<T> => new Parser((inp) => func().exec(inp));
 
-  parens = () =>
-    this.onError((p) => `[${p.what}] in parens`).bracket(
-      Parser.char("("),
-      Parser.char(")"),
-    );
+  parens = () => this.onError((p) => `[${p.what}] in parens`).bracket(Parser.char("("), Parser.char(")"));
   static parens = <T>(p: Parser<T>) => p.parens();
 
-  static choice<A, B = never, C = never, D = never, E = never, F = never>(
-    p1: Parser<A>,
-    p2?: Parser<B>,
-    p3?: Parser<C>,
-    p4?: Parser<D>,
-    p5?: Parser<E>,
-    p6?: Parser<F>,
-    // deno-lint-ignore no-explicit-any
-    ...prest: Parser<any>[]
-  ): Parser<A | B | C | D | E | F> {
-    let p: Parser<A | B | C | D | E | F> = p1;
-
-    if (p2) {
-      p = p.or(p2);
-    }
-    if (p3) {
-      p = p.or(p3);
-    }
-    if (p4) {
-      p = p.or(p4);
-    }
-    if (p5) {
-      p = p.or(p5);
-    }
-    if (p6) {
-      p = p.or(p6);
-    }
-
-    if (prest.length > 0) {
-      return prest.reduce((f, c) => f.or(c), p);
-    }
-
-    return p;
+  static choice<T extends Array<any>>(ps: T): Parser<Discriminate<T>> {
+    return ps.reduce((p, c) => p.or(c))
   }
 
-  // deno-lint-ignore no-explicit-any
-  /** @internal */
-  static __doNotation<Obj = any>(
-    parsers: Array<[string, Parser<any>]>,
-  ): Parser<Obj> {
-    // deno-lint-ignore no-explicit-any
-    const descend = (
-      list: Array<[string, Parser<any>]>,
-      obj: Record<string, any>,
-    ): Parser<any> => {
-      if (list.length == 0) {
-        return Parser.result(obj);
-      } else {
-        const [varName, parser] = list[0];
-
-        return parser.bind((value) => {
-          const objCopy = { ...obj };
-
-          if (varName != "") {
-            objCopy[varName] = value;
-          }
-
-          return descend(list.slice(1), objCopy);
-        });
-      }
-    };
-
-    return descend(parsers, {});
-  }
-
-  static chainl1 = <T, O>(
-    p: Parser<T>,
-    op: Parser<O>,
-  ): Parser<{ f: O; a: T; b: T } | T> => {
+  static chainl1 = <T, O>(p: Parser<T>, op: Parser<O>): Parser<{ f: O; a: T; b: T } | T> => {
     return p.bind((a) =>
       op.maybe().bind((f) => {
         if (f == null) {
@@ -269,14 +181,9 @@ export class Parser<T> {
     );
   };
 
-  static chainl = <T, O, A>(p: Parser<T>, op: Parser<O>, a: Parser<A>) =>
-    Parser.chainl1(p, op).or(a);
+  static chainl = <T, O, A>(p: Parser<T>, op: Parser<O>, a: Parser<A>) => Parser.chainl1(p, op).or(a);
 
-  static bindChain = <T, O, Q>(
-    p: Parser<T>,
-    op: Parser<O>,
-    fOTT: (val: { f: O; a: T; b: T }) => Q,
-  ) => {
+  static bindChain = <T, O, Q>(p: Parser<T>, op: Parser<O>, fOTT: (val: { f: O; a: T; b: T }) => Q) => {
     return Parser.chainl1(p, op).bindResult((chain) => {
       if (chain != null && typeof chain == "object" && "f" in chain) {
         return fOTT(chain);
@@ -286,10 +193,7 @@ export class Parser<T> {
     });
   };
 
-  bindChain<O, Q>(
-    op: Parser<O>,
-    f: (val: { f: O; a: T; b: T }) => Q,
-  ): Parser<T | Q> {
+  bindChain<O, Q>(op: Parser<O>, f: (val: { f: O; a: T; b: T }) => Q): Parser<T | Q> {
     return Parser.bindChain(this, op, f);
   }
 
@@ -298,13 +202,10 @@ export class Parser<T> {
   }
 }
 
-class Do<B extends {}> {
+class Do<B extends Record<symbol | number | string, never>> {
   constructor(public parsers: Parser<any>[], public names: string[]) {}
 
-  bind<BindName extends string, BindType extends any>(
-    name: BindName,
-    parser: Parser<BindType>,
-  ): Do<B & Record<BindName, BindType>> {
+  bind<BindName extends string, BindType extends any>(name: BindName, parser: Parser<BindType>): Do<B & Record<BindName, BindType>> {
     return new Do(this.parsers.concat([parser]), this.names.concat([name]));
   }
 
@@ -313,14 +214,42 @@ class Do<B extends {}> {
   }
 
   bindResult<T>(f: (val: B) => T): Parser<T> {
-    const zipped: Array<[string, Parser<any>]> = this.parsers.map((
-      p,
-      idx,
-    ) => [this.names[idx], p]);
-    return Parser.__doNotation<B>(zipped).bindResult(f);
+    const zipped: Array<[string, Parser<any>]> = this.parsers.map((p, idx) => [this.names[idx], p]);
+    return Do.finalize<B>(zipped).bindResult(f);
   }
 
   toParser(): Parser<B> {
     return this.bindResult<B>((val) => val);
   }
+
+  /** @internal */
+  // deno-lint-ignore no-explicit-any
+  private static finalize<Obj>(parsers: Array<[string, Parser<any>]>): Parser<Obj> {
+    const descend = (
+      // deno-lint-ignore no-explicit-any
+      list: Array<[string, Parser<any>]>,
+      // deno-lint-ignore no-explicit-any
+      obj: Record<string, any>
+      // deno-lint-ignore no-explicit-any
+    ): Parser<any> => {
+      if (list.length == 0) {
+        return Parser.result(obj);
+      } else {
+        const [varName, parser] = list[0];
+
+        return parser.bind((value) => {
+          if (varName != "") {
+            obj[varName] = value;
+          }
+
+          return descend(list.slice(1), obj);
+        });
+      }
+    };
+
+    return descend(parsers, {});
+  }
 }
+
+// Array<Parser<T> | Parser<Q> | ...> => T | Q | ...
+type Discriminate<U> = U extends Array<Parser<infer T>> ?  T : never; 
