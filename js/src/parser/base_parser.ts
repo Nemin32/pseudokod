@@ -1,8 +1,19 @@
 type Input<T> = { tokens: T[]; index: number };
 type ParseResult<T, R, E> = ({ kind: "capture"; next: Input<T>; value: R } | { kind: "error"; where: Input<T>; value: E })[];
 
-class BaseParser<Token, Result, Error> {
-  constructor(public exec: (input: Input<Token>) => ParseResult<Token, Result, Error>) {}
+export class BaseParser<Token, Result, Error> {
+  constructor(private exec: (input: Input<Token>) => ParseResult<Token, Result, Error>) {}
+
+  wrap(input: Token[]): Input<Token> {
+    return {
+      tokens: input,
+      index: 0,
+    };
+  }
+
+  run(input: Token[]) {
+    return this.exec(this.wrap(input));
+  }
 
   static result = <Token, Q, Error>(value: Q): BaseParser<Token, Q, Error> =>
     new BaseParser(
@@ -41,15 +52,15 @@ class BaseParser<Token, Result, Error> {
       ];
     });
 
-  bind<Q>(func: (value: Result) => BaseParser<Token, Q, Error>): BaseParser<Token, Q, Error> {
+  bind<Q>(func: (value: Result, prevInput: Input<Token>) => BaseParser<Token, Q, Error>): BaseParser<Token, Q, Error> {
     return new BaseParser<Token, Q, Error>((inp: Input<Token>) => {
       const firstRun = this.exec(inp);
 
       const values = firstRun.flatMap((fR) => {
-        if (fR.kind == "error") return fR;
+        if (fR.kind == "error") return fR; // fR;
 
         const { next, value } = fR;
-        return func(value).exec(next);
+        return func(value, next).exec(next);
       });
 
       return values;
@@ -66,32 +77,41 @@ class BaseParser<Token, Result, Error> {
     });
   };
 
-  or = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Q | Result, Error> => new BaseParser(inp => {
-    const firstRun = this.exec(inp) as ParseResult<Token, Q|Result, Error>;
+  or = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Q | Result, Error> =>
+    new BaseParser<Token, Q | Result, Error>((inp) => {
+      const firstRun = this.exec(inp) as ParseResult<Token, Q | Result, Error>;
 
-    return firstRun.flatMap(run => {
-      if (run.kind == "capture") {
-        return run;
-      } else {
-        return other.exec(inp) as ParseResult<Token, Q|Result, Error>
-      }
-    })
-  });
+      return firstRun.flatMap((run) => {
+        if (run.kind == "capture") {
+          return run;
+        } else {
+          return other.exec(inp) as ParseResult<Token, Q | Result, Error>;
+        }
+      });
+    });
 
-  bindResult<W>(f: (val: Result) => W): BaseParser<Token, W, Error> {
-    return this.bind((val) => BaseParser.result(f(val)));
+  sepBy = <S>(separator: BaseParser<Token, S, Error>): BaseParser<Token, Result[], Error> => {
+    const valueBind = (_: S) => this.bind(BaseParser.result);
+    const resultConcat = (x: Result, xs: Result[]): BaseParser<Token, Result[], Error> => BaseParser.result([x].concat(xs));
+    const sepBind = separator.bind(valueBind);
+
+    return this.bind((x) => sepBind.many().bind((xs) => resultConcat(x, xs)));
+  };
+
+  bindResult<W>(f: (val: Result, inp: Input<Token>) => W): BaseParser<Token, W, Error> {
+    return this.bind((val, inp) => BaseParser.result(f(val, inp)));
   }
 
   left = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Result, Error> => this.bind((v) => other.bindResult((_) => v));
   right = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Q, Error> => this.bind((_) => other.bindResult((v) => v));
-  bracket = <Q,T>(leftB: BaseParser<Token, Q, Error>, rightB: BaseParser<Token, T, Error>) => leftB.right(this).left(rightB);
+  bracket = <Q, T>(leftB: BaseParser<Token, Q, Error>, rightB: BaseParser<Token, T, Error>) => leftB.right(this).left(rightB);
 
   plus = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Result | Q, Error> =>
-    new BaseParser((inp) => (this as BaseParser<Token, Result | Q, Error>).exec(inp).concat(other.exec(inp)));
+    new BaseParser<Token, Q | Result, Error>((inp) => (this as BaseParser<Token, Result | Q, Error>).exec(inp).concat(other.exec(inp)));
 
   many1 = (): BaseParser<Token, Result[], Error> => this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
   many = (): BaseParser<Token, Result[], Error> => this.many1().plus(BaseParser.result<Token, Result[], Error>([]));
   maybe = (): BaseParser<Token, Result | null, Error> => this.or(BaseParser.result(null));
 
-  static of = <T,R,E>(p: BaseParser<T,R,E>) => new BaseParser<T,R,E>(inp => p.exec(inp));
+  static of = <T, R, E>(p: BaseParser<T, R, E>) => new BaseParser<T, R, E>((inp) => p.exec(inp));
 }
