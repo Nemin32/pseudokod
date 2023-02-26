@@ -60,6 +60,22 @@ export class VM {
         this.vars.leaveScope();
         break;
 
+      case OpCode.REFERENCE:
+        {
+          const originalVar = this.stack.pop(); // string
+
+          if (typeof payload != "string") {
+            throw new Error("Variable name must be string.");
+          }
+
+          if (typeof originalVar != "string") {
+            throw new Error("Variable name must be string.");
+          }
+
+          this.vars.makeReference(originalVar, payload);
+        }
+        break;
+
       case OpCode.GETARR:
         {
           const index = this.stack.pop();

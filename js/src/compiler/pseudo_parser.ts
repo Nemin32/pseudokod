@@ -49,7 +49,7 @@ const parseStatement: P<Statement> = P.of<Statement>(() =>
     .or(parseExpression)
 );
 
-export const parseBlock: P<Block> = parseStatement.many1() //parseStatement.bind(s => parseBlock.bind(ps => P.result([s].concat(ps)))).or(P.result([])) //parseStatement.many1(); //.or(P.result([]));
+export const parseBlock: P<Block> = parseStatement.many1(); //parseStatement.bind(s => parseBlock.bind(ps => P.result([s].concat(ps)))).or(P.result([])) //parseStatement.many1(); //.or(P.result([]));
 
 /* = Utils = */
 
@@ -91,13 +91,11 @@ const parseVariable: P<Variable> = P.matchToken(TT.SYMBOL).bindResult((token) =>
 );
 
 /* Array Index */
-const parseArrayIndex: P<ArrayIndex> = parseVariable.bind(variable => parseExpression.brackets().bindResult(index => new ArrayIndex(variable, index)))
-
-/*P.do()
-  .bind("variable", parseVariable)
-  .bind("index", parseExpression.brackets())
-  .bindResult(({ variable, index }) => {const aI = new ArrayIndex(variable, index); console.log(variable, index); return aI});
-  */
+const parseArrayIndex: P<ArrayIndex> = parseVariable.bind((variable) =>
+  parseExpression.brackets().bindResult((index) =>
+    new ArrayIndex(variable, index)
+  )
+);
 
 /* Array Comprehension */
 const parseArrayComprehension: P<ArrayComprehension> = parseExpressionList
@@ -166,7 +164,9 @@ const parseMulOp = P.matchToken(TT.ARITHMOP).bind(
 const parseCompOp = P.matchToken(TT.COMPOP).bindResult((t) => t.lexeme);
 const parseLogicOp = P.matchToken(TT.LOGICOP).bindResult((t) => t.lexeme);
 
-const parseValue = parseArrayIndex.or(parseVariable).or(parseNumber).or(parseBool).or(parseString);
+const parseValue = parseArrayIndex.or(parseVariable).or(parseNumber).or(
+  parseBool,
+).or(parseString);
 
 const parseFactor: P<Expression> = parseValue.or(
   P.of(() => parseLogic).parens(),
@@ -275,6 +275,6 @@ const parseDoWhile = P.do()
 
 function run<T>(p: P<T>, input: string) {
   const tk = new Tokenizer(input);
-  const tokens = tk.parse().filter(f => f.type != TokenType.WHITESPACE);
-  return [tokens, p.run(tokens)?.at(0)]
+  const tokens = tk.parse().filter((f) => f.type != TokenType.WHITESPACE);
+  return [tokens, p.run(tokens)?.at(0)];
 }

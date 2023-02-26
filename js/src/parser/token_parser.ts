@@ -33,7 +33,11 @@ export class TokenToASTParser<T> {
 
   run(input: Token[]): T[] | null {
     const results = this.exec(this.wrap(input));
-    const capture = (results.filter(c => c.kind == "capture" && c.done()) as Capture<Token, T>[]).map(c=>c.value) //.at(0)?.value ?? null
+    const capture =
+      (results.filter((c) => c.kind == "capture" && c.done()) as Capture<
+        Token,
+        T
+      >[]).map((c) => c.value); //.at(0)?.value ?? null
 
     return capture;
   }

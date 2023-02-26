@@ -42,12 +42,14 @@ export class Environment<T> implements IEnvironment<T> {
     return elem.kind == "reference";
   }
 
-  getVar(varName: string): ValueWrapper<T> | null {
+  getVar(varName: string, jump = false): ValueWrapper<T> | null {
     for (let i = this.variables.length - 1; i >= 0; i--) {
       const elem: EnvVar<T> = this.variables[i];
 
       if (this.isSentinel(elem)) {
-        if (elem.boundary) {
+        if (elem.boundary && jump) {
+          jump = false;
+        } else {
           return null;
         }
 
@@ -79,7 +81,7 @@ export class Environment<T> implements IEnvironment<T> {
   }
 
   makeReference(oldName: string, newName: string): void {
-    const variable = this.getVar(oldName);
+    const variable = this.getVar(oldName, true);
 
     if (variable === null) {
       throw new Error(`Variable ${oldName} doesn't exist!`);

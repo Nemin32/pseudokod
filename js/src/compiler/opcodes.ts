@@ -17,6 +17,7 @@ export enum OpCode {
   NOT,
   PRINT,
   PUSH,
+  REFERENCE,
   RETURN,
   SETARR,
   SETVAR,

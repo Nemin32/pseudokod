@@ -31,15 +31,14 @@ self.addEventListener("load", () => {
   let byteCode: Array<ByteCode> = [];
 
   domElements.codeInput.addEventListener("input", () => {
-    // Tokenize
     console.time("tokenize");
-    const input = (domElements.codeInput as HTMLTextAreaElement).value
-    const tk = new Tokenizer(input.trimEnd());
+    const input = (domElements.codeInput as HTMLTextAreaElement).value;
+    const tk = new Tokenizer(input + "\n");
     tokens = tk.parse();
     console.timeEnd("tokenize");
 
     console.time("colorize");
-    colorize(<HTMLDivElement>domElements.syntaxHighlightOverlay, tokens);
+    colorize(<HTMLDivElement> domElements.syntaxHighlightOverlay, tokens);
     console.timeEnd("colorize");
   });
 
@@ -49,22 +48,22 @@ self.addEventListener("load", () => {
   });
 
   domElements.compileButton.addEventListener("click", () => {
-    console.time("oldparser")
+    domElements.standardOutput.innerText = ""
 
-    const filtered = tokens.filter(t => t.type != TokenType.WHITESPACE)
+    console.time("parsing");
+
+    const filtered = tokens.filter((t) => t.type != TokenType.WHITESPACE);
     const AST = parseBlock.run(filtered);
 
     if (!AST) {
-      console.timeEnd("oldparser")
+      console.timeEnd("parsing");
       throw new Error("Couldn't convert tokens to AST!");
     }
 
-    console.log(filtered, AST);
-
     const compiler = new ASTCompiler();
     compiler.visitBlock(AST[0]);
-    byteCode = compiler.bytecode //ASTCompiler.compile(input);
-    console.timeEnd("oldparser")
+    byteCode = compiler.bytecode; //ASTCompiler.compile(input);
+    console.timeEnd("parsing");
 
     domElements.vmInstructions.innerHTML = byteCode
       .map((value, idx) => {

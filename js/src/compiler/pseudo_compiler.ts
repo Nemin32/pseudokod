@@ -204,7 +204,11 @@ export class ASTCompiler {
   }
 
   visitParameter(ast: Parameter) {
-    this.createOp(OpCode.SETVAR, ast.name);
+    if (ast.byReference) {
+      this.createOp(OpCode.REFERENCE, ast.name);
+    } else {
+      this.createOp(OpCode.SETVAR, ast.name);
+    }
   }
 
   visitFunctionDeclaration(ast: FunctionDeclaration) {
