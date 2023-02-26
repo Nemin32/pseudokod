@@ -43,7 +43,11 @@ export enum TokenType {
 export class PseudoToken {
   start: number;
 
-  constructor(public type: TokenType, public lexeme: string, public end: number) {
+  constructor(
+    public type: TokenType,
+    public lexeme: string,
+    public end: number,
+  ) {
     this.start = this.end - lexeme.length;
   }
 }
@@ -109,7 +113,10 @@ abstract class SimpleParser<Token> {
     return null;
   }
 
-  parseWhile(eatPred: (c: string) => boolean, parser: (str: string, idx: number) => Token | null): Token | null {
+  parseWhile(
+    eatPred: (c: string) => boolean,
+    parser: (str: string, idx: number) => Token | null,
+  ): Token | null {
     let value = "";
 
     while (true) {
@@ -148,8 +155,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
     ["tömb", TokenType.TOMB],
     ["vissza", TokenType.VISSZA],
     ["vége", TokenType.VEGE],
-    ["létrehoz", TokenType.LETREHOZ],
-
+    ["Létrehoz", TokenType.LETREHOZ],
 
     /* Misc. */
     ["~", TokenType.NEGAL],
@@ -182,14 +188,18 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
     const tokens = super.parse();
 
     if (this.index < this.input.length) {
-      const idx = tokens.at(-1)?.end ?? 0
+      const idx = tokens.at(-1)?.end ?? 0;
       throw new Error("Lexing error at " + idx + ": " + this.input[idx]);
     }
 
     return tokens;
   }
 
-  mkToken(type: TokenType | null, lexeme: string | null, index: number | null = null): PseudoToken | null {
+  mkToken(
+    type: TokenType | null,
+    lexeme: string | null,
+    index: number | null = null,
+  ): PseudoToken | null {
     if (lexeme == null) return null;
     if (type == null) return null;
     return new PseudoToken(type, lexeme, index ? index : this.index);
@@ -228,8 +238,8 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
 
   parseArrow(): PseudoToken | null {
     if (this.eat() == "<" && this.eat() == "-") {
-      return this.mkToken(TokenType.NYIL, "<-")
-    } 
+      return this.mkToken(TokenType.NYIL, "<-");
+    }
 
     return null;
   }
@@ -263,14 +273,24 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
   parseType(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["egész", "szöveg"].includes(str) ? new PseudoToken(TokenType.TYPE, str, idx) : null)
+      (
+        str,
+        idx,
+      ) => (["egész", "szöveg"].includes(str)
+        ? new PseudoToken(TokenType.TYPE, str, idx)
+        : null),
     );
   }
 
   parseBool(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["igaz", "hamis"].includes(str) ? new PseudoToken(TokenType.BOOLEAN, str, idx) : null)
+      (
+        str,
+        idx,
+      ) => (["igaz", "hamis"].includes(str)
+        ? new PseudoToken(TokenType.BOOLEAN, str, idx)
+        : null),
     );
   }
 
@@ -288,21 +308,51 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
   parseArithmOp(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["+", "-", "/", "*", "mod"].includes(str) ? new PseudoToken(TokenType.ARITHMOP, str, idx) : null)
+      (
+        str,
+        idx,
+      ) => (["+", "-", "/", "*", "mod"].includes(str)
+        ? new PseudoToken(TokenType.ARITHMOP, str, idx)
+        : null),
     );
   }
 
   parseCompOp(): PseudoToken | null {
-    return this.parseWhile(
-      (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => ([">", "<", ">=", "<=", "=", "=/="].includes(str) ? new PseudoToken(TokenType.COMPOP, str, idx) : null)
-    );
+    let op = this.eat();
+    if (op == "=") {
+      if (this.peek() == "/") {
+        op += this.eat();
+        op += this.eat();
+        if (op == "=/=") {
+          return this.mkToken(TokenType.COMPOP, op);
+        } else {
+          return null;
+        }
+      } else {
+        return this.mkToken(TokenType.COMPOP, op);
+      }
+    }
+
+    if (op == ">" || op == "<") {
+      if (this.peek() == "=") {
+        op += this.eat();
+      }
+
+      return this.mkToken(TokenType.COMPOP, op);
+    }
+
+    return null;
   }
 
   parseLogicOp(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["&&", "||"].includes(str) ? new PseudoToken(TokenType.LOGICOP, str, idx) : null)
+      (
+        str,
+        idx,
+      ) => (["&&", "||"].includes(str)
+        ? new PseudoToken(TokenType.LOGICOP, str, idx)
+        : null),
     );
   }
 
@@ -310,7 +360,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
     const skw = this.tryParse(this.parseSingleCharKw);
     if (skw) return skw;
 
-    const kw = this.eatWhile(c =>!Tokenizer.isWhitespace(c));
+    const kw = this.eatWhile((c) => Tokenizer.isLetter(c));
     if (!kw) return null;
 
     return this.mkToken(Tokenizer.kwToType.get(kw) ?? null, kw);

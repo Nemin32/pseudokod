@@ -38,12 +38,16 @@ export class ASTCompiler {
 
     const mAST = parseBlock.run(input);
 
-    mAST.onError(e => {throw new Error("Error parsing input: " + e.what); })
+    mAST.onError((e) => {
+      throw new Error("Error parsing input: " + e.what);
+    });
 
-    const vAST = mAST.getValue()
+    const vAST = mAST.getValue();
 
     if (vAST.next.index != input.length) {
-      throw new Error("Couldn't parse entire input: " + input.slice(vAST.next.index));
+      throw new Error(
+        "Couldn't parse entire input: " + input.slice(vAST.next.index),
+      );
     }
 
     const AST = vAST.value;
@@ -146,7 +150,6 @@ export class ASTCompiler {
     // From...
     this.visitExpression(ast.from);
     this.createOp(OpCode.SETVAR, varName);
-
 
     // var := var + 1
     this.createOp(OpCode.GETVAR, varName);

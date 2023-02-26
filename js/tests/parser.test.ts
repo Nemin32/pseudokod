@@ -35,7 +35,11 @@ async function generateTest(t: Deno.TestContext, test: Test) {
       assertEquals(mock.values.length, 1);
       assertEquals(mock.values[0], test.output ?? "OK");
     } else {
-      throw new Error("Error while parsing: '" + AST?.where.tokens[AST.where.index].lexeme + "'")
+      if (!AST) {
+        throw new Error("No succesful parses.");
+      }
+
+      throw new Error("Error while parsing: '" + AST.where.tokens[AST.where.index].lexeme + "'")
     }
   });
 }

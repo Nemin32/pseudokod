@@ -1,5 +1,5 @@
 import PseudoCodeVisitor from "./libs/PseudoCodeVisitor.js";
-import { Stack, Value, TYPES } from "./Stack.js";
+import { Stack, TYPES, Value } from "./Stack.js";
 
 export class LinearGenerator extends PseudoCodeVisitor {
   output = {
@@ -78,7 +78,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
             VISIT expression;
             ret
-        `
+        `,
     );
   }
 
@@ -90,7 +90,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
             VISIT parameters; 
             functionCall ${fName}
-        `
+        `,
     );
   }
 
@@ -100,7 +100,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
             VISIT newline 0
             VISIT newline 1
-        `
+        `,
     );
 
     return {
@@ -132,7 +132,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             NL
             VISIT body; 
             functionEnd ${fName}
-        `
+        `,
     );
   }
 
@@ -151,8 +151,8 @@ export class LinearGenerator extends PseudoCodeVisitor {
         this.output.parameterTypes.set(fName, params);
 
         this.assemble(ctx, `
-            functionDef ${fName}; 
-            VISIT body; 
+            functionDef ${fName};
+            VISIT body;
             functionEnd ${fName}
         `)
     }
@@ -161,8 +161,8 @@ export class LinearGenerator extends PseudoCodeVisitor {
         const fName = ctx.functionName().getText();
 
         this.assemble(ctx, `
-            functionDef ${fName}; 
-            VISIT body; 
+            functionDef ${fName};
+            VISIT body;
             functionEnd ${fName}
         `)
     }
@@ -174,7 +174,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
             VISIT expression
             print
-        `
+        `,
     );
   }
 
@@ -194,7 +194,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT elseBranch
             endIf ${this.contextID}
             exitScope
-        `
+        `,
     );
 
     this.contextID--;
@@ -207,7 +207,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             else ${this.contextID}
             NL
             VISIT body
-        `
+        `,
     );
   }
 
@@ -220,7 +220,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             NL
             VISIT body
             jmp ${this.contextID}
-        `
+        `,
     );
   }
 
@@ -238,7 +238,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT body
             loop ${this.contextID}
             exitScope
-        `
+        `,
     );
 
     this.contextID--;
@@ -265,7 +265,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             while ${this.contextID}
             NL
             VISIT body
-        `
+        `,
     );
 
     // FIXME: Make this more ergonomic.
@@ -281,7 +281,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             loop ${this.contextID}
 
             exitScope
-        `
+        `,
     );
 
     this.contextID--;
@@ -293,7 +293,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
         VISIT expression
         not
-      `
+      `,
     );
   }
 
@@ -306,7 +306,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT expression 0
             VISIT expression 1
             compare ${comparer}
-        `
+        `,
     );
   }
 
@@ -319,7 +319,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT expression 0
             VISIT expression 1
             calculate ${operator}
-        `
+        `,
     );
   }
 
@@ -333,7 +333,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT expression 0
             VISIT expression 1
             setElement ${varname}
-        `
+        `,
     );
   }
 
@@ -355,7 +355,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
             VISIT expression
             pushVar ${varname}
             index ${ctx.expression().length}
-        `
+        `,
     );
   }
 
@@ -365,7 +365,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
             VISIT expression
             array ${ctx.expression().length}
-        `
+        `,
     );
   }
 
@@ -377,7 +377,7 @@ export class LinearGenerator extends PseudoCodeVisitor {
       `
             VISIT expression
             assign ${varname}
-        `
+        `,
     );
   }
 
@@ -511,7 +511,7 @@ export class LinearExecutor {
           const length = this.popStack().safe_get(TYPES.number);
           const values = Array.from(
             Array(length),
-            () => new Value(...defaultValue)
+            () => new Value(...defaultValue),
           );
 
           this.pushStack(new Value(values, TYPES.array));
@@ -548,8 +548,8 @@ export class LinearExecutor {
                     return false;
                 }
               })(),
-              TYPES.boolean
-            )
+              TYPES.boolean,
+            ),
           );
         }
         break;
@@ -577,8 +577,8 @@ export class LinearExecutor {
                     return 0;
                 }
               })(),
-              TYPES.number
-            )
+              TYPES.number,
+            ),
           );
         }
         break;

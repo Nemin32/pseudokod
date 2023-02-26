@@ -44,9 +44,7 @@ export class Value {
     // FIXME: Make this more robust. Remove part after &&.
     if (this.#_type !== expected_type && this.#_type !== null) {
       throw new Error(
-        `'${expected_type}' típust vártunk, de a változó '${
-          this.#_type
-        }' típusú volt!`
+        `'${expected_type}' típust vártunk, de a változó '${this.#_type}' típusú volt!`,
       );
     }
 
@@ -120,7 +118,7 @@ export class Stack {
     for (let i = this.variables.length - 1; i >= 0; i--) {
       if (
         this.#scopeBounds.findLast(
-          (bound) => bound.isFunctionScope && bound.length == i + 1
+          (bound) => bound.isFunctionScope && bound.length == i + 1,
         )
       ) {
         return null;

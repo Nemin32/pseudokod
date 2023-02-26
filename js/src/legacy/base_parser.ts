@@ -1,11 +1,13 @@
 type Input<T> = { tokens: T[]; index: number };
-type Capture<T, R> = { kind: "capture"; next: Input<T>; value: R } 
-type CError<T, E> = { kind: "error"; where: Input<T>; value: E }
+type Capture<T, R> = { kind: "capture"; next: Input<T>; value: R };
+type CError<T, E> = { kind: "error"; where: Input<T>; value: E };
 
-type ParseResult<T, R, E> = (Capture<T,R> | CError<T, E>)[];
+type ParseResult<T, R, E> = (Capture<T, R> | CError<T, E>)[];
 
 export class BaseParser<Token, Result, Error> {
-  constructor(private exec: (input: Input<Token>) => ParseResult<Token, Result, Error>) {}
+  constructor(
+    private exec: (input: Input<Token>) => ParseResult<Token, Result, Error>,
+  ) {}
 
   wrap(input: Token[]): Input<Token> {
     return {
@@ -26,7 +28,7 @@ export class BaseParser<Token, Result, Error> {
           next: input,
           value,
         },
-      ]
+      ],
     );
 
   static zero = <Token, Error>(error: Error): BaseParser<Token, never, Error> =>
@@ -37,7 +39,7 @@ export class BaseParser<Token, Result, Error> {
           where: inp,
           value: error,
         },
-      ]
+      ],
     );
 
   static item = <Token, Error>(error: Error): BaseParser<Token, Token, Error> =>
@@ -55,17 +57,35 @@ export class BaseParser<Token, Result, Error> {
       ];
     });
 
-  bind<Q>(func: (value: Result, prevInput: Input<Token>) => BaseParser<Token, Q, Error>): BaseParser<Token, Q, Error> {
+  bind<Q>(
+    func: (
+      value: Result,
+      prevInput: Input<Token>,
+    ) => BaseParser<Token, Q, Error>,
+  ): BaseParser<Token, Q, Error> {
     return new BaseParser<Token, Q, Error>((inp: Input<Token>) =>
-      this.exec(inp).flatMap((fR) => (fR.kind == "error" ? fR : func(fR.value, fR.next).exec(fR.next)))
+      this.exec(inp).flatMap((
+        fR,
+      ) => (fR.kind == "error" ? fR : func(fR.value, fR.next).exec(fR.next)))
     );
   }
 
-  static sat = <Token, Error>(predicate: (value: Token) => boolean, eofError: Error, noSatError: Error) => {
-    return BaseParser.item<Token, Error>(eofError).bind((value) => (predicate(value) ? BaseParser.result(value) : BaseParser.zero(noSatError)));
+  static sat = <Token, Error>(
+    predicate: (value: Token) => boolean,
+    eofError: Error,
+    noSatError: Error,
+  ) => {
+    return BaseParser.item<Token, Error>(eofError).bind((
+      value,
+    ) => (predicate(value)
+      ? BaseParser.result(value)
+      : BaseParser.zero(noSatError))
+    );
   };
 
-  or = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Q | Result, Error> =>
+  or = <Q>(
+    other: BaseParser<Token, Q, Error>,
+  ): BaseParser<Token, Q | Result, Error> =>
     new BaseParser<Token, Q | Result, Error>((inp) => {
       const firstRun = this.exec(inp) as ParseResult<Token, Q | Result, Error>;
 
@@ -78,32 +98,59 @@ export class BaseParser<Token, Result, Error> {
       });
     });
 
-  sepBy = <S>(separator: BaseParser<Token, S, Error>): BaseParser<Token, Result[], Error> => {
+  sepBy = <S>(
+    separator: BaseParser<Token, S, Error>,
+  ): BaseParser<Token, Result[], Error> => {
     const valueBind = (_: S) => this.bind(BaseParser.result);
-    const resultConcat = (x: Result, xs: Result[]): BaseParser<Token, Result[], Error> => BaseParser.result([x].concat(xs));
+    const resultConcat = (
+      x: Result,
+      xs: Result[],
+    ): BaseParser<Token, Result[], Error> => BaseParser.result([x].concat(xs));
     const sepBind = separator.bind(valueBind);
 
     return this.bind((x) => sepBind.many().bind((xs) => resultConcat(x, xs)));
   };
 
-  bindResult<W>(f: (val: Result, inp: Input<Token>) => W): BaseParser<Token, W, Error> {
+  bindResult<W>(
+    f: (val: Result, inp: Input<Token>) => W,
+  ): BaseParser<Token, W, Error> {
     return this.bind((val, inp) => BaseParser.result(f(val, inp)));
   }
 
-  left = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Result, Error> => this.bind((v) => other.bindResult((_) => v));
-  right = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Q, Error> => this.bind((_) => other.bindResult((v) => v));
-  bracket = <Q, T>(leftB: BaseParser<Token, Q, Error>, rightB: BaseParser<Token, T, Error>) => leftB.right(this).left(rightB);
+  left = <Q>(
+    other: BaseParser<Token, Q, Error>,
+  ): BaseParser<Token, Result, Error> =>
+    this.bind((v) => other.bindResult((_) => v));
+  right = <Q>(
+    other: BaseParser<Token, Q, Error>,
+  ): BaseParser<Token, Q, Error> =>
+    this.bind((_) => other.bindResult((v) => v));
+  bracket = <Q, T>(
+    leftB: BaseParser<Token, Q, Error>,
+    rightB: BaseParser<Token, T, Error>,
+  ) => leftB.right(this).left(rightB);
 
-  plus = <Q>(other: BaseParser<Token, Q, Error>): BaseParser<Token, Result | Q, Error> =>
-    new BaseParser<Token, Q | Result, Error>((inp) => (this as BaseParser<Token, Result | Q, Error>).exec(inp).concat(other.exec(inp)));
+  plus = <Q>(
+    other: BaseParser<Token, Q, Error>,
+  ): BaseParser<Token, Result | Q, Error> =>
+    new BaseParser<Token, Q | Result, Error>((inp) =>
+      (this as BaseParser<Token, Result | Q, Error>).exec(inp).concat(
+        other.exec(inp),
+      )
+    );
 
-  many1 = (): BaseParser<Token, Result[], Error> => this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
-  many = (): BaseParser<Token, Result[], Error> => this.many1().plus(BaseParser.result<Token, Result[], Error>([]));
-  maybe = (): BaseParser<Token, Result | null, Error> => this.or(BaseParser.result(null));
+  many1 = (): BaseParser<Token, Result[], Error> =>
+    this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
+  many = (): BaseParser<Token, Result[], Error> =>
+    this.many1().plus(BaseParser.result<Token, Result[], Error>([]));
+  maybe = (): BaseParser<Token, Result | null, Error> =>
+    this.or(BaseParser.result(null));
 
-  static exact = <T>(value: T) => BaseParser.sat(elem => elem == value, "EOF!", "Expected " + value);
+  static exact = <T>(value: T) =>
+    BaseParser.sat((elem) => elem == value, "EOF!", "Expected " + value);
 
-  static of = <T, R, E>(p: BaseParser<T, R, E>) => new BaseParser<T, R, E>((inp) => p.exec(inp));
+  static of = <T, R, E>(p: BaseParser<T, R, E>) =>
+    new BaseParser<T, R, E>((inp) => p.exec(inp));
 
   static do<Token>() {
     return new BaseDo<{}, Token>([], []);
@@ -112,10 +159,16 @@ export class BaseParser<Token, Result, Error> {
 
 class BaseDo<B extends Record<symbol | number | string, never>, Token> {
   // deno-lint-ignore no-explicit-any
-  constructor(public parsers: BaseParser<Token, any, any>[], public names: string[]) {}
+  constructor(
+    public parsers: BaseParser<Token, any, any>[],
+    public names: string[],
+  ) {}
 
   // deno-lint-ignore no-explicit-any
-  bind<BindName extends string, BindType extends any>(name: BindName, parser: BaseParser<Token, BindType, any>): BaseDo<B & Record<BindName, BindType>, Token> {
+  bind<BindName extends string, BindType extends any>(
+    name: BindName,
+    parser: BaseParser<Token, BindType, any>,
+  ): BaseDo<B & Record<BindName, BindType>, Token> {
     return new BaseDo(this.parsers.concat([parser]), this.names.concat([name]));
   }
 
@@ -126,8 +179,9 @@ class BaseDo<B extends Record<symbol | number | string, never>, Token> {
 
   // deno-lint-ignore no-explicit-any
   bindResult<T>(f: (val: B) => T): BaseParser<Token, T, any> {
-  // deno-lint-ignore no-explicit-any
-    const zipped: Array<[string, BaseParser<Token, any, any>]> = this.parsers.map((p, idx) => [this.names[idx], p]);
+    // deno-lint-ignore no-explicit-any
+    const zipped: Array<[string, BaseParser<Token, any, any>]> = this.parsers
+      .map((p, idx) => [this.names[idx], p]);
     return BaseDo.finalize<B, Token>(zipped).bindResult(f);
   }
 
@@ -138,12 +192,14 @@ class BaseDo<B extends Record<symbol | number | string, never>, Token> {
 
   /** @internal */
   // deno-lint-ignore no-explicit-any
-  private static finalize<Obj, Token>(parsers: Array<[string, BaseParser<Token, any, any>]>): BaseParser<Token, Obj, any> {
+  private static finalize<Obj, Token>(
+    parsers: Array<[string, BaseParser<Token, any, any>]>,
+  ): BaseParser<Token, Obj, any> {
     const descend = (
       // deno-lint-ignore no-explicit-any
       list: Array<[string, BaseParser<Token, any, any>]>,
       // deno-lint-ignore no-explicit-any
-      obj: Record<string, any>
+      obj: Record<string, any>,
       // deno-lint-ignore no-explicit-any
     ): BaseParser<Token, any, any> => {
       if (list.length == 0) {

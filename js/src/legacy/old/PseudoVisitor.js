@@ -1,6 +1,6 @@
 import PseudoCodeVisitor from "./libs/PseudoCodeVisitor.js";
 import { DebugPrompt } from "./DebugPrompt.js";
-import { TYPES, Value, Stack } from "./Stack.js";
+import { Stack, TYPES, Value } from "./Stack.js";
 
 export class PseudoVisitor extends PseudoCodeVisitor {
   constructor(outputFunc, varOutput) {
@@ -26,27 +26,27 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   visitDebugPrintStatement(ctx) {
     let exp = this.visit(ctx.expression());
 
-    let output = ""
+    let output = "";
     const extract = (exp) => {
       if (exp === null) {
-        output += "[Nem létezik]"
+        output += "[Nem létezik]";
       } else if (exp.type !== TYPES.array) {
-        output += exp.value
+        output += exp.value;
       } else {
-        output += "["
+        output += "[";
         exp.value.forEach((val, idx) => {
-          extract(val)
+          extract(val);
 
           if (idx != exp.value.length - 1) {
-            output += ", "
+            output += ", ";
           }
-        })
-        output += "]"
+        });
+        output += "]";
       }
-    }
+    };
 
-    extract(exp)
-    this.outputFunc(output)
+    extract(exp);
+    this.outputFunc(output);
   }
 
   visitStatement(ctx) {
@@ -57,18 +57,18 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const statements = ctx.statement();
 
     if (statements !== null) {
-      this.variableStack.enterBasicScope()
+      this.variableStack.enterBasicScope();
 
       for (let statement of statements) {
         const value = this.visit(statement);
 
         if (value !== null && value !== undefined) {
-          this.variableStack.leaveBasicScope()
+          this.variableStack.leaveBasicScope();
           return value;
         }
       }
 
-      this.variableStack.leaveBasicScope()
+      this.variableStack.leaveBasicScope();
     }
 
     return null;
@@ -97,8 +97,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
 
     if (predicate.value) {
       return this.visit(ctx.body());
-    }
-    else {
+    } else {
       return this.visit(ctx.elseBranch());
     }
   }
@@ -113,8 +112,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
 
     if (predicate.value) {
       return this.visit(ctx.body());
-    }
-    else {
+    } else {
       const elifBranches = ctx.elseIfBranch();
 
       for (let elifBranch of elifBranches) {
@@ -138,12 +136,12 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitForStatement(ctx) {
-    const body = ctx.body()
+    const body = ctx.body();
     const varname = ctx.variable().getText();
     const start = this.visit(ctx.expression(0)).safe_get(TYPES.number);
     const end = this.visit(ctx.expression(1)).safe_get(TYPES.number);
 
-    this.variableStack.enterBasicScope()
+    this.variableStack.enterBasicScope();
 
     this.variableStack.set(varname, new Value(start, TYPES.number));
 
@@ -157,14 +155,14 @@ export class PseudoVisitor extends PseudoCodeVisitor {
       const value = this.visitBody(body);
 
       if (value) {
-        this.variableStack.leaveBasicScope()
+        this.variableStack.leaveBasicScope();
         return value;
       }
 
       iterator.set(iterator.value + 1, iterator.type);
     }
 
-    this.variableStack.leaveBasicScope()
+    this.variableStack.leaveBasicScope();
   }
 
   visitWhileStatement(ctx) {
@@ -172,7 +170,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const body = ctx.body();
 
     while (true) {
-      const pred = this.visit(exp).safe_get(TYPES.boolean)
+      const pred = this.visit(exp).safe_get(TYPES.boolean);
 
       if (pred == false) {
         return null;
@@ -197,7 +195,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         return value;
       }
 
-      const predicate = this.visit(exp).safe_get(TYPES.boolean)
+      const predicate = this.visit(exp).safe_get(TYPES.boolean);
       if (predicate == false) {
         return null;
       }
@@ -210,7 +208,9 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitFunctionDeclarationWithParameters(ctx) {
-    const parameters = ctx.parameterWithType().map(param => this.visit(param));
+    const parameters = ctx.parameterWithType().map((param) =>
+      this.visit(param)
+    );
     const funcName = ctx.functionName().getText();
     const funcBody = ctx.body(0);
 
@@ -219,7 +219,11 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitParameterWithType(ctx) {
-    return { name: ctx.variable().getText(), reference: ctx.CIMSZERINT() !== null, type: ctx.type().getText() };
+    return {
+      name: ctx.variable().getText(),
+      reference: ctx.CIMSZERINT() !== null,
+      type: ctx.type().getText(),
+    };
   }
 
   visitFunctionDeclarationWithoutParameters(ctx) {
@@ -237,7 +241,9 @@ export class PseudoVisitor extends PseudoCodeVisitor {
     const funcName = ctx.functionName().getText();
     const funcBody = this.functions.get(funcName);
 
-    const parameters = ctx.parameters().expression().map(param => this.visit(param));
+    const parameters = ctx.parameters().expression().map((param) =>
+      this.visit(param)
+    );
 
     if (funcBody) {
       this.variableStack.enterFunctionScope(funcName, parameters);
@@ -269,24 +275,29 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   visitArrayAssignmentStatement(ctx) {
     const varname = ctx.variable().getText();
     const typeName = ctx.type().getText();
-    const length = this.visit(ctx.expression()).safe_get(TYPES.number)
+    const length = this.visit(ctx.expression()).safe_get(TYPES.number);
 
     const defaultValue = (() => {
       switch (typeName) {
-        case "egész": return [Number(), TYPES.number];
-        case "szöveg": return [String(), TYPES.string];
-        case "logikai": return [Boolean(), TYPES.boolean];
+        case "egész":
+          return [Number(), TYPES.number];
+        case "szöveg":
+          return [String(), TYPES.string];
+        case "logikai":
+          return [Boolean(), TYPES.boolean];
       }
-    })()
-
+    })();
 
     this.variableStack.set(
       varname,
       new Value(
         Array.from(
           Array(length),
-          () => new Value(...defaultValue)),
-        TYPES.array))
+          () => new Value(...defaultValue),
+        ),
+        TYPES.array,
+      ),
+    );
   }
 
   visitAssignmentStatement(ctx) {
@@ -309,17 +320,19 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitArrayIndex(ctx) {
-    let current_variable = this.visit(ctx.variable()).safe_get(TYPES.array)
+    let current_variable = this.visit(ctx.variable()).safe_get(TYPES.array);
 
-    let expressions = ctx.expression()
+    let expressions = ctx.expression();
 
     for (let i = 0; i < expressions.length - 1; i++) {
-      let exp = expressions[i]
-      const index = this.visit(exp).safe_get(TYPES.number) - 1
+      let exp = expressions[i];
+      const index = this.visit(exp).safe_get(TYPES.number) - 1;
       current_variable = current_variable[index].safe_get(TYPES.array);
     }
 
-    let index = this.visit(expressions[expressions.length - 1]).safe_get(TYPES.number) - 1
+    let index =
+      this.visit(expressions[expressions.length - 1]).safe_get(TYPES.number) -
+      1;
 
     return current_variable[index];
   }
@@ -333,7 +346,10 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitArrayShorthand(ctx) {
-    return new Value([...ctx.expression()].map((exp) => this.visit(exp)), TYPES.array)
+    return new Value(
+      [...ctx.expression()].map((exp) => this.visit(exp)),
+      TYPES.array,
+    );
   }
 
   visitBool(ctx) {
@@ -345,7 +361,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
   }
 
   visitString(ctx) {
-    return new Value(String(ctx.getText().replaceAll("\"", "")), TYPES.string);
+    return new Value(String(ctx.getText().replaceAll('"', "")), TYPES.string);
   }
 
   visitComparisonExpression(ctx) {
@@ -382,7 +398,7 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         default:
           throw new Error("Illegal operator found in comparison.");
       }
-    })()
+    })();
 
     return new Value(value, TYPES.boolean);
   }
@@ -415,14 +431,15 @@ export class PseudoVisitor extends PseudoCodeVisitor {
         default:
           throw new Error("Illegal operator found in calculation.");
       }
-    })()
+    })();
 
     return new Value(result, TYPES.number);
   }
 
   visitTerminal(ctx) {
-    if (this.debugger.step)
+    if (this.debugger.step) {
       this.debugger.prompt();
+    }
     return super.visitTerminal(ctx);
   }
 }

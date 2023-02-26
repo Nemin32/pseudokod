@@ -20,7 +20,7 @@ self.addEventListener("load", () => {
       ["variableInspector", "#vars div"],
       ["stackInspector", "#stack div"],
       ["ipStackInspector", "#ipStack div"],
-    ].map(([name, id]) => [name, document.querySelector(id)!])
+    ].map(([name, id]) => [name, document.querySelector(id)!]),
   );
 
   let byteCode: Array<ByteCode> = [];
@@ -36,20 +36,26 @@ self.addEventListener("load", () => {
       [[TokenType.NYIL, TokenType.FORSTART, TokenType.FOREND], "#aaa"],
       [[TokenType.FUGGVENY], "#8c9472"],
       [[TokenType.CIKLUS, TokenType.AMIG], "#bf9475"],
-      [[TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS], "#a878cf"],
+      [
+        [TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS],
+        "#a878cf",
+      ],
       [[TokenType.VISSZA, TokenType.KIIR], "#8ec07c"],
       [[TokenType.SYMBOL], "#efefef"],
     ];
 
     const kwColor = "#fb4934";
-    const input = (<HTMLTextAreaElement>domElements.codeInput).value.trimEnd();
+    const input = (<HTMLTextAreaElement> domElements.codeInput).value.trimEnd();
     const tokens = new Tokenizer(input).parse();
 
     const spans: HTMLSpanElement[] = [];
 
     tokens.forEach((token, idx) => {
-      const type = token.type == TokenType.VEGE ? tokens[idx - 2].type : token.type
-      const color = colors.find(([types, _]) => types.includes(type))?.[1] ?? kwColor;
+      const type = token.type == TokenType.VEGE
+        ? tokens[idx - 2].type
+        : token.type;
+      const color = colors.find(([types, _]) => types.includes(type))?.[1] ??
+        kwColor;
 
       const span = document.createElement("span");
       span.innerText = token.lexeme;
@@ -65,21 +71,24 @@ self.addEventListener("load", () => {
   domElements.codeInput.addEventListener("input", () => {
     console.time();
     colorize();
-    console.timeEnd()
+    console.timeEnd();
   });
 
   domElements.codeInput.addEventListener("scroll", () => {
-    domElements.syntaxHighlightOverlay.scrollTop = domElements.codeInput.scrollTop;
+    domElements.syntaxHighlightOverlay.scrollTop =
+      domElements.codeInput.scrollTop;
   });
 
   domElements.compileButton.addEventListener("click", () => {
-    const input = (<HTMLTextAreaElement>domElements.codeInput).value;
+    const input = (<HTMLTextAreaElement> domElements.codeInput).value;
 
     byteCode = ASTCompiler.compile(input);
 
     domElements.vmInstructions.innerHTML = byteCode
       .map((value, idx) => {
-        return `<span><pre>${String(idx).padStart(4, " ")}: ${OpCode[value.opCode].padEnd(6, " ")} ${value.payload ?? ""}</pre></span>`;
+        return `<span><pre>${String(idx).padStart(4, " ")}: ${
+          OpCode[value.opCode].padEnd(6, " ")
+        } ${value.payload ?? ""}</pre></span>`;
       })
       .join("\n");
   });

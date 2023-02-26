@@ -35,8 +35,14 @@ export class TokenToASTParser<T> {
     return this.exec(this.wrap(input));
   }
 
-  static result = <Q>(value: Q): TokenToASTParser<Q> => new TokenToASTParser((input: ParseInput): ParseResult<Q> => [new Capture(input, value)]);
-  static zero = (error: Error): TokenToASTParser<never> => new TokenToASTParser((inp: ParseInput): ParseResult<never> => [new CError(inp, error)]);
+  static result = <Q>(value: Q): TokenToASTParser<Q> =>
+    new TokenToASTParser((
+      input: ParseInput,
+    ): ParseResult<Q> => [new Capture(input, value)]);
+  static zero = (error: Error): TokenToASTParser<never> =>
+    new TokenToASTParser((
+      inp: ParseInput,
+    ): ParseResult<never> => [new CError(inp, error)]);
 
   static item = (error: Error): TokenToASTParser<Token> =>
     new TokenToASTParser((inp: ParseInput): ParseResult<Token> => {
@@ -44,15 +50,35 @@ export class TokenToASTParser<T> {
         return [new CError(inp, error)];
       }
 
-      return [new Capture({ tokens: inp.tokens, index: inp.index + 1 }, inp.tokens[inp.index])];
+      return [
+        new Capture(
+          { tokens: inp.tokens, index: inp.index + 1 },
+          inp.tokens[inp.index],
+        ),
+      ];
     });
 
-  bind<Q>(func: (value: T, prevInput: ParseInput) => TokenToASTParser<Q>): TokenToASTParser<Q> {
-    return new TokenToASTParser<Q>((inp: ParseInput) => this.exec(inp).flatMap((fR) => (fR.kind == "error" ? fR : func(fR.value, fR.next).exec(fR.next))));
+  bind<Q>(
+    func: (value: T, prevInput: ParseInput) => TokenToASTParser<Q>,
+  ): TokenToASTParser<Q> {
+    return new TokenToASTParser<Q>((inp: ParseInput) =>
+      this.exec(inp).flatMap((
+        fR,
+      ) => (fR.kind == "error" ? fR : func(fR.value, fR.next).exec(fR.next)))
+    );
   }
 
-  static sat = (predicate: (value: Token) => boolean, eofError: Error, noSatError: Error) => {
-    return TokenToASTParser.item(eofError).bind((value) => (predicate(value) ? TokenToASTParser.result(value) : TokenToASTParser.zero(noSatError)));
+  static sat = (
+    predicate: (value: Token) => boolean,
+    eofError: Error,
+    noSatError: Error,
+  ) => {
+    return TokenToASTParser.item(eofError).bind((
+      value,
+    ) => (predicate(value)
+      ? TokenToASTParser.result(value)
+      : TokenToASTParser.zero(noSatError))
+    );
   };
 
   or = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<Q | T> =>
@@ -70,7 +96,8 @@ export class TokenToASTParser<T> {
 
   sepBy = <S>(separator: TokenToASTParser<S>): TokenToASTParser<T[]> => {
     const valueBind = (_: S) => this.bind(TokenToASTParser.result);
-    const resultConcat = (x: T, xs: T[]): TokenToASTParser<T[]> => TokenToASTParser.result([x].concat(xs));
+    const resultConcat = (x: T, xs: T[]): TokenToASTParser<T[]> =>
+      TokenToASTParser.result([x].concat(xs));
     const sepBind = separator.bind(valueBind);
 
     return this.bind((x) => sepBind.many().bind((xs) => resultConcat(x, xs)));
@@ -80,24 +107,87 @@ export class TokenToASTParser<T> {
     return this.bind((val, inp) => TokenToASTParser.result(f(val, inp)));
   }
 
-  left = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<T> => this.bind((v) => other.bindResult((_) => v));
-  right = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<Q> => this.bind((_) => other.bindResult((v) => v));
-  bracket = <L, R>(leftB: TokenToASTParser<L>, rightB: TokenToASTParser<R>): TokenToASTParser<T> => leftB.right(this).left(rightB);
+  left = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<T> =>
+    this.bind((v) => other.bindResult((_) => v));
+  right = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<Q> =>
+    this.bind((_) => other.bindResult((v) => v));
+  bracket = <L, R>(
+    leftB: TokenToASTParser<L>,
+    rightB: TokenToASTParser<R>,
+  ): TokenToASTParser<T> => leftB.right(this).left(rightB);
 
   plus = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<T | Q> =>
-    new TokenToASTParser<T | Q>((inp) => (this as TokenToASTParser<T | Q>).exec(inp).concat(other.exec(inp)));
+    new TokenToASTParser<T | Q>((inp) =>
+      (this as TokenToASTParser<T | Q>).exec(inp).concat(other.exec(inp))
+    );
 
-  many1 = (): TokenToASTParser<T[]> => this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
-  many = (): TokenToASTParser<T[]> => this.many1().plus(TokenToASTParser.result<T[]>([]));
-  maybe = (): TokenToASTParser<T | null> => this.or(TokenToASTParser.result(null));
+  many1 = (): TokenToASTParser<T[]> =>
+    this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
+  many = (): TokenToASTParser<T[]> =>
+    this.many1().plus(TokenToASTParser.result<T[]>([]));
+  maybe = (): TokenToASTParser<T | null> =>
+    this.or(TokenToASTParser.result(null));
 
-  static matchToken = (type: TokenType) => TokenToASTParser.sat((t) => t.type == type, "EOF!", "");
-  brackets = (): TokenToASTParser<T> => this.bracket(TokenToASTParser.matchToken(TokenType.OBRACKET), TokenToASTParser.matchToken(TokenType.CBRACKET));
-  parens = (): TokenToASTParser<T> => this.bracket(TokenToASTParser.matchToken(TokenType.OPAREN), TokenToASTParser.matchToken(TokenType.CPAREN));
-  end = (): TokenToASTParser<T> => this.left(TokenToASTParser.matchToken(TokenType.VEGE));
+  static matchToken = (type: TokenType) =>
+    TokenToASTParser.sat((t) => t.type == type, "EOF!", "");
+  brackets = (): TokenToASTParser<T> =>
+    this.bracket(
+      TokenToASTParser.matchToken(TokenType.OBRACKET),
+      TokenToASTParser.matchToken(TokenType.CBRACKET),
+    );
+  parens = (): TokenToASTParser<T> =>
+    this.bracket(
+      TokenToASTParser.matchToken(TokenType.OPAREN),
+      TokenToASTParser.matchToken(TokenType.CPAREN),
+    );
+  end = (): TokenToASTParser<T> =>
+    this.left(TokenToASTParser.matchToken(TokenType.VEGE));
 
-  static exact = <T>(value: T) => TokenToASTParser.sat((elem) => elem == value, "EOF!", "Expected " + value);
-  static of = <T>(p: () => TokenToASTParser<T>) => new TokenToASTParser<T>((inp) => p().exec(inp));
+  static exact = <T>(value: T) =>
+    TokenToASTParser.sat((elem) => elem == value, "EOF!", "Expected " + value);
+  static of = <T>(p: () => TokenToASTParser<T>) =>
+    new TokenToASTParser<T>((inp) => p().exec(inp));
+
+  static chainl1 = <T, O>(
+    p: TokenToASTParser<T>,
+    op: TokenToASTParser<O>,
+  ): TokenToASTParser<{ f: O; a: T; b: T } | T> => {
+    return p.bind((a) =>
+      op.maybe().bind((
+        f,
+      ) => (f == null
+        ? TokenToASTParser.result<{ f: O; a: T; b: T } | T>(a)
+        : p.bindResult<{ f: O; a: T; b: T } | T>((b) => ({ f, a, b })))
+      )
+    );
+  };
+
+  static chainl = <T, O, A>(
+    p: TokenToASTParser<T>,
+    op: TokenToASTParser<O>,
+    a: TokenToASTParser<A>,
+  ) => TokenToASTParser.chainl1(p, op).or(a);
+
+  static bindChain = <T, O, Q>(
+    p: TokenToASTParser<T>,
+    op: TokenToASTParser<O>,
+    fOTT: (val: { f: O; a: T; b: T }) => Q,
+  ) => {
+    return TokenToASTParser.chainl1(p, op).bindResult((chain) => {
+      if (chain != null && typeof chain == "object" && "f" in chain) {
+        return fOTT(chain);
+      } else {
+        return chain;
+      }
+    });
+  };
+
+  bindChain<O, Q>(
+    op: TokenToASTParser<O>,
+    f: (val: { f: O; a: T; b: T }) => Q,
+  ): TokenToASTParser<T | Q> {
+    return TokenToASTParser.bindChain(this, op, f);
+  }
 
   static do() {
     return new BaseDo([], []);
@@ -106,10 +196,16 @@ export class TokenToASTParser<T> {
 
 class BaseDo<B extends Record<symbol | number | string, never>> {
   // deno-lint-ignore no-explicit-any
-  constructor(public parsers: TokenToASTParser<any>[], public names: string[]) {}
+  constructor(
+    public parsers: TokenToASTParser<any>[],
+    public names: string[],
+  ) {}
 
   // deno-lint-ignore no-explicit-any
-  bind<BindName extends string, BindType extends any>(name: BindName, parser: TokenToASTParser<BindType>): BaseDo<B & Record<BindName, BindType>> {
+  bind<BindName extends string, BindType extends any>(
+    name: BindName,
+    parser: TokenToASTParser<BindType>,
+  ): BaseDo<B & Record<BindName, BindType>> {
     return new BaseDo(this.parsers.concat([parser]), this.names.concat([name]));
   }
 
@@ -124,7 +220,10 @@ class BaseDo<B extends Record<symbol | number | string, never>> {
 
   bindResult<T>(f: (val: B) => T): TokenToASTParser<T> {
     // deno-lint-ignore no-explicit-any
-    const zipped: Array<[string, TokenToASTParser<any>]> = this.parsers.map((p, idx) => [this.names[idx], p]);
+    const zipped: Array<[string, TokenToASTParser<any>]> = this.parsers.map((
+      p,
+      idx,
+    ) => [this.names[idx], p]);
     return BaseDo.finalize<B>(zipped).bindResult(f);
   }
 
@@ -134,12 +233,14 @@ class BaseDo<B extends Record<symbol | number | string, never>> {
 
   /** @internal */
   // deno-lint-ignore no-explicit-any
-  private static finalize<Obj>(parsers: Array<[string, TokenToASTParser<any>]>): TokenToASTParser<Obj> {
+  private static finalize<Obj>(
+    parsers: Array<[string, TokenToASTParser<any>]>,
+  ): TokenToASTParser<Obj> {
     const descend = (
       // deno-lint-ignore no-explicit-any
       list: Array<[string, TokenToASTParser<any>]>,
       // deno-lint-ignore no-explicit-any
-      obj: Record<string, any>
+      obj: Record<string, any>,
       // deno-lint-ignore no-explicit-any
     ): TokenToASTParser<any> => {
       if (list.length == 0) {

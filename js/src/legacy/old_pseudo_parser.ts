@@ -1,4 +1,4 @@
-import { Parser } from "../parser/parser.ts";
+import { Parser } from "./parser.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -23,7 +23,7 @@ import {
   Statement,
   Variable,
   While,
-} from "./pseudo_types.ts";
+} from "../compiler/pseudo_types.ts";
 
 // const OSPACES = Parser.char(" ").many();
 const SPACES = Parser.char(" ").many1();
@@ -108,11 +108,10 @@ export const parseArrayComprehension = parseExpression
 
 /* Atom */
 
-export const parseNumber = Parser.digit.many1().bindResult((digits) =>
-  Number(digits.join(""))
-).expect(
-  "<number>",
-);
+export const parseNumber = Parser.digit
+  .many1()
+  .bindResult((digits) => Number(digits.join("")))
+  .expect("<number>");
 
 export const parseString = Parser.sat((c) => c != '"')
   .many()
@@ -179,17 +178,25 @@ const parseFactor: Parser<Expression> = parseValue.or(
   Parser.of(() => parseLogic).parens(),
 );
 
-const parseArithmAdd: Parser<Expression> = parseFactor
-  .bindChain(parseAddOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
+const parseArithmAdd: Parser<Expression> = parseFactor.bindChain(
+  parseAddOp,
+  ({ f, a, b }) => new ArithmeticBinOp(f, a, b),
+);
 
-const parseArithmMul: Parser<Expression> = parseArithmAdd
-  .bindChain(parseMulOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
+const parseArithmMul: Parser<Expression> = parseArithmAdd.bindChain(
+  parseMulOp,
+  ({ f, a, b }) => new ArithmeticBinOp(f, a, b),
+);
 
-const parseComp: Parser<Expression> = parseArithmMul
-  .bindChain(parseCompOp, ({ f, a, b }) => new Comparison(f, a, b));
+const parseComp: Parser<Expression> = parseArithmMul.bindChain(
+  parseCompOp,
+  ({ f, a, b }) => new Comparison(f, a, b),
+);
 
-const parseLogic: Parser<Expression> = parseComp
-  .bindChain(parseLogicOp, ({ f, a, b }) => new LogicBinOp(f, a, b));
+const parseLogic: Parser<Expression> = parseComp.bindChain(
+  parseLogicOp,
+  ({ f, a, b }) => new LogicBinOp(f, a, b),
+);
 
 /* Not */
 
@@ -201,8 +208,7 @@ export const parseNot: Parser<Not> = Parser.char("~")
 
 const parseExpressionList = Parser.or(
   OWS.parens().bindResult((_) => []),
-  parseExpression.sepBy(Parser.char(",").left(OWS))
-    .parens(),
+  parseExpression.sepBy(Parser.char(",").left(OWS)).parens(),
 );
 
 export const parseFuncCall: Parser<FunctionCall> = Parser.do()
@@ -214,14 +220,15 @@ export const parseFuncCall: Parser<FunctionCall> = Parser.do()
 
 /* Debug */
 
-export const parseDebug: Parser<Debug> = Parser.string("debug").bindResult(
-  (_) => new Debug(),
-);
+export const parseDebug: Parser<Debug> = Parser.string("debug").bindResult((
+  _,
+) => new Debug());
 
 /* Print */
 
-export const parsePrintStatement: Parser<Print> = Parser.string("kiír ")
-  .bind((_) => parseExpression.bindResult((exp: Expression) => new Print(exp)));
+export const parsePrintStatement: Parser<Print> = Parser.string("kiír ").bind((
+  _,
+) => parseExpression.bindResult((exp: Expression) => new Print(exp)));
 
 /* If */
 
@@ -241,7 +248,8 @@ const parseElseIfBranches: Parser<Array<{ pred: Expression; body: Block }>> =
     .bind("pred", parseExpression)
     .ignore(Parser.string("akkor").bracket(WS, WS))
     .bind("body", parseBlock)
-    .toParser().many1();
+    .toParser()
+    .many1();
 
 // if ...
 const parseIf: Parser<If> = parseIfHead.left(
@@ -271,11 +279,18 @@ export const parseFor: Parser<For> = Parser.do()
   .ignore(Parser.string("ciklus").left(WS))
   .bind("variable", parseVariable)
   .ignore(Parser.string("<-").bracket(OWS, OWS))
-  .bind("from", parseExpression.left(Parser.or(Parser.string("-tól"), Parser.string("-től")).left(WS)))
+  .bind(
+    "from",
+    parseExpression.left(
+      Parser.or(Parser.string("-tól"), Parser.string("-től")).left(WS),
+    ),
+  )
   .bind("to", parseExpression.left(Parser.string("-ig")))
   .bind("body", parseBlock)
   .ignore(Parser.string("ciklus vége"))
-  .bindResult(({variable, from, to, body}) => new For(variable, from, to, body))
+  .bindResult(({ variable, from, to, body }) =>
+    new For(variable, from, to, body)
+  );
 
 /* Arrays */
 
