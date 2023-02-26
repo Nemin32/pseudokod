@@ -12,8 +12,6 @@ enum TokenType {
   VISSZA,
   TOMB,
 
-  ES,
-  VAGY,
   NEGAL,
 
   /* Misc. */
@@ -34,6 +32,7 @@ enum TokenType {
   FUNCNAME,
   ARITHMOP,
   COMPOP,
+  LOGICOP,
   WHITESPACE,
   TYPE,
 }
@@ -145,11 +144,9 @@ class Tokenizer extends SimpleParser<BaseToken> {
     ["vissza", TokenType.VISSZA],
     ["tömb", TokenType.TOMB],
 
-    ["&&", TokenType.ES],
-    ["||", TokenType.VAGY],
-    ["~", TokenType.NEGAL],
 
     /* Misc. */
+    ["~", TokenType.NEGAL],
     ["(", TokenType.OPAREN],
     [")", TokenType.CPAREN],
     ["[", TokenType.OBRACKET],
@@ -178,7 +175,8 @@ class Tokenizer extends SimpleParser<BaseToken> {
     const tokens = super.parse();
 
     if (this.index < this.input.length) {
-      throw new Error("Lexing error at " + tokens.at(-1)?.end ?? 0);
+      const idx = tokens.at(-1)?.end ?? 0
+      throw new Error("Lexing error at " + idx + ": " + this.input[idx]);
     }
 
     return tokens;
@@ -199,6 +197,7 @@ class Tokenizer extends SimpleParser<BaseToken> {
       this.parseKeyword,
       this.parseCompOp,
       this.parseArithmOp,
+      this.parseLogicOp,
       this.parseNumber,
       this.parseFuncName,
       this.parseSymbol,
@@ -280,22 +279,43 @@ class Tokenizer extends SimpleParser<BaseToken> {
   parseCompOp(): BaseToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => ([">", "<", ">=", "<=", "=", "=/="].includes(str) ? new BaseToken(TokenType.ARITHMOP, str, idx) : null)
+      (str, idx) => ([">", "<", ">=", "<=", "=", "=/="].includes(str) ? new BaseToken(TokenType.COMPOP, str, idx) : null)
+    );
+  }
+
+  parseLogicOp(): BaseToken | null {
+    return this.parseWhile(
+      (c) => !Tokenizer.isWhitespace(c),
+      (str, idx) => (["&&", "||"].includes(str) ? new BaseToken(TokenType.LOGICOP, str, idx) : null)
     );
   }
 
   parseKeyword(): BaseToken | null {
-    return this.parseWhile(
+    /*return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
       (str, idx) => {
         const type = Tokenizer.kwToType.get(str) ?? null;
         return this.mkToken(type, str, idx);
       }
-    );
+    );*/
+
+    const c = this.peek();
+    if (!c) return null;
+    this.eat();
+
+    const type = Tokenizer.kwToType.get(c) ?? null;
+    if (type) {
+      return this.mkToken(type, c);
+    }
+
+    const kw = this.eatWhile(Tokenizer.isLetter);
+    if (!kw) return null;
+
+    return this.mkToken(Tokenizer.kwToType.get(kw) ?? null, kw);
   }
 }
 
-const input = "igaz hamis egész tömb";
+const input = "haigaz&& : , ~";
 
 const ainput = `függvény Csere(címszerint a : egész, címszerint b : egész)
    temp <- a
