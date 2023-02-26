@@ -43,9 +43,9 @@ címszerint tc : egész
       sc <- sc - 1
     elágazás vége
   különben ha c = "." akkor
-    kiir tape[tc]
+    kiír tape[tc]
   különben
-    kiir "Ismeretelen karakter!"
+    kiír "Ismeretelen karakter!"
   elágazás vége
 
   pc <- pc + 1
@@ -54,8 +54,8 @@ debug
 függvény vége
 
 függvény Adatok(tape : egész tömb, inst : egész tömb, pc : egész)
-  kiir inst[pc]
-  kiir tape
+  kiír inst[pc]
+  kiír tape
 függvény vége
 
 Adatok(tape, inst, pc)
@@ -73,7 +73,7 @@ elágazás vége
 
 halt <- halt + 1
 ha halt = 100 akkor
-kiir "Végtelen ciklus!"
+kiír "Végtelen ciklus!"
 pc <- 7
 elágazás vége
 ciklus vége

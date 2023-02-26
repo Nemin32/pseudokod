@@ -31,8 +31,11 @@ export class TokenToASTParser<T> {
     };
   }
 
-  run(input: Token[]) {
-    return this.exec(this.wrap(input));
+  run(input: Token[]): T[] | null {
+    const results = this.exec(this.wrap(input));
+    const capture = (results.filter(c => c.kind == "capture" && c.done()) as Capture<Token, T>[]).map(c=>c.value) //.at(0)?.value ?? null
+
+    return capture;
   }
 
   static result = <Q>(value: Q): TokenToASTParser<Q> =>
@@ -124,7 +127,7 @@ export class TokenToASTParser<T> {
   many1 = (): TokenToASTParser<T[]> =>
     this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
   many = (): TokenToASTParser<T[]> =>
-    this.many1().plus(TokenToASTParser.result<T[]>([]));
+    this.many1().or(TokenToASTParser.result<T[]>([]));
   maybe = (): TokenToASTParser<T | null> =>
     this.or(TokenToASTParser.result(null));
 

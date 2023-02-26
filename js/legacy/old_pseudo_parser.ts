@@ -23,7 +23,7 @@ import {
   Statement,
   Variable,
   While,
-} from "../compiler/pseudo_types.ts";
+} from "../src/compiler/pseudo_types.ts";
 
 // const OSPACES = Parser.char(" ").many();
 const SPACES = Parser.char(" ").many1();

@@ -1,7 +1,11 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.ts";
 import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
-import { Tokenizer, TokenType } from "../parser/tokenizer.ts";
+import { parseBlock } from "../compiler/pseudo_parser.ts";
+import { astToString } from "../debug/ast_printer.ts";
+import { PseudoToken, Tokenizer, TokenType } from "../parser/tokenizer.ts";
+import { TokenToASTParser } from "../parser/token_parser.ts";
 import { VM } from "../runtime/vm.ts";
+import { colorize } from "./syntax_highlight.ts";
 
 self.addEventListener("load", () => {
   const domElements: Readonly<Record<string, HTMLElement>> = Object.fromEntries(
@@ -23,55 +27,20 @@ self.addEventListener("load", () => {
     ].map(([name, id]) => [name, document.querySelector(id)!]),
   );
 
+  let tokens: PseudoToken[] = [];
   let byteCode: Array<ByteCode> = [];
 
-  const colorize = () => {
-    const colors: [TokenType[], string][] = [
-      [[TokenType.NUMBER], "#b16286"],
-      [[TokenType.STRING], "#aaefba"],
-      [[TokenType.ARITHMOP, TokenType.LOGICOP, TokenType.COMPOP], "#a0a0a0"],
-      [[TokenType.FUNCNAME], "#7899cf"],
-      [[TokenType.TYPE, TokenType.TOMB], "#a9cf78"],
-      [[TokenType.CIMSZERINT], "#888"],
-      [[TokenType.NYIL, TokenType.FORSTART, TokenType.FOREND], "#aaa"],
-      [[TokenType.FUGGVENY], "#8c9472"],
-      [[TokenType.CIKLUS, TokenType.AMIG], "#bf9475"],
-      [
-        [TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS],
-        "#a878cf",
-      ],
-      [[TokenType.VISSZA, TokenType.KIIR], "#8ec07c"],
-      [[TokenType.SYMBOL], "#efefef"],
-    ];
-
-    const kwColor = "#fb4934";
-    const input = (<HTMLTextAreaElement> domElements.codeInput).value.trimEnd();
-    const tokens = new Tokenizer(input).parse();
-
-    const spans: HTMLSpanElement[] = [];
-
-    tokens.forEach((token, idx) => {
-      const type = token.type == TokenType.VEGE
-        ? tokens[idx - 2].type
-        : token.type;
-      const color = colors.find(([types, _]) => types.includes(type))?.[1] ??
-        kwColor;
-
-      const span = document.createElement("span");
-      span.innerText = token.lexeme;
-      span.style.whiteSpace = "pre";
-      span.style.color = color;
-
-      spans.push(span);
-    });
-
-    domElements.syntaxHighlightOverlay.replaceChildren(...spans);
-  };
-
   domElements.codeInput.addEventListener("input", () => {
-    console.time();
-    colorize();
-    console.timeEnd();
+    // Tokenize
+    console.time("tokenize");
+    const input = (domElements.codeInput as HTMLTextAreaElement).value
+    const tk = new Tokenizer(input.trimEnd());
+    tokens = tk.parse();
+    console.timeEnd("tokenize");
+
+    console.time("colorize");
+    colorize(<HTMLDivElement>domElements.syntaxHighlightOverlay, tokens);
+    console.timeEnd("colorize");
   });
 
   domElements.codeInput.addEventListener("scroll", () => {
@@ -80,9 +49,22 @@ self.addEventListener("load", () => {
   });
 
   domElements.compileButton.addEventListener("click", () => {
-    const input = (<HTMLTextAreaElement> domElements.codeInput).value;
+    console.time("oldparser")
 
-    byteCode = ASTCompiler.compile(input);
+    const filtered = tokens.filter(t => t.type != TokenType.WHITESPACE)
+    const AST = parseBlock.run(filtered);
+
+    if (!AST) {
+      console.timeEnd("oldparser")
+      throw new Error("Couldn't convert tokens to AST!");
+    }
+
+    console.log(filtered, AST);
+
+    const compiler = new ASTCompiler();
+    compiler.visitBlock(AST[0]);
+    byteCode = compiler.bytecode //ASTCompiler.compile(input);
+    console.timeEnd("oldparser")
 
     domElements.vmInstructions.innerHTML = byteCode
       .map((value, idx) => {
