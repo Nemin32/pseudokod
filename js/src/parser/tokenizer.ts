@@ -12,10 +12,11 @@ export enum TokenType {
   HA,
   VISSZA,
   TOMB,
-
-  NEGAL,
+  DEBUG,
+  KULONBEN,
 
   /* Misc. */
+  NEGAL,
   OPAREN,
   CPAREN,
   OBRACKET,
@@ -145,6 +146,8 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     ["ha", TokenType.HA],
     ["vissza", TokenType.VISSZA],
     ["tömb", TokenType.TOMB],
+    ["debug", TokenType.DEBUG],
+    ["különben", TokenType.KULONBEN],
 
 
     /* Misc. */
@@ -229,7 +232,7 @@ export class Tokenizer extends SimpleParser<BaseToken> {
       }
 
       if (this.eat() == '"') {
-        return new BaseToken(TokenType.STRING, value, this.index);
+        return new BaseToken(TokenType.STRING, '"' + value + '"', this.index);
       }
     }
 

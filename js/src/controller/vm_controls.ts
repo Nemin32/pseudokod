@@ -25,19 +25,10 @@ self.addEventListener("load", () => {
 
   let byteCode: Array<ByteCode> = [];
 
-  function debounce(func: Function, timeout = 300) {
-    let timer: number;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => {
-        func.apply(this, args);
-      }, timeout);
-    };
-  }
-
   const colorize = () => {
     const colors: [TokenType[], string][] = [
       [[TokenType.NUMBER], "#b16286"],
+      [[TokenType.STRING], "#aaefba"],
       [[TokenType.ARITHMOP, TokenType.LOGICOP, TokenType.COMPOP], "#a0a0a0"],
       [[TokenType.FUNCNAME], "#7899cf"],
       [[TokenType.TYPE, TokenType.TOMB], "#a9cf78"],
@@ -45,27 +36,40 @@ self.addEventListener("load", () => {
       [[TokenType.NYIL, TokenType.FORSTART, TokenType.FOREND], "#aaa"],
       [[TokenType.FUGGVENY], "#8c9472"],
       [[TokenType.CIKLUS, TokenType.AMIG], "#bf9475"],
-      [[TokenType.HA, TokenType.AKKOR, TokenType.ELAGAZAS], "#a878cf"],
+      [[TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS], "#a878cf"],
       [[TokenType.VISSZA, TokenType.KIIR], "#8ec07c"],
       [[TokenType.SYMBOL], "#efefef"],
     ];
 
     const kwColor = "#fb4934";
-    const input = (<HTMLTextAreaElement>domElements.codeInput).value;
+    const input = (<HTMLTextAreaElement>domElements.codeInput).value.trimEnd();
     const tokens = new Tokenizer(input).parse();
 
-    domElements.syntaxHighlightOverlay.innerHTML = "";
+    const spans: HTMLSpanElement[] = [];
+
     tokens.forEach((token, idx) => {
       const type = token.type == TokenType.VEGE ? tokens[idx - 2].type : token.type
       const color = colors.find(([types, _]) => types.includes(type))?.[1] ?? kwColor;
 
-      domElements.syntaxHighlightOverlay.innerHTML += `<span style="white-space: pre; color: ${color}">${token.lexeme}</span>`;
+      const span = document.createElement("span");
+      span.innerText = token.lexeme;
+      span.style.whiteSpace = "pre";
+      span.style.color = color;
+
+      spans.push(span);
     });
+
+    domElements.syntaxHighlightOverlay.replaceChildren(...spans);
   };
 
-  const dColorize = debounce(colorize, 50);
   domElements.codeInput.addEventListener("input", () => {
-    dColorize();
+    console.time();
+    colorize();
+    console.timeEnd()
+  });
+
+  domElements.codeInput.addEventListener("scroll", () => {
+    domElements.syntaxHighlightOverlay.scrollTop = domElements.codeInput.scrollTop;
   });
 
   domElements.compileButton.addEventListener("click", () => {
