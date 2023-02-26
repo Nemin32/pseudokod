@@ -1,4 +1,4 @@
-enum TokenType {
+export enum TokenType {
   /* Keywords */
   CIKLUS,
   AMIG,
@@ -129,7 +129,7 @@ abstract class SimpleParser<Token> {
   }
 }
 
-class Tokenizer extends SimpleParser<BaseToken> {
+export class Tokenizer extends SimpleParser<BaseToken> {
   static kwToType: Map<string, TokenType> = new Map([
     /* Keywords */
     ["ciklus", TokenType.CIKLUS],
@@ -291,63 +291,20 @@ class Tokenizer extends SimpleParser<BaseToken> {
   }
 
   parseKeyword(): BaseToken | null {
-    /*return this.parseWhile(
-      (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => {
-        const type = Tokenizer.kwToType.get(str) ?? null;
-        return this.mkToken(type, str, idx);
-      }
-    );*/
+    const skw = this.tryParse(this.parseSingleCharKw);
+    if (skw) return skw;
 
-    const c = this.peek();
-    if (!c) return null;
-    this.eat();
-
-    const type = Tokenizer.kwToType.get(c) ?? null;
-    if (type) {
-      return this.mkToken(type, c);
-    }
-
-    const kw = this.eatWhile(Tokenizer.isLetter);
+    const kw = this.eatWhile(c =>!Tokenizer.isWhitespace(c));
     if (!kw) return null;
 
     return this.mkToken(Tokenizer.kwToType.get(kw) ?? null, kw);
   }
-}
 
-const input = "haigaz&& : , ~";
+  parseSingleCharKw(): BaseToken | null {
+    const c = this.eat();
+    if (!c) return null;
 
-const ainput = `függvény Csere(címszerint a : egész, címszerint b : egész)
-   temp <- a
-   a <- b
-   b <- temp
-függvény vége
-
-függvény Minimum(címszerint tomb : egész tömb, n : egész)
-  ciklus i <- 1-től n-1-ig
-    min <- i
-    ciklus j <- i+1-től n-ig
-      ha tomb[min] > tomb[j] akkor
-        min <- j
-      elágazás vége
-    ciklus vége
-  Csere(tomb[i], tomb[min])
-  ciklus vége
-függvény vége
-
-x <- (3, 2, 4, 6, 1)
-
-Csere(x[1], x[2])
-
-kiir x
-
-Minimum(x, 5)
-kiir x
-`;
-
-const tk = new Tokenizer(input);
-const tokens = tk.parse()?.map((t) => `${TokenType[t.type]} - "${t.lexeme}"`);
-
-for (const token of tokens) {
-  console.log(token);
+    const type = Tokenizer.kwToType.get(c) ?? null;
+    return this.mkToken(type, c);
+  }
 }
