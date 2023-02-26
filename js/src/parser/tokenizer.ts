@@ -2,6 +2,7 @@ export enum TokenType {
   /* Keywords */
   CIKLUS,
   AMIG,
+  AKKOR,
   VEGE,
   ELAGAZAS,
   FUGGVENY,
@@ -134,6 +135,7 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     /* Keywords */
     ["ciklus", TokenType.CIKLUS],
     ["amíg", TokenType.AMIG],
+    ["akkor", TokenType.AKKOR],
     ["vége", TokenType.VEGE],
     ["elágazás", TokenType.ELAGAZAS],
     ["függvény", TokenType.FUGGVENY],

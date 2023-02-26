@@ -120,15 +120,12 @@ div {
   background-color: #282828;
   color: #ebdbb2;
 }
-#leftPane #editorContainer #syntax > span {
-  display: block;
-}
 #leftPane #editorContainer #syntax > span.highlight {
   background-color: #484848;
 }
 #leftPane #editorContainer #input {
   background-color: transparent;
-  color: white;
+  color: transparent;
   caret-color: white;
 }
 #leftPane #buttons {

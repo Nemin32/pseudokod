@@ -10,4 +10,4 @@ függvény LNKO(m : egész, n : egész)
   vissza n
 függvény vége
 
-kiir LNKO(15, 33)
+kiír LNKO(15, 33)
