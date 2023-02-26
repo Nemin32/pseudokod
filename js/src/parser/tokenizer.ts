@@ -39,7 +39,7 @@ export enum TokenType {
   TYPE,
 }
 
-class BaseToken {
+export class PseudoToken {
   start: number;
 
   constructor(public type: TokenType, public lexeme: string, public end: number) {
@@ -131,7 +131,7 @@ abstract class SimpleParser<Token> {
   }
 }
 
-export class Tokenizer extends SimpleParser<BaseToken> {
+export class Tokenizer extends SimpleParser<PseudoToken> {
   static kwToType: Map<string, TokenType> = new Map([
     /* Keywords */
     ["ciklus", TokenType.CIKLUS],
@@ -176,7 +176,7 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     return char == " " || char == "\n";
   }
 
-  override parse(): BaseToken[] {
+  override parse(): PseudoToken[] {
     const tokens = super.parse();
 
     if (this.index < this.input.length) {
@@ -187,13 +187,13 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     return tokens;
   }
 
-  mkToken(type: TokenType | null, lexeme: string | null, index: number | null = null): BaseToken | null {
+  mkToken(type: TokenType | null, lexeme: string | null, index: number | null = null): PseudoToken | null {
     if (lexeme == null) return null;
     if (type == null) return null;
-    return new BaseToken(type, lexeme, index ? index : this.index);
+    return new PseudoToken(type, lexeme, index ? index : this.index);
   }
 
-  parseOne(): BaseToken | null {
+  parseOne(): PseudoToken | null {
     const parsers = [
       this.parseWhitespace,
       this.parseString,
@@ -218,12 +218,12 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     return null;
   }
 
-  parseWhitespace(): BaseToken | null {
+  parseWhitespace(): PseudoToken | null {
     const spaces = this.eatWhile(Tokenizer.isWhitespace);
     return this.mkToken(TokenType.WHITESPACE, spaces);
   }
 
-  parseString(): BaseToken | null {
+  parseString(): PseudoToken | null {
     if (this.eat() == '"') {
       const value = this.eatWhile((c) => c != '"');
 
@@ -232,38 +232,38 @@ export class Tokenizer extends SimpleParser<BaseToken> {
       }
 
       if (this.eat() == '"') {
-        return new BaseToken(TokenType.STRING, '"' + value + '"', this.index);
+        return new PseudoToken(TokenType.STRING, '"' + value + '"', this.index);
       }
     }
 
     return null;
   }
 
-  parseNumber(): BaseToken | null {
+  parseNumber(): PseudoToken | null {
     const num = this.eatWhile(Tokenizer.isNum);
     return this.mkToken(TokenType.NUMBER, num);
   }
 
-  parseSymbol(): BaseToken | null {
+  parseSymbol(): PseudoToken | null {
     const symbol = this.eatWhile(Tokenizer.isLetter);
     return this.mkToken(TokenType.SYMBOL, symbol);
   }
 
-  parseType(): BaseToken | null {
+  parseType(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["egész", "szöveg"].includes(str) ? new BaseToken(TokenType.TYPE, str, idx) : null)
+      (str, idx) => (["egész", "szöveg"].includes(str) ? new PseudoToken(TokenType.TYPE, str, idx) : null)
     );
   }
 
-  parseBool(): BaseToken | null {
+  parseBool(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["igaz", "hamis"].includes(str) ? new BaseToken(TokenType.BOOLEAN, str, idx) : null)
+      (str, idx) => (["igaz", "hamis"].includes(str) ? new PseudoToken(TokenType.BOOLEAN, str, idx) : null)
     );
   }
 
-  parseFuncName(): BaseToken | null {
+  parseFuncName(): PseudoToken | null {
     const starter = this.eat();
 
     if (starter && starter >= "A" && starter <= "Z") {
@@ -274,28 +274,28 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     return null;
   }
 
-  parseArithmOp(): BaseToken | null {
+  parseArithmOp(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["+", "-", "/", "*", "mod"].includes(str) ? new BaseToken(TokenType.ARITHMOP, str, idx) : null)
+      (str, idx) => (["+", "-", "/", "*", "mod"].includes(str) ? new PseudoToken(TokenType.ARITHMOP, str, idx) : null)
     );
   }
 
-  parseCompOp(): BaseToken | null {
+  parseCompOp(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => ([">", "<", ">=", "<=", "=", "=/="].includes(str) ? new BaseToken(TokenType.COMPOP, str, idx) : null)
+      (str, idx) => ([">", "<", ">=", "<=", "=", "=/="].includes(str) ? new PseudoToken(TokenType.COMPOP, str, idx) : null)
     );
   }
 
-  parseLogicOp(): BaseToken | null {
+  parseLogicOp(): PseudoToken | null {
     return this.parseWhile(
       (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) => (["&&", "||"].includes(str) ? new BaseToken(TokenType.LOGICOP, str, idx) : null)
+      (str, idx) => (["&&", "||"].includes(str) ? new PseudoToken(TokenType.LOGICOP, str, idx) : null)
     );
   }
 
-  parseKeyword(): BaseToken | null {
+  parseKeyword(): PseudoToken | null {
     const skw = this.tryParse(this.parseSingleCharKw);
     if (skw) return skw;
 
@@ -305,7 +305,7 @@ export class Tokenizer extends SimpleParser<BaseToken> {
     return this.mkToken(Tokenizer.kwToType.get(kw) ?? null, kw);
   }
 
-  parseSingleCharKw(): BaseToken | null {
+  parseSingleCharKw(): PseudoToken | null {
     const c = this.eat();
     if (!c) return null;
 
