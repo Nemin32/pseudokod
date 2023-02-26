@@ -1,7 +1,8 @@
 import { astToString } from "./ast_printer.ts";
 import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
-import { parseBlock } from "../compiler/old_pseudo_parser.ts";
+import { parseBlock } from "../../legacy/old_pseudo_parser.ts";
 import { VM } from "../runtime/vm.ts";
+import { AtomValue } from "../compiler/pseudo_types.ts";
 
 const input = `
             x <- 5
@@ -42,7 +43,7 @@ parseBlock.run(input).onSuccess((ast) => {
   console.error(err.where.index + ". Error: " + err.what);
 });
 
-export function execute(input: string, outputFn: (val: any) => void) {
+export function execute(input: string, outputFn: (val: AtomValue) => void) {
   const bc = ASTCompiler.compile(input);
   const vm = new VM(bc, outputFn);
 
