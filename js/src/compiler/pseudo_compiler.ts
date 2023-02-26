@@ -1,5 +1,5 @@
 import { ByteCode, OpCode } from "./opcodes.ts";
-import { parseBlock } from "./pseudo_parser.ts";
+import { parseBlock } from "./old_pseudo_parser.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,

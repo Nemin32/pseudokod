@@ -1,6 +1,6 @@
 import { astToString } from "./ast_printer.ts";
 import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
-import { parseBlock } from "../compiler/pseudo_parser.ts";
+import { parseBlock } from "../compiler/old_pseudo_parser.ts";
 import { VM } from "../runtime/vm.ts";
 
 const input = `

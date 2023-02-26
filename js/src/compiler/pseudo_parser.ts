@@ -37,7 +37,7 @@ const parseStatement: P<Statement> = P.of(() =>
   parseExpression.or(parseIf).or(parseReturn).or(parseFor).or(parseAssignment).or(parseFuncDecl).or(parsePrint).or(parseDoWhile).or(parseWhile).or(parseDebug)
 );
 
-const parseBlock: P<Block> = parseStatement.many1()//.or(P.result([]));
+export const parseBlock: P<Block> = parseStatement.many1()//.or(P.result([]));
 
 /* = Utils = */
 
@@ -190,6 +190,7 @@ function run(input: string) {
   return parseBlock.run(tokens).filter((c) => c.kind == "capture")?.[0]?.value;
 }
 
+/*
 while (true ){
   const line = prompt("RUN>")
 
@@ -197,5 +198,6 @@ while (true ){
     console.log(run(line));
   }
 }
+*/
 
 // console.log(run("ha igaz akkor vissza hamis különben vissza igaz elágazás vége"));
