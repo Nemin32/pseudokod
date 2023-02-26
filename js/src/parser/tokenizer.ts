@@ -1,19 +1,19 @@
 export enum TokenType {
   /* Keywords */
-  CIKLUS,
-  AMIG,
   AKKOR,
-  VEGE,
+  AMIG,
+  CIKLUS,
+  CIMSZERINT,
+  DEBUG,
   ELAGAZAS,
   FUGGVENY,
-  KIIR,
-  NYIL,
-  CIMSZERINT,
   HA,
-  VISSZA,
-  TOMB,
-  DEBUG,
+  KIIR,
   KULONBEN,
+  LETREHOZ,
+  TOMB,
+  VEGE,
+  VISSZA,
 
   /* Misc. */
   NEGAL,
@@ -25,6 +25,7 @@ export enum TokenType {
   COMMA,
   FORSTART,
   FOREND,
+  NYIL,
 
   /* Special */
   NUMBER,
@@ -134,20 +135,20 @@ abstract class SimpleParser<Token> {
 export class Tokenizer extends SimpleParser<PseudoToken> {
   static kwToType: Map<string, TokenType> = new Map([
     /* Keywords */
-    ["ciklus", TokenType.CIKLUS],
-    ["amíg", TokenType.AMIG],
     ["akkor", TokenType.AKKOR],
-    ["vége", TokenType.VEGE],
+    ["amíg", TokenType.AMIG],
+    ["ciklus", TokenType.CIKLUS],
+    ["címszerint", TokenType.CIMSZERINT],
+    ["debug", TokenType.DEBUG],
     ["elágazás", TokenType.ELAGAZAS],
     ["függvény", TokenType.FUGGVENY],
-    ["kiír", TokenType.KIIR],
-    ["<-", TokenType.NYIL],
-    ["címszerint", TokenType.CIMSZERINT],
     ["ha", TokenType.HA],
-    ["vissza", TokenType.VISSZA],
-    ["tömb", TokenType.TOMB],
-    ["debug", TokenType.DEBUG],
+    ["kiír", TokenType.KIIR],
     ["különben", TokenType.KULONBEN],
+    ["tömb", TokenType.TOMB],
+    ["vissza", TokenType.VISSZA],
+    ["vége", TokenType.VEGE],
+    ["létrehoz", TokenType.LETREHOZ],
 
 
     /* Misc. */
@@ -159,6 +160,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
     [":", TokenType.COLON],
     [",", TokenType.COMMA],
 
+    ["<-", TokenType.NYIL],
     ["-tól", TokenType.FORSTART],
     ["-től", TokenType.FORSTART],
     ["-ig", TokenType.FOREND],
