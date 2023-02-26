@@ -4,8 +4,19 @@ type Error = string;
 type Token = PseudoToken;
 
 type InputWrap<T> = { tokens: T[]; index: number };
-type Capture<T, R> = { kind: "capture"; next: InputWrap<T>; value: R };
-type CError<T, E> = { kind: "error"; where: InputWrap<T>; value: E };
+
+class Capture<T, R> {
+  kind: Readonly<"capture"> = "capture";
+  done(): boolean {
+    return this.next.tokens.length == this.next.index;
+  }
+  constructor(public next: InputWrap<T>, public value: R) {}
+}
+
+class CError<T, E> {
+  kind: Readonly<"error"> = "error";
+  constructor(public where: InputWrap<T>, public value: E) {}
+}
 
 type ParseInput = InputWrap<Token>;
 type ParseResult<T> = (Capture<Token, T> | CError<Token, Error>)[];
@@ -24,41 +35,16 @@ export class TokenToASTParser<T> {
     return this.exec(this.wrap(input));
   }
 
-  static result = <Q>(value: Q): TokenToASTParser<Q> =>
-    new TokenToASTParser(
-      (input: ParseInput): ParseResult<Q> => [
-        {
-          kind: "capture",
-          next: input,
-          value,
-        },
-      ]
-    );
-
-  static zero = (error: Error): TokenToASTParser<never> =>
-    new TokenToASTParser(
-      (inp: ParseInput): ParseResult<never> => [
-        {
-          kind: "error",
-          where: inp,
-          value: error,
-        },
-      ]
-    );
+  static result = <Q>(value: Q): TokenToASTParser<Q> => new TokenToASTParser((input: ParseInput): ParseResult<Q> => [new Capture(input, value)]);
+  static zero = (error: Error): TokenToASTParser<never> => new TokenToASTParser((inp: ParseInput): ParseResult<never> => [new CError(inp, error)]);
 
   static item = (error: Error): TokenToASTParser<Token> =>
     new TokenToASTParser((inp: ParseInput): ParseResult<Token> => {
       if (inp.index >= inp.tokens.length) {
-        return [{ kind: "error", where: inp, value: error }];
+        return [new CError(inp, error)];
       }
 
-      return [
-        {
-          kind: "capture",
-          next: { tokens: inp.tokens, index: inp.index + 1 },
-          value: inp.tokens[inp.index],
-        },
-      ];
+      return [new Capture({ tokens: inp.tokens, index: inp.index + 1 }, inp.tokens[inp.index])];
     });
 
   bind<Q>(func: (value: T, prevInput: ParseInput) => TokenToASTParser<Q>): TokenToASTParser<Q> {
@@ -106,9 +92,9 @@ export class TokenToASTParser<T> {
   maybe = (): TokenToASTParser<T | null> => this.or(TokenToASTParser.result(null));
 
   static matchToken = (type: TokenType) => TokenToASTParser.sat((t) => t.type == type, "EOF!", "");
-  brackets = (): TokenToASTParser<T> => this.bracket(TokenToASTParser.matchToken(TokenType.OBRACKET), TokenToASTParser.matchToken(TokenType.CBRACKET))
-  parens = (): TokenToASTParser<T> => this.bracket(TokenToASTParser.matchToken(TokenType.OPAREN), TokenToASTParser.matchToken(TokenType.CPAREN))
-  end = (): TokenToASTParser<T> => this.left(TokenToASTParser.matchToken(TokenType.VEGE))
+  brackets = (): TokenToASTParser<T> => this.bracket(TokenToASTParser.matchToken(TokenType.OBRACKET), TokenToASTParser.matchToken(TokenType.CBRACKET));
+  parens = (): TokenToASTParser<T> => this.bracket(TokenToASTParser.matchToken(TokenType.OPAREN), TokenToASTParser.matchToken(TokenType.CPAREN));
+  end = (): TokenToASTParser<T> => this.left(TokenToASTParser.matchToken(TokenType.VEGE));
 
   static exact = <T>(value: T) => TokenToASTParser.sat((elem) => elem == value, "EOF!", "Expected " + value);
   static of = <T>(p: () => TokenToASTParser<T>) => new TokenToASTParser<T>((inp) => p().exec(inp));

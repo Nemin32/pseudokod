@@ -198,6 +198,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
   parseOne(): PseudoToken | null {
     const parsers = [
       this.parseWhitespace,
+      this.parseArrow,
       this.parseString,
       this.parseType,
       this.parseBool,
@@ -223,6 +224,14 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
   parseWhitespace(): PseudoToken | null {
     const spaces = this.eatWhile(Tokenizer.isWhitespace);
     return this.mkToken(TokenType.WHITESPACE, spaces);
+  }
+
+  parseArrow(): PseudoToken | null {
+    if (this.eat() == "<" && this.eat() == "-") {
+      return this.mkToken(TokenType.NYIL, "<-")
+    } 
+
+    return null;
   }
 
   parseString(): PseudoToken | null {

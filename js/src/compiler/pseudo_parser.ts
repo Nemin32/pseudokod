@@ -30,14 +30,25 @@ import {
 /* = Groupings = */
 
 const parseExpression: P<Expression> = P.of(() =>
-  parseNegate.or(parseFuncCall).or(parseArrayIndex).or(parseVariable).or(parseNumber).or(parseBool).or(parseString)
+  parseNegate.or(parseArrayComprehension).or(parseFuncCall).or(parseArrayIndex).or(parseVariable).or(parseNumber).or(parseBool).or(parseString)
 );
 
 const parseStatement: P<Statement> = P.of(() =>
-  parseExpression.or(parseIf).or(parseReturn).or(parseFor).or(parseAssignment).or(parseFuncDecl).or(parsePrint).or(parseDoWhile).or(parseWhile).or(parseDebug)
+    parseArrayElementAssignment
+    .or(parseArrayAssignment)
+    .or(parseIf)
+    .or(parseReturn)
+    .or(parseFor)
+    .or(parseAssignment)
+    .or(parseFuncDecl)
+    .or(parsePrint)
+    .or(parseDoWhile)
+    .or(parseWhile)
+    .or(parseDebug)
+    .or(parseExpression)
 );
 
-export const parseBlock: P<Block> = parseStatement.many1()//.or(P.result([]));
+export const parseBlock: P<Block> = parseStatement.many1(); //.or(P.result([]));
 
 /* = Utils = */
 
@@ -71,6 +82,9 @@ const parseArrayIndex: P<ArrayIndex> = P.do()
   .bind("variable", parseVariable)
   .bind("index", parseExpression.brackets())
   .bindResult(({ variable, index }) => new ArrayIndex(variable, index));
+
+/* Array Comprehension */
+const parseArrayComprehension: P<ArrayComprehension> = parseExpressionList.bindResult((exps) => new ArrayComprehension(exps));
 
 /* Negation */
 const parseNegate: P<Not> = P.matchToken(TT.NEGAL)
@@ -127,7 +141,7 @@ const parseIfHead: P<{ pred: Expression; body: Block }> = P.do()
   .toBaseParser();
 
 // (különben ha PRED akkor BODY)*
-const parseElseIf = P.matchToken(TT.KULONBEN).right(parseIfHead.many1())
+const parseElseIf = P.matchToken(TT.KULONBEN).right(parseIfHead.many1());
 
 // különben BODY
 const parseElse = P.matchToken(TT.KULONBEN).right(parseBlock);
@@ -137,7 +151,7 @@ const parseSimpleIf = P.do()
   .bind("elseB", parseElse.maybe())
   .ignoreT(TT.ELAGAZAS)
   .ignoreT(TT.VEGE)
-  .bindResult(({head, elseB}) => new If(head, [], elseB));
+  .bindResult(({ head, elseB }) => new If(head, [], elseB));
 
 const parseIfElse = P.do()
   .bind("head", parseIfHead)
@@ -145,9 +159,25 @@ const parseIfElse = P.do()
   .bind("elseB", parseElse)
   .ignoreT(TT.ELAGAZAS)
   .ignoreT(TT.VEGE)
-  .bindResult(({head, elseIf, elseB}) => new If(head, elseIf, elseB));
+  .bindResult(({ head, elseIf, elseB }) => new If(head, elseIf, elseB));
 
-const parseIf: P<If> = parseIfElse.or(parseSimpleIf)
+const parseIf: P<If> = parseIfElse.or(parseSimpleIf);
+
+/* Array Assignment */
+const parseArrayAssignment = P.do()
+  .bind("variable", parseVariable)
+  .ignoreT(TT.NYIL)
+  .ignoreT(TT.LETREHOZ)
+  .bind("type", parseType.brackets())
+  .bind("length", parseExpression.parens())
+  .bindResult(({variable, type, length}) => new ArrayAssignment(variable, type, length))
+
+/* Array Element Assignment */
+const parseArrayElementAssignment = P.do()
+  .bind("variable", parseArrayIndex)
+  .ignoreT(TT.NYIL)
+  .bind("exp", parseExpression)
+  .bindResult(({ index, exp }) => new ArrayElementAssignment(index, exp));
 
 /* For */
 const parseFor: P<For> = P.do()
@@ -187,7 +217,7 @@ function run(input: string) {
 
   console.log(tokens);
 
-  return parseBlock.run(tokens).filter((c) => c.kind == "capture")?.[0]?.value;
+  return parseBlock.run(tokens).filter((c) => c.kind == "capture" && c.done())
 }
 
 /*
@@ -200,4 +230,4 @@ while (true ){
 }
 */
 
-// console.log(run("ha igaz akkor vissza hamis különben vissza igaz elágazás vége"));
+// console.log(run("x <- (1, 2, 3)"));

@@ -23,9 +23,9 @@ async function generateTest(t: Deno.TestContext, test: Test) {
 
     // execute(test.input, mock.fn.bind(mock));
     const tokens = new Tokenizer(test.input).parse().filter(t => t.type != TokenType.WHITESPACE);
-    const AST = parseBlock.run(tokens).filter(c => c.kind == "capture")?.[0]
+    const AST = parseBlock.run(tokens).filter(c => c.kind == "capture" && c.done()).at(0)
 
-    if (AST.kind == "capture") {
+    if (AST && AST.kind == "capture") {
       const compiler = new ASTCompiler();
       compiler.visitBlock(AST.value);
 
@@ -35,7 +35,7 @@ async function generateTest(t: Deno.TestContext, test: Test) {
       assertEquals(mock.values.length, 1);
       assertEquals(mock.values[0], test.output ?? "OK");
     } else {
-      throw new Error("Error while parsing: '" + AST.where.tokens[AST.where.index].lexeme + "'")
+      throw new Error("Error while parsing: '" + AST?.where.tokens[AST.where.index].lexeme + "'")
     }
   });
 }
