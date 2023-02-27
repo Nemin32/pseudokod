@@ -1,6 +1,7 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.ts";
 import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
 import { parseBlock } from "../compiler/pseudo_parser.ts";
+import { AtomValue } from "../compiler/pseudo_types.ts";
 import { astToString } from "../debug/ast_printer.ts";
 import { PseudoToken, Tokenizer, TokenType } from "../parser/tokenizer.ts";
 import { TokenToASTParser } from "../parser/token_parser.ts";
@@ -29,6 +30,7 @@ self.addEventListener("load", () => {
 
   let tokens: PseudoToken[] = [];
   let byteCode: Array<ByteCode> = [];
+  let vm: VM | null = null;
 
   domElements.codeInput.addEventListener("input", () => {
     console.time("tokenize");
@@ -65,20 +67,45 @@ self.addEventListener("load", () => {
     byteCode = compiler.bytecode; //ASTCompiler.compile(input);
     console.timeEnd("parsing");
 
-    domElements.vmInstructions.innerHTML = byteCode
+    let indent = -2;
+    const spans: HTMLSpanElement[] = byteCode
       .map((value, idx) => {
-        return `<span><pre>${String(idx).padStart(4, " ")}: ${
-          OpCode[value.opCode].padEnd(6, " ")
-        } ${value.payload ?? ""}</pre></span>`;
+        const span = document.createElement("span");
+        const pre = document.createElement("pre");
+
+        if (value.opCode == OpCode.ESCOPE) indent+=2;
+
+        pre.innerText = `${String(idx).padStart(4, " ")}: ${
+          " ".repeat(indent) + OpCode[value.opCode].padEnd(6, " ")
+        } ${value.payload ?? ""}`
+
+        span.appendChild(pre);
+
+        if (value.opCode == OpCode.LSCOPE) indent-=2;
+        return span
       })
-      .join("\n");
+
+    vm = new VM(byteCode, {out: (value) => {
+      domElements.standardOutput.innerText += value + "\n";
+    }, stack: (stack: AtomValue[]) => {
+      domElements.stackInspector.innerText = ""
+      stack.forEach(e => {
+        domElements.stackInspector.innerText += e + "\n";
+      })
+    }});
+
+    domElements.vmInstructions.replaceChildren(...spans);
   });
 
   domElements.runButton.addEventListener("click", () => {
-    const vm = new VM(byteCode, (value) => {
-      domElements.standardOutput.innerText += value + "\n";
-    });
+    try {
+    vm?.run();
+    } catch(e) {
+      console.log(vm?.ip);
+    }
+  });
 
-    vm.run();
+  domElements.instStepButton.addEventListener("click", () => {
+    vm?.step();
   });
 });

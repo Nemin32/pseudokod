@@ -7,18 +7,20 @@ type Value = Atom["value"];
 
 export class VM {
   ip = 0;
-  stack: Stack<Value> = new Stack();
+  stack: Stack<Value>;
   ipStack: Array<number> = [];
   vars: IEnvironment<Value> = new Environment();
 
   constructor(
     public code: Array<ByteCode>,
-    private outputFn: (value: Value) => void,
-  ) {}
+    private bindings: {out: (value: Value) => void, stack: (stack: Value[]) => void},
+  ) {
+    this.stack =  new Stack(bindings.stack);
+  }
 
   dump() {
     for (const line of this.code) {
-      this.outputFn(`${OpCode[line.opCode]} ${line.payload ?? ""}`);
+      this.bindings.out(`${OpCode[line.opCode]} ${line.payload ?? ""}`);
     }
   }
 
@@ -60,7 +62,7 @@ export class VM {
         this.vars.leaveScope();
         break;
 
-      case OpCode.REFERENCE:
+      case OpCode.MKREF:
         {
           const originalVar = this.stack.pop(); // string
 
@@ -172,7 +174,7 @@ export class VM {
         break;
 
       case OpCode.PRINT:
-        this.outputFn(this.stack.pop());
+        this.bindings.out(this.stack.pop());
         break;
 
       case OpCode.PUSH:
@@ -276,7 +278,7 @@ export class VM {
         }
         break;
 
-      case OpCode.MAKEARR:
+      case OpCode.MKARR:
         {
           const length = this.stack.pop();
           const arr: Value = Array(length).fill(0);
@@ -339,5 +341,7 @@ export class VM {
     while (this.ip < this.code.length) {
       if (this.step()) return;
     }
+
+    console.log(this.ip)
   }
 }

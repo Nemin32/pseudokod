@@ -1,5 +1,4 @@
 import { ByteCode, OpCode } from "./opcodes.ts";
-import { parseBlock } from "../../legacy/old_pseudo_parser.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -32,29 +31,6 @@ import {
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
   labelId = 0;
-
-  public static compile(input: string): ByteCode[] {
-    const compiler = new this();
-
-    const mAST = parseBlock.run(input);
-
-    mAST.onError((e) => {
-      throw new Error("Error parsing input: " + e.what);
-    });
-
-    const vAST = mAST.getValue();
-
-    if (vAST.next.index != input.length) {
-      throw new Error(
-        "Couldn't parse entire input: " + input.slice(vAST.next.index),
-      );
-    }
-
-    const AST = vAST.value;
-    compiler.visitBlock(AST);
-
-    return compiler.bytecode;
-  }
 
   createOp(op: OpCode, payload: ByteCode["payload"]) {
     this.bytecode.push({ opCode: op, payload });
@@ -127,7 +103,7 @@ export class ASTCompiler {
   /* Statements */
   visitArrayAssignment(ast: ArrayAssignment) {
     this.visitExpression(ast.length);
-    this.createOp(OpCode.MAKEARR, null);
+    this.createOp(OpCode.MKARR, null);
     this.createOp(OpCode.SETVAR, ast.variable.name);
   }
 
@@ -143,6 +119,8 @@ export class ASTCompiler {
   }
 
   visitFor(ast: For) {
+    const label = ++this.labelId;
+
     const varName = ast.variable.name;
 
     this.createOp(OpCode.ESCOPE, null);
@@ -151,30 +129,38 @@ export class ASTCompiler {
     this.visitExpression(ast.from);
     this.createOp(OpCode.SETVAR, varName);
 
+    // To...
+    this.createOp(OpCode.LABEL, "for_" + label)
+
+    this.createOp(OpCode.GETVAR, varName);
+    this.visitExpression(ast.to);
+    this.createOp(OpCode.COMP, "<=");
+
+    this.createOp(OpCode.FJMP, "for_end_" + label)
+
+    this.visitBlock(ast.body)
+
     // var := var + 1
     this.createOp(OpCode.GETVAR, varName);
     this.createOp(OpCode.PUSH, 1);
     this.createOp(OpCode.CALC, "+");
     this.createOp(OpCode.SETVAR, varName);
 
-    // To...
-    this.createOp(OpCode.GETVAR, varName);
-    this.visitExpression(ast.to);
-    this.createOp(OpCode.COMP, "<=");
-
+    this.createOp(OpCode.JMP, "for_" + label)
+    this.createOp(OpCode.LABEL, "for_end_" + label)
     this.createOp(OpCode.LSCOPE, null);
   }
 
   visitDoWhile(ast: DoWhile) {
-    this.labelId++;
+    const label = ++this.labelId;
 
-    this.createOp(OpCode.LABEL, "do_while_" + this.labelId);
+    this.createOp(OpCode.LABEL, "do_while_" + label);
 
     this.visitBlock(ast.body);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.TJMP, "do_while_" + this.labelId);
+    this.createOp(OpCode.TJMP, "do_while_" + label);
   }
 
   visitExpression(ast: Expression) {
@@ -205,7 +191,7 @@ export class ASTCompiler {
 
   visitParameter(ast: Parameter) {
     if (ast.byReference) {
-      this.createOp(OpCode.REFERENCE, ast.name);
+      this.createOp(OpCode.MKREF, ast.name);
     } else {
       this.createOp(OpCode.SETVAR, ast.name);
     }
@@ -245,15 +231,15 @@ export class ASTCompiler {
     // Else If
     this.createOp(OpCode.LABEL, "else_" + headId);
     for (const elIf of ast.elIfs) {
-      this.labelId++;
+      const label = ++this.labelId;
 
       this.visitExpression(elIf.pred);
-      this.createOp(OpCode.FJMP, "if_else_" + this.labelId);
+      this.createOp(OpCode.FJMP, "if_else_" + label);
 
       this.visitBlock(elIf.body);
 
       this.createOp(OpCode.JMP, "if_end_" + headId);
-      this.createOp(OpCode.LABEL, "if_else_" + this.labelId);
+      this.createOp(OpCode.LABEL, "if_else_" + label);
     }
 
     // Else
@@ -332,18 +318,18 @@ export class ASTCompiler {
   }
 
   visitWhile(ast: While) {
-    this.labelId++;
+    const label = ++this.labelId;
 
-    this.createOp(OpCode.LABEL, "wpred_" + this.labelId);
+    this.createOp(OpCode.LABEL, "wpred_" + label);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.FJMP, "wend_" + this.labelId);
+    this.createOp(OpCode.FJMP, "wend_" + label);
 
     this.visitBlock(ast.body);
 
-    this.createOp(OpCode.JMP, "wpred_" + this.labelId);
+    this.createOp(OpCode.JMP, "wpred_" + label);
 
-    this.createOp(OpCode.LABEL, "wend_" + this.labelId);
+    this.createOp(OpCode.LABEL, "wend_" + label);
   }
 }

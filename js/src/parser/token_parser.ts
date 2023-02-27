@@ -256,11 +256,13 @@ class BaseDo<B extends Record<symbol | number | string, never>> {
         const [varName, parser] = list[0];
 
         return parser.bind((value) => {
+          const newObj = {...obj}
+
           if (varName != "") {
-            obj[varName] = value;
+            newObj[varName] = value;
           }
 
-          return descend(list.slice(1), obj);
+          return descend(list.slice(1), newObj);
         });
       }
     };

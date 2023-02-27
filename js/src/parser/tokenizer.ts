@@ -208,6 +208,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
   parseOne(): PseudoToken | null {
     const parsers = [
       this.parseWhitespace,
+      this.parseForStuff,
       this.parseArrow,
       this.parseString,
       this.parseType,
@@ -242,6 +243,20 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
     }
 
     return null;
+  }
+
+  parseForStuff(): PseudoToken | null {
+    if (this.eat() == "-") {
+      const word = this.eatWhile(Tokenizer.isLetter);
+
+      if (word == "től" || word == "tól") {
+        return this.mkToken(TokenType.FORSTART, "-" + word);
+      } else if (word == "ig") {
+        return this.mkToken(TokenType.FOREND, "-" + word);
+      }
+    }
+
+    return null
   }
 
   parseString(): PseudoToken | null {

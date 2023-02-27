@@ -47,10 +47,12 @@ export class Environment<T> implements IEnvironment<T> {
       const elem: EnvVar<T> = this.variables[i];
 
       if (this.isSentinel(elem)) {
-        if (elem.boundary && jump) {
-          jump = false;
-        } else {
-          return null;
+        if (elem.boundary) {
+          if (jump) {
+            jump = false;
+          } else {
+            return null;
+          }
         }
 
         continue;
