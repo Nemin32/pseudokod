@@ -1,4 +1,4 @@
-import { Tokenizer, TokenType, TokenType as TT } from "../parser/tokenizer.ts";
+import { TokenType as TT } from "../parser/tokenizer.ts";
 import { TokenToASTParser as P } from "../parser/token_parser.ts";
 import {
   ArithmeticBinOp,
@@ -273,8 +273,10 @@ const parseDoWhile = P.do()
   .bind("pred", parseExpression)
   .bindResult(({ pred, body }) => new DoWhile(pred, body));
 
+/*
 function run<T>(p: P<T>, input: string) {
   const tk = new Tokenizer(input);
   const tokens = tk.parse().filter((f) => f.type != TokenType.WHITESPACE);
   return [tokens, p.run(tokens)?.at(0)];
 }
+*/

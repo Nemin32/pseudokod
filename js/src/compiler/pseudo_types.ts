@@ -24,6 +24,7 @@ export enum ASTKind {
   WHILE,
 }
 
+/*
 enum ValueTypes {
   NUMBER,
   STRING,
@@ -31,6 +32,7 @@ enum ValueTypes {
   ARRAY,
   NIL,
 }
+*/
 
 export class Debug {
   readonly kind = ASTKind.DEBUG;

@@ -1,8 +1,6 @@
-import { AtomValue } from "../compiler/pseudo_types.ts";
-
 export class Stack<T> {
   private stack: Array<T> = [];
- 
+
   constructor(private callback: (stack: T[]) => void) {}
 
   get length() {
@@ -11,7 +9,7 @@ export class Stack<T> {
 
   push(val: T) {
     this.stack.push(val);
-    this.callback(this.stack)
+    this.callback(this.stack);
   }
 
   pop(): T {

@@ -256,7 +256,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
       }
     }
 
-    return null
+    return null;
   }
 
   parseString(): PseudoToken | null {

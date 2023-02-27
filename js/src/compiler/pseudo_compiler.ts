@@ -130,15 +130,15 @@ export class ASTCompiler {
     this.createOp(OpCode.SETVAR, varName);
 
     // To...
-    this.createOp(OpCode.LABEL, "for_" + label)
+    this.createOp(OpCode.LABEL, "for_" + label);
 
     this.createOp(OpCode.GETVAR, varName);
     this.visitExpression(ast.to);
     this.createOp(OpCode.COMP, "<=");
 
-    this.createOp(OpCode.FJMP, "for_end_" + label)
+    this.createOp(OpCode.FJMP, "for_end_" + label);
 
-    this.visitBlock(ast.body)
+    this.visitBlock(ast.body);
 
     // var := var + 1
     this.createOp(OpCode.GETVAR, varName);
@@ -146,8 +146,8 @@ export class ASTCompiler {
     this.createOp(OpCode.CALC, "+");
     this.createOp(OpCode.SETVAR, varName);
 
-    this.createOp(OpCode.JMP, "for_" + label)
-    this.createOp(OpCode.LABEL, "for_end_" + label)
+    this.createOp(OpCode.JMP, "for_" + label);
+    this.createOp(OpCode.LABEL, "for_end_" + label);
     this.createOp(OpCode.LSCOPE, null);
   }
 

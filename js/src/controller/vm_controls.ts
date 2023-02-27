@@ -2,9 +2,7 @@ import { ByteCode, OpCode } from "../compiler/opcodes.ts";
 import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
 import { parseBlock } from "../compiler/pseudo_parser.ts";
 import { AtomValue } from "../compiler/pseudo_types.ts";
-import { astToString } from "../debug/ast_printer.ts";
 import { PseudoToken, Tokenizer, TokenType } from "../parser/tokenizer.ts";
-import { TokenToASTParser } from "../parser/token_parser.ts";
 import { VM } from "../runtime/vm.ts";
 import { colorize } from "./syntax_highlight.ts";
 
@@ -50,7 +48,7 @@ self.addEventListener("load", () => {
   });
 
   domElements.compileButton.addEventListener("click", () => {
-    domElements.standardOutput.innerText = ""
+    domElements.standardOutput.innerText = "";
 
     console.time("parsing");
 
@@ -73,34 +71,37 @@ self.addEventListener("load", () => {
         const span = document.createElement("span");
         const pre = document.createElement("pre");
 
-        if (value.opCode == OpCode.ESCOPE) indent+=2;
+        if (value.opCode == OpCode.ESCOPE) indent += 2;
 
         pre.innerText = `${String(idx).padStart(4, " ")}: ${
           " ".repeat(indent) + OpCode[value.opCode].padEnd(6, " ")
-        } ${value.payload ?? ""}`
+        } ${value.payload ?? ""}`;
 
         span.appendChild(pre);
 
-        if (value.opCode == OpCode.LSCOPE) indent-=2;
-        return span
-      })
+        if (value.opCode == OpCode.LSCOPE) indent -= 2;
+        return span;
+      });
 
-    vm = new VM(byteCode, {out: (value) => {
-      domElements.standardOutput.innerText += value + "\n";
-    }, stack: (stack: AtomValue[]) => {
-      domElements.stackInspector.innerText = ""
-      stack.forEach(e => {
-        domElements.stackInspector.innerText += e + "\n";
-      })
-    }});
+    vm = new VM(byteCode, {
+      out: (value) => {
+        domElements.standardOutput.innerText += value + "\n";
+      },
+      stack: (stack: AtomValue[]) => {
+        domElements.stackInspector.innerText = "";
+        stack.forEach((e) => {
+          domElements.stackInspector.innerText += e + "\n";
+        });
+      },
+    });
 
     domElements.vmInstructions.replaceChildren(...spans);
   });
 
   domElements.runButton.addEventListener("click", () => {
     try {
-    vm?.run();
-    } catch(e) {
+      vm?.run();
+    } catch (_) {
       console.log(vm?.ip);
     }
   });

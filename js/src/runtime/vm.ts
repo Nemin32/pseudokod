@@ -13,9 +13,12 @@ export class VM {
 
   constructor(
     public code: Array<ByteCode>,
-    private bindings: {out: (value: Value) => void, stack: (stack: Value[]) => void},
+    private bindings: {
+      out: (value: Value) => void;
+      stack: (stack: Value[]) => void;
+    },
   ) {
-    this.stack =  new Stack(bindings.stack);
+    this.stack = new Stack(bindings.stack);
   }
 
   dump() {
@@ -342,6 +345,6 @@ export class VM {
       if (this.step()) return;
     }
 
-    console.log(this.ip)
+    console.log(this.ip);
   }
 }

@@ -202,8 +202,8 @@ export class TokenToASTParser<T> {
 }
 
 class BaseDo<B extends Record<symbol | number | string, never>> {
-  // deno-lint-ignore no-explicit-any
   constructor(
+    // deno-lint-ignore no-explicit-any
     public parsers: TokenToASTParser<any>[],
     public names: string[],
   ) {}
@@ -239,8 +239,8 @@ class BaseDo<B extends Record<symbol | number | string, never>> {
   }
 
   /** @internal */
-  // deno-lint-ignore no-explicit-any
   private static finalize<Obj>(
+    // deno-lint-ignore no-explicit-any
     parsers: Array<[string, TokenToASTParser<any>]>,
   ): TokenToASTParser<Obj> {
     const descend = (
@@ -256,7 +256,7 @@ class BaseDo<B extends Record<symbol | number | string, never>> {
         const [varName, parser] = list[0];
 
         return parser.bind((value) => {
-          const newObj = {...obj}
+          const newObj = { ...obj };
 
           if (varName != "") {
             newObj[varName] = value;
