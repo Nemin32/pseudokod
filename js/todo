@@ -2,9 +2,9 @@ TODO:
 
 - [X] Enum az AST-hez
 - [ ] assemble utasítás? - Kell egyáltalán?
-- [ ] stack portolása TS-re
-- [ ] Függvények - Stack space?
-- [ ] if/else if
+- [X] stack portolása TS-re
+- [X] Függvények - Stack space?
+- [X] if/else if
 - [ ] regression testek
 
 Régi:
