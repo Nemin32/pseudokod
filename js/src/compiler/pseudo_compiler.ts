@@ -1,4 +1,4 @@
-import { ByteCode, OpCode } from "./opcodes.ts";
+import { ByteCode, OpCode } from "./opcodes.js";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -26,11 +26,17 @@ import {
   Value,
   Variable,
   While,
-} from "./pseudo_types.ts";
+} from "./pseudo_types.js";
 
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];
   labelId = 0;
+
+  static compile(block: Block) {
+    const comp = new this();
+    comp.visitBlock(block);
+    return comp.bytecode;
+  }
 
   createOp(op: OpCode, payload: ByteCode["payload"]) {
     this.bytecode.push({ opCode: op, payload });
