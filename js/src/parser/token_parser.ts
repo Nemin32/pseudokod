@@ -1,4 +1,4 @@
-import { PseudoToken, TokenType } from "./tokenizer.ts";
+import { PseudoToken, TokenType } from "./tokenizer.js";
 
 type Error = string;
 type Token = PseudoToken;
@@ -31,13 +31,12 @@ export class TokenToASTParser<T> {
     };
   }
 
-  run(input: Token[]): T[] | null {
+  run(input: Token[]): T | null {
     const results = this.exec(this.wrap(input));
-    const capture =
-      (results.filter((c) => c.kind == "capture" && c.done()) as Capture<
-        Token,
-        T
-      >[]).map((c) => c.value); //.at(0)?.value ?? null
+    const capture = (results.filter((c) => c.kind == "capture" && c.done()) as Capture<
+      Token,
+      T
+    >[]).at(0)?.value ?? null; // .map((c) => c.value)
 
     return capture;
   }
@@ -82,10 +81,7 @@ export class TokenToASTParser<T> {
   ) => {
     return TokenToASTParser.item(eofError).bind((
       value,
-    ) => (predicate(value)
-      ? TokenToASTParser.result(value)
-      : TokenToASTParser.zero(noSatError))
-    );
+    ) => (predicate(value) ? TokenToASTParser.result(value) : TokenToASTParser.zero(noSatError)));
   };
 
   or = <Q>(other: TokenToASTParser<Q>): TokenToASTParser<Q | T> =>
@@ -130,13 +126,10 @@ export class TokenToASTParser<T> {
 
   many1 = (): TokenToASTParser<T[]> =>
     this.bind((x) => this.many().bindResult((xs) => [x].concat(xs)));
-  many = (): TokenToASTParser<T[]> =>
-    this.many1().or(TokenToASTParser.result<T[]>([]));
-  maybe = (): TokenToASTParser<T | null> =>
-    this.or(TokenToASTParser.result(null));
+  many = (): TokenToASTParser<T[]> => this.many1().or(TokenToASTParser.result<T[]>([]));
+  maybe = (): TokenToASTParser<T | null> => this.or(TokenToASTParser.result(null));
 
-  static matchToken = (type: TokenType) =>
-    TokenToASTParser.sat((t) => t.type == type, "EOF!", "");
+  static matchToken = (type: TokenType) => TokenToASTParser.sat((t) => t.type == type, "EOF!", "");
   brackets = (): TokenToASTParser<T> =>
     this.bracket(
       TokenToASTParser.matchToken(TokenType.OBRACKET),
@@ -147,13 +140,11 @@ export class TokenToASTParser<T> {
       TokenToASTParser.matchToken(TokenType.OPAREN),
       TokenToASTParser.matchToken(TokenType.CPAREN),
     );
-  end = (): TokenToASTParser<T> =>
-    this.left(TokenToASTParser.matchToken(TokenType.VEGE));
+  end = (): TokenToASTParser<T> => this.left(TokenToASTParser.matchToken(TokenType.VEGE));
 
   static exact = <T>(value: T) =>
     TokenToASTParser.sat((elem) => elem == value, "EOF!", "Expected " + value);
-  static of = <T>(p: () => TokenToASTParser<T>) =>
-    new TokenToASTParser<T>((inp) => p().exec(inp));
+  static of = <T>(p: () => TokenToASTParser<T>) => new TokenToASTParser<T>((inp) => p().exec(inp));
 
   static chainl1 = <T, O>(
     p: TokenToASTParser<T>,

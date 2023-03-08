@@ -1,5 +1,5 @@
-import { TokenType as TT } from "../parser/tokenizer.ts";
-import { TokenToASTParser as P } from "../parser/token_parser.ts";
+import { PseudoToken, TokenType as TT } from "../parser/tokenizer.js";
+import { TokenToASTParser as P } from "../parser/token_parser.js";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -25,12 +25,11 @@ import {
   Statement,
   Variable,
   While,
-} from "./pseudo_types.ts";
+} from "./pseudo_types.js";
 
 /* = Groupings = */
 
 const parseExpression: P<Expression> = P.of(() =>
-  // parseNegate.or(parseArrayComprehension).or(parseFuncCall).or(parseArrayIndex) .or(parseLogic).or(parseVariable).or(parseNumber).or(parseBool).or(parseString)
   parseNegate.or(parseArrayComprehension).or(parseFuncCall).or(parseLogic)
 );
 
@@ -49,7 +48,9 @@ const parseStatement: P<Statement> = P.of<Statement>(() =>
     .or(parseExpression)
 );
 
-export const parseBlock: P<Block> = parseStatement.many1(); //parseStatement.bind(s => parseBlock.bind(ps => P.result([s].concat(ps)))).or(P.result([])) //parseStatement.many1(); //.or(P.result([]));
+export const parseProgram = (tokens: PseudoToken[]) =>
+  parseBlock.run(tokens.filter((t) => t.type != TT.WHITESPACE));
+export const parseBlock: P<Block> = parseStatement.many1();
 
 /* = Utils = */
 
@@ -65,12 +66,8 @@ const parseParameter = P.do()
   .ignore(P.matchToken(TT.TOMB).maybe())
   .bindResult(({ ref, name, _type }) => new Parameter(name, ref != null));
 
-const parseParamList = parseParameter.sepBy(P.matchToken(TT.COMMA)).or(
-  P.result([]),
-).parens();
-const parseExpressionList = parseExpression.sepBy(P.matchToken(TT.COMMA)).or(
-  P.result([]),
-).parens();
+const parseParamList = parseParameter.sepBy(P.matchToken(TT.COMMA)).or(P.result([])).parens();
+const parseExpressionList = parseExpression.sepBy(P.matchToken(TT.COMMA)).or(P.result([])).parens();
 
 /* = Expressions = */
 
@@ -92,14 +89,13 @@ const parseVariable: P<Variable> = P.matchToken(TT.SYMBOL).bindResult((token) =>
 
 /* Array Index */
 const parseArrayIndex: P<ArrayIndex> = parseVariable.bind((variable) =>
-  parseExpression.brackets().bindResult((index) =>
-    new ArrayIndex(variable, index)
-  )
+  parseExpression.brackets().bindResult((index) => new ArrayIndex(variable, index))
 );
 
 /* Array Comprehension */
-const parseArrayComprehension: P<ArrayComprehension> = parseExpressionList
-  .bindResult((exps) => new ArrayComprehension(exps));
+const parseArrayComprehension: P<ArrayComprehension> = parseExpressionList.bindResult((exps) =>
+  new ArrayComprehension(exps)
+);
 
 /* Negation */
 const parseNegate: P<Not> = P.matchToken(TT.NEGAL)
@@ -119,9 +115,7 @@ const parseFuncDecl: P<FunctionDeclaration> = P.do()
   .bind("params", parseParamList)
   .bind("body", parseBlock)
   .ignore(P.matchToken(TT.FUGGVENY).end())
-  .bindResult(({ name, params, body }) =>
-    new FunctionDeclaration(name, params, body)
-  );
+  .bindResult(({ name, params, body }) => new FunctionDeclaration(name, params, body));
 
 /* Print */
 const parsePrint: P<Print> = P.matchToken(TT.KIIR)
@@ -129,9 +123,7 @@ const parsePrint: P<Print> = P.matchToken(TT.KIIR)
   .bindResult((exp) => new Print(exp));
 
 /* Debug */
-const parseDebug: P<Debug> = P.matchToken(TT.DEBUG).bindResult((_) =>
-  new Debug()
-);
+const parseDebug: P<Debug> = P.matchToken(TT.DEBUG).bindResult((_) => new Debug());
 
 /* Return */
 const parseReturn: P<Return> = P.matchToken(TT.VISSZA)
@@ -147,42 +139,36 @@ const parseAssignment: P<Assignment> = P.do()
 
 /* BinOps */
 
-const parseAddOp = P.matchToken(TT.ARITHMOP).bind(
-  (
-    t,
-  ) => (["+", "-"].includes(t.lexeme)
-    ? P.result(t.lexeme)
-    : P.zero("Not an add/sub operator.")),
-);
-const parseMulOp = P.matchToken(TT.ARITHMOP).bind(
-  (
-    t,
-  ) => (["*", "/", "mod"].includes(t.lexeme)
-    ? P.result(t.lexeme)
-    : P.zero("Not an add/sub operator.")),
+const parseAddOp = P.matchToken(TT.ARITHMOP).bind((
+  t,
+) => (["+", "-"].includes(t.lexeme) ? P.result(t.lexeme) : P.zero("Not an add/sub operator.")));
+const parseMulOp = P.matchToken(TT.ARITHMOP).bind((
+  t,
+) => (["*", "/", "mod"].includes(t.lexeme)
+  ? P.result(t.lexeme)
+  : P.zero("Not an add/sub operator."))
 );
 const parseCompOp = P.matchToken(TT.COMPOP).bindResult((t) => t.lexeme);
 const parseLogicOp = P.matchToken(TT.LOGICOP).bindResult((t) => t.lexeme);
 
-const parseValue = parseArrayIndex.or(parseVariable).or(parseNumber).or(
-  parseBool,
-).or(parseString);
-
-const parseFactor: P<Expression> = parseValue.or(
-  P.of(() => parseLogic).parens(),
+const parseValue = parseArrayIndex.or(parseVariable).or(parseNumber).or(parseBool).or(parseString);
+const parseFactor: P<Expression> = parseValue.or(P.of(() => parseLogic).parens());
+const parseArithmAdd: P<Expression> = parseFactor.bindChain(
+  parseAddOp,
+  ({ f, a, b }) => new ArithmeticBinOp(f, a, b),
 );
-
-const parseArithmAdd: P<Expression> = parseFactor
-  .bindChain(parseAddOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
-
-const parseArithmMul: P<Expression> = parseArithmAdd
-  .bindChain(parseMulOp, ({ f, a, b }) => new ArithmeticBinOp(f, a, b));
-
-const parseComp: P<Expression> = parseArithmMul
-  .bindChain(parseCompOp, ({ f, a, b }) => new Comparison(f, a, b));
-
-const parseLogic: P<Expression> = parseComp
-  .bindChain(parseLogicOp, ({ f, a, b }) => new LogicBinOp(f, a, b));
+const parseArithmMul: P<Expression> = parseArithmAdd.bindChain(
+  parseMulOp,
+  ({ f, a, b }) => new ArithmeticBinOp(f, a, b),
+);
+const parseComp: P<Expression> = parseArithmMul.bindChain(
+  parseCompOp,
+  ({ f, a, b }) => new Comparison(f, a, b),
+);
+const parseLogic: P<Expression> = parseComp.bindChain(
+  parseLogicOp,
+  ({ f, a, b }) => new LogicBinOp(f, a, b),
+);
 
 /* If  */
 
@@ -228,9 +214,7 @@ const parseArrayAssignment = P.do()
   .ignoreT(TT.LETREHOZ)
   .bind("type", parseType.brackets())
   .bind("length", parseExpression.parens())
-  .bindResult(({ variable, type, length }) =>
-    new ArrayAssignment(variable, type, length)
-  );
+  .bindResult(({ variable, type, length }) => new ArrayAssignment(variable, type, length));
 
 /* Array Element Assignment */
 const parseArrayElementAssignment = P.do()
@@ -251,9 +235,7 @@ const parseFor: P<For> = P.do()
   .bind("body", parseBlock)
   .ignoreT(TT.CIKLUS)
   .ignoreT(TT.VEGE)
-  .bindResult(({ variable, fromE, toE, body }) =>
-    new For(variable, fromE, toE, body)
-  );
+  .bindResult(({ variable, fromE, toE, body }) => new For(variable, fromE, toE, body));
 
 /* While */
 const parseWhile = P.do()

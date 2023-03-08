@@ -38,6 +38,8 @@ export enum TokenType {
   LOGICOP,
   WHITESPACE,
   TYPE,
+
+  ERROR,
 }
 
 export class PseudoToken {
@@ -81,7 +83,7 @@ abstract class SimpleParser<Token> {
   }
 
   parse(): Token[] {
-    const tokens = [];
+    const tokens: Token[] = [];
 
     let t;
     while ((t = this.parseOne()) != null) {
@@ -139,6 +141,17 @@ abstract class SimpleParser<Token> {
   }
 }
 
+export class TokenizeError extends Error {
+  constructor(
+    public msg: string,
+    public input: string,
+    public index: number,
+    public tokens: PseudoToken[],
+  ) {
+    super(msg);
+  }
+}
+
 export class Tokenizer extends SimpleParser<PseudoToken> {
   static kwToType: Map<string, TokenType> = new Map([
     /* Keywords */
@@ -189,7 +202,12 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
 
     if (this.index < this.input.length) {
       const idx = tokens.at(-1)?.end ?? 0;
-      throw new Error("Lexing error at " + idx + ": " + this.input[idx]);
+      throw new TokenizeError(
+        "Lexing error at " + idx,
+        this.input,
+        idx,
+        tokens,
+      );
     }
 
     return tokens;
@@ -291,9 +309,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
       (
         str,
         idx,
-      ) => (["egész", "szöveg"].includes(str)
-        ? new PseudoToken(TokenType.TYPE, str, idx)
-        : null),
+      ) => (["egész", "szöveg"].includes(str) ? new PseudoToken(TokenType.TYPE, str, idx) : null),
     );
   }
 
@@ -303,9 +319,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
       (
         str,
         idx,
-      ) => (["igaz", "hamis"].includes(str)
-        ? new PseudoToken(TokenType.BOOLEAN, str, idx)
-        : null),
+      ) => (["igaz", "hamis"].includes(str) ? new PseudoToken(TokenType.BOOLEAN, str, idx) : null),
     );
   }
 
@@ -365,9 +379,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
       (
         str,
         idx,
-      ) => (["&&", "||"].includes(str)
-        ? new PseudoToken(TokenType.LOGICOP, str, idx)
-        : null),
+      ) => (["&&", "||"].includes(str) ? new PseudoToken(TokenType.LOGICOP, str, idx) : null),
     );
   }
 
