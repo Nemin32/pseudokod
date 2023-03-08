@@ -7,9 +7,13 @@ export class Stack<T> {
     return this.stack.length;
   }
 
+  reset() {
+    this.stack = [];
+  }
+
   push(val: T) {
     this.stack.push(val);
-    this.callback(this.stack);
+    // this.callback(this.stack);
   }
 
   pop(): T {

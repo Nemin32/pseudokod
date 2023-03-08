@@ -29,10 +29,16 @@ export interface IEnvironment<T> {
 
   enterScope(boundary: boolean): void;
   leaveScope(): void;
+
+  reset(): void;
 }
 
 export class Environment<T> implements IEnvironment<T> {
   variables: Array<EnvVar<T>> = [];
+
+  reset() {
+    this.variables = [];
+  }
 
   private isSentinel(elem: EnvVar<T>): elem is Sentinel {
     return elem.kind == "sentinel";
