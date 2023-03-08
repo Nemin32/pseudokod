@@ -101,9 +101,7 @@ class MainDriver {
     const AST = parseProgram(this.tokens);
 
     if (AST) {
-      const compiler = new ASTCompiler();
-
-      this.byteCode = compiler.compile(AST);
+      this.byteCode = ASTCompiler.compile(AST);
 
       console.log(astToDiv(AST))
       this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST))) //.innerText = astToString(AST);

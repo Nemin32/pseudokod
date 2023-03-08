@@ -1,24 +1,33 @@
-import { ByteCode, OpCode } from "../compiler/opcodes.ts";
-import { Atom } from "../compiler/pseudo_types.ts";
-import { Stack } from "./stack.ts";
-import { Environment, IEnvironment } from "./variables.ts";
+import { ByteCode, OpCode } from "../compiler/opcodes.js";
+import { Atom } from "../compiler/pseudo_types.js";
+import { Stack } from "./stack.js";
+import { Environment, IEnvironment } from "./variables.js";
 
 type Value = Atom["value"];
 
+export interface IBindings {
+  out: (value: Value) => void;
+  stack: (stack: Value[]) => void;
+}
+
 export class VM {
   ip = 0;
-  stack: Stack<Value>;
-  ipStack: Array<number> = [];
-  vars: IEnvironment<Value> = new Environment();
+  private stack: Stack<Value>;
+  private ipStack: Array<number> = [];
+  private vars: IEnvironment<Value> = new Environment();
+  private code: Array<ByteCode> = [];
 
-  constructor(
-    public code: Array<ByteCode>,
-    private bindings: {
-      out: (value: Value) => void;
-      stack: (stack: Value[]) => void;
-    },
-  ) {
+  constructor(private bindings: IBindings) {
     this.stack = new Stack(bindings.stack);
+  }
+
+  setup(code: ByteCode[]) {
+    this.ip = 0;
+    this.ipStack = [];
+    this.vars.reset();
+    this.stack.reset();
+
+    this.code = code;
   }
 
   dump() {
