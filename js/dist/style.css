@@ -148,6 +148,23 @@ div {
 #rightPane {
   display: grid;
   grid-template-rows: 4fr 1fr;
+  /*
+  #vars>div>div {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+
+    border-bottom: 1px solid var(--subBorder);
+
+    span {
+      padding-left: 0.4rem;
+      padding-right: 0.4rem;
+
+      &:first-of-type {
+        border-right: 1px solid var(--subBorder);
+      }
+    }
+  }
+  */
 }
 #rightPane input {
   background-color: #242424;
@@ -198,17 +215,17 @@ div {
 #rightPane #ipStack > div > div span:first-of-type {
   border-right: 1px solid var(--subBorder);
 }
-#rightPane #vars > div > div {
-  display: grid;
-  grid-template-columns: 2fr 3fr;
-  border-bottom: 1px solid var(--subBorder);
+#rightPane #vars {
+  white-space: pre;
+  font-family: monospace;
 }
-#rightPane #vars > div > div span {
-  padding-left: 0.4rem;
-  padding-right: 0.4rem;
+#rightPane #vars div {
+  margin-left: 0.25rem;
+  padding: 0.2rem;
+  border: 1px solid #222;
 }
-#rightPane #vars > div > div span:first-of-type {
-  border-right: 1px solid var(--subBorder);
+#rightPane #vars div:hover div:hover {
+  background-color: rgba(204, 204, 204, 0.1);
 }
 #rightPane #output {
   margin: 0;

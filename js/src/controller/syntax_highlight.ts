@@ -1,4 +1,4 @@
-import { PseudoToken, TokenType } from "../parser/tokenizer.ts";
+import { PseudoToken, TokenType } from "../parser/tokenizer.js";
 
 const colors: [TokenType[], string][] = [
   [[TokenType.NUMBER], "#b16286"],
@@ -16,7 +16,9 @@ const colors: [TokenType[], string][] = [
   ],
   [[TokenType.VISSZA, TokenType.KIIR], "#8ec07c"],
   [[TokenType.SYMBOL], "#efefef"],
-  [[TokenType.VEGE], "#ff000"],
+
+  [[TokenType.VEGE], "#ff0000"],
+  [[TokenType.ERROR], "#ff0000"],
 ];
 
 const kwColor = "#fb4934";

@@ -1,112 +1,161 @@
-import { ByteCode, OpCode } from "../compiler/opcodes.ts";
-import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
-import { parseBlock } from "../compiler/pseudo_parser.ts";
-import { AtomValue } from "../compiler/pseudo_types.ts";
-import { PseudoToken, Tokenizer, TokenType } from "../parser/tokenizer.ts";
-import { VM } from "../runtime/vm.ts";
-import { colorize } from "./syntax_highlight.ts";
+import { ByteCode } from "../compiler/opcodes.js";
+import { ASTCompiler } from "../compiler/pseudo_compiler.js";
+import { parseProgram } from "../compiler/pseudo_parser.js";
+import { astToDiv, astToString, divMaker } from "../debug/ast_printer.js";
+import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.js";
+import { VM } from "../runtime/vm.js";
+import { ByteCodeDumper } from "./bytecode_dumper.js";
+import { colorize } from "./syntax_highlight.js";
 
+// Main entry point.
 self.addEventListener("load", () => {
-  const domElements: Readonly<Record<string, HTMLElement>> = Object.fromEntries(
-    [
-      /* User controls */
-      ["codeInput", "#input"],
-      ["syntaxHighlightOverlay", "#syntax"],
-      ["compileButton", "#compile"],
-      ["instStepButton", "#step"],
-      ["lineStepButton", "#stepLine"],
-      ["runButton", "#run"],
+  MainDriver.getInstance().attach();
+});
 
-      /* Program output */
-      ["standardOutput", "#output div"],
-      ["vmInstructions", "#code div"],
-      ["variableInspector", "#vars div"],
-      ["stackInspector", "#stack div"],
-      ["ipStackInspector", "#ipStack div"],
-    ].map(([name, id]) => [name, document.querySelector(id)!]),
-  );
+const enum domElemName {
+  /* User controls */
+  codeInput = "#input",
+  syntaxHighlightOverlay = "#syntax",
+  compileButton = "#compile",
+  instStepButton = "#step",
+  lineStepButton = "#stepLine",
+  runButton = "#run",
 
-  let tokens: PseudoToken[] = [];
-  let byteCode: Array<ByteCode> = [];
-  let vm: VM | null = null;
+  /* Program output */
+  standardOutput = "#output div",
+  vmInstructions = "#code div",
+  variableInspector = "#vars div",
+  stackInspector = "#stack div",
+  ipStackInspector = "#ipStack div",
+}
 
-  domElements.codeInput.addEventListener("input", () => {
-    console.time("tokenize");
-    const input = (domElements.codeInput as HTMLTextAreaElement).value;
-    const tk = new Tokenizer(input + "\n");
-    tokens = tk.parse();
-    console.timeEnd("tokenize");
+class MainDriver {
+  getElem = <T extends HTMLElement = HTMLElement>(name: domElemName): T => {
+    const elem = this.domElems.get(name) ?? document.querySelector<T>(name);
 
-    console.time("colorize");
-    colorize(<HTMLDivElement> domElements.syntaxHighlightOverlay, tokens);
-    console.timeEnd("colorize");
-  });
+    if (elem) {
+      if (!this.domElems.get(name)) {
+        this.domElems.set(name, elem);
+      }
 
-  domElements.codeInput.addEventListener("scroll", () => {
-    domElements.syntaxHighlightOverlay.scrollTop =
-      domElements.codeInput.scrollTop;
-  });
-
-  domElements.compileButton.addEventListener("click", () => {
-    domElements.standardOutput.innerText = "";
-
-    console.time("parsing");
-
-    const filtered = tokens.filter((t) => t.type != TokenType.WHITESPACE);
-    const AST = parseBlock.run(filtered);
-
-    if (!AST) {
-      console.timeEnd("parsing");
-      throw new Error("Couldn't convert tokens to AST!");
+      return elem as T;
     }
 
-    const compiler = new ASTCompiler();
-    compiler.visitBlock(AST[0]);
-    byteCode = compiler.bytecode; //ASTCompiler.compile(input);
-    console.timeEnd("parsing");
+    throw new Error("Can't queryselect!");
+  };
 
-    let indent = -2;
-    const spans: HTMLSpanElement[] = byteCode
-      .map((value, idx) => {
-        const span = document.createElement("span");
-        const pre = document.createElement("pre");
+  private domElems: Map<string, HTMLElement> = new Map();
+  private tokens: PseudoToken[] = [];
+  private byteCode: ByteCode[] = [];
 
-        if (value.opCode == OpCode.ESCOPE) indent += 2;
+  private vm: VM;
+  private dumper: ByteCodeDumper = new ByteCodeDumper();
 
-        pre.innerText = `${String(idx).padStart(4, " ")}: ${
-          " ".repeat(indent) + OpCode[value.opCode].padEnd(6, " ")
-        } ${value.payload ?? ""}`;
-
-        span.appendChild(pre);
-
-        if (value.opCode == OpCode.LSCOPE) indent -= 2;
-        return span;
-      });
-
-    vm = new VM(byteCode, {
+  private constructor() {
+    this.vm = new VM({
       out: (value) => {
-        domElements.standardOutput.innerText += value + "\n";
+        const output = this.getElem(domElemName.standardOutput);
+        output.innerText += value + "\n";
+        output.scrollTo(0, output.scrollHeight);
       },
-      stack: (stack: AtomValue[]) => {
-        domElements.stackInspector.innerText = "";
-        stack.forEach((e) => {
-          domElements.stackInspector.innerText += e + "\n";
+      stack: (stack) => {
+        const stackInspector = this.getElem(domElemName.stackInspector);
+
+        let output = "";
+        stack.forEach((s) => {
+          output += s + "\n";
         });
+
+        stackInspector.innerText = output;
       },
     });
+  }
 
-    domElements.vmInstructions.replaceChildren(...spans);
-  });
+  public attach = () => {
+    this.getElem(domElemName.codeInput).addEventListener("input", this.onInput);
+    this.getElem(domElemName.codeInput).addEventListener("scroll", this.onScroll);
+    this.getElem(domElemName.compileButton).addEventListener("click", this.onCompile);
+    this.getElem(domElemName.runButton).addEventListener("click", this.onRun);
+    this.getElem(domElemName.instStepButton).addEventListener("click", this.onInstStep);
 
-  domElements.runButton.addEventListener("click", () => {
-    try {
-      vm?.run();
-    } catch (_) {
-      console.log(vm?.ip);
+    this.onScroll();
+    this.onInput();
+  };
+
+  public onInput = () => {
+    const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
+    const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
+
+    // Tokenize
+    this.tokens = this.tokenize(input);
+
+    // Colorize
+    colorize(syntax, this.tokens);
+  };
+
+  public onCompile = () => {
+    if (this.tokens.at(-1)?.type == TokenType.ERROR) {
+      return;
     }
-  });
 
-  domElements.instStepButton.addEventListener("click", () => {
-    vm?.step();
-  });
-});
+    const AST = parseProgram(this.tokens);
+
+    if (AST) {
+      const compiler = new ASTCompiler();
+
+      this.byteCode = compiler.compile(AST);
+
+      console.log(astToDiv(AST))
+      this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST))) //.innerText = astToString(AST);
+
+      this.dumper.generateSpans(this.byteCode);
+      this.dumper.show(this.getElem(domElemName.vmInstructions));
+
+      this.vm.setup(this.byteCode);
+    }
+  };
+
+  public onRun = () => {
+    this.vm.run();
+    this.dumper.setHighlight(this.vm.ip);
+  };
+
+  public onInstStep = () => {
+    this.vm.step();
+    this.dumper.setHighlight(this.vm.ip);
+  };
+
+  public onLineStep = () => {};
+
+  public onScroll = () => {
+    const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
+    const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
+
+    syntax.scrollTop = input.scrollTop;
+  };
+
+  private tokenize = (inputElem: HTMLTextAreaElement): PseudoToken[] => {
+    const input = inputElem.value;
+    const tk = new Tokenizer(input + "\n");
+
+    try {
+      return tk.parse();
+    } catch (e: unknown) {
+      if (e instanceof TokenizeError) {
+        const errorToken = tk.mkToken(TokenType.ERROR, e.input.slice(e.index), e.index)!;
+        return e.tokens.concat(errorToken);
+      } else {
+        throw e;
+      }
+    }
+  };
+
+  private static instance: MainDriver | null = null;
+  static getInstance(): MainDriver {
+    if (MainDriver.instance == null) {
+      MainDriver.instance = new MainDriver();
+    }
+
+    return MainDriver.instance;
+  }
+}

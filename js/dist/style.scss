@@ -248,6 +248,23 @@ div {
     }
   }
 
+  #vars {
+    white-space: pre;
+    font-family: monospace;
+
+    div {
+      margin-left: 0.25rem;
+      padding: 0.2rem;
+
+      border: 1px solid #222;
+
+      &:hover div:hover {
+        background-color: rgba($color: #ccc, $alpha: 0.1);
+      }
+    }
+  }
+
+  /*
   #vars>div>div {
     display: grid;
     grid-template-columns: 2fr 3fr;
@@ -263,6 +280,7 @@ div {
       }
     }
   }
+  */
 
   #output {
     margin: 0;
