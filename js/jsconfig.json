@@ -5,7 +5,8 @@
         "target": "ESNext",
         "jsx": "react",
         "strictNullChecks": true,
-        "strictFunctionTypes": true
+        "strictFunctionTypes": true,
+        "allowImportingTsExtensions": true
     },
     "exclude": [
         "node_modules",

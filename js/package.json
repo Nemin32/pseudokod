@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
-    "build": "yarn esbuild src/index.js --bundle --format=esm --sourcemap --outfile=dist/esbundle.js --watch",
-    "prod": "yarn esbuild src/index.js --bundle --format=esm --minify --outfile=dist/esbundle.js"
+    "build": "yarn esbuild src/controller/vm_controls.ts --bundle --format=esm --sourcemap --outfile=dist/newglue.js --watch",
+    "prod": "yarn esbuild src/controller/vm_controls.js --bundle --format=esm --minify --outfile=dist/newglue.js"
   }
 }
