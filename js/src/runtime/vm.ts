@@ -1,9 +1,12 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.js";
-import { Atom } from "../compiler/pseudo_types.js";
+import { Atom, AtomValue } from "../compiler/pseudo_types.js";
 import { Stack } from "./stack.js";
-import { Environment, IEnvironment } from "./variables.js";
+import { Environment, IEnvironment } from "./environment.js";
+import { Store } from "./store.js";
+import { Box } from "./box.js";
 
-type Value = Atom["value"];
+type NoArrValue = Exclude<Atom["value"], AtomValue[]>;
+type Value =  NoArrValue | (Value|Box<any>)[];
 
 export interface IBindings {
   out: (value: Value) => void;
@@ -14,7 +17,8 @@ export class VM {
   ip = 0;
   private stack: Stack<Value>;
   private ipStack: Array<number> = [];
-  private vars: IEnvironment<Value> = new Environment();
+  private store: Store = new Store();
+  private vars: IEnvironment<Value> = new Environment(this.store);
   private code: Array<ByteCode> = [];
 
   constructor(private bindings: IBindings) {
@@ -26,6 +30,7 @@ export class VM {
     this.ipStack = [];
     this.vars.reset();
     this.stack.reset();
+    this.store.reset();
 
     this.code = code;
   }
@@ -82,8 +87,8 @@ export class VM {
             throw new Error("Variable name must be string.");
           }
 
-          if (typeof originalVar != "string") {
-            throw new Error("Variable name must be string.");
+          if (!(typeof originalVar == "string" || typeof originalVar == "number")) {
+            throw new Error("Variable name must be string or number.");
           }
 
           this.vars.makeReference(originalVar, payload);
@@ -92,19 +97,55 @@ export class VM {
 
       case OpCode.GETARR:
         {
+          if (typeof payload != "string") throw new Error("GETARR: Payload must be string.");
+          
           const index = this.stack.pop();
-          const variable = this.stack.pop();
 
           if (typeof index != "number") {
             throw new Error("GETARR: Index must be a number!");
           }
 
-          if (!Array.isArray(variable)) {
-            throw new Error("GETARR: Variable must be an array!");
+          const headValue = this.vars.getVar(payload);
+          const headIdx = this.vars.getVarBoxIdx(payload);
+
+          if (typeof headValue != "number" || headIdx == null) throw new Error("GETARR: Head wasn't an array header.");
+
+          if (index > headValue) {
+            throw new Error("SETARR: Out-of-bounds");
           }
 
-          // Pseudocode is 1-indexed.
-          this.stack.push(variable[index - 1]);
+          this.stack.push(this.store.get(headIdx + index));
+        }
+        break;
+
+      case OpCode.ARRADDR:
+        {
+          if (typeof payload != "string") {
+            throw new Error("ARRADDR: Payload must be string.");
+          }
+
+          const index = this.stack.pop();
+
+          if (typeof index != "number") {
+            throw new Error("ARRADDR: Index must be a number!");
+          }
+
+          const arrayIdx = this.vars.getVarBoxIdx(payload)
+          if (arrayIdx == null) {
+            throw new Error("ARRADDR: No such variable.");
+          }
+
+          const arrayLength = this.store.get(arrayIdx);
+
+          if (!arrayLength) {
+            throw new Error("ARRADDR: Can't find array in store!");
+          }
+
+          if (index > arrayLength) {
+            throw new Error("ARRADDR: Out of bounds.");
+          }
+
+          this.stack.push(arrayIdx + index);
         }
         break;
 
@@ -116,12 +157,32 @@ export class VM {
             throw new Error(`Variable '${payload}' doesn't exist!`);
           }
 
-          this.stack.push(variable.value);
+          this.stack.push(variable);
+        }
+        break;
+
+      case OpCode.ADDRESS:
+        {
+          const variable = this.vars.getVarBoxIdx(payload as string);
+
+          if (variable == null) {
+            throw new Error(`Variable '${payload}' doesn't exist!`);
+          }
+
+          this.stack.push(variable);
         }
         break;
 
       case OpCode.SETVAR:
-        this.vars.setVar(payload as string, this.stack.pop());
+        {
+          const value = this.stack.pop();
+          if (Array.isArray(value)) {
+            const head = this.store.add(value);
+            this.vars.makeReference(head, payload as string);
+          } else {
+            this.vars.setVar(payload as string, value);
+          }
+        }
         break;
 
       case OpCode.VALARR:
@@ -242,11 +303,11 @@ export class VM {
           const op = payload;
 
           switch (op) {
-            case "&&":
+            case "és":
               this.stack.push(exp1 && exp2);
               break;
 
-            case "||":
+            case "vagy":
               this.stack.push(exp1 || exp2);
               break;
 
@@ -292,9 +353,14 @@ export class VM {
 
       case OpCode.MKARR:
         {
+          if (typeof payload != "string") throw new Error("MKARR: Payload must be string.");
+
           const length = this.stack.pop();
-          const arr: Value = Array(length).fill(0);
-          this.stack.push(arr);
+          if (typeof length != "number") throw new Error("MKARR: Length must be number.");
+          
+          const arr: Value[] = Array(length).fill(0);
+          const head = this.store.arrayAdd(arr);         
+          this.vars.makeReference(head, payload);
         }
         break;
 
@@ -302,6 +368,7 @@ export class VM {
         {
           const idx = this.stack.pop();
           const val = this.stack.pop();
+
 
           if (typeof payload != "string") {
             throw new Error("SETARR: Varname must be string!");
@@ -311,7 +378,19 @@ export class VM {
             throw new Error("SETARR: Idx must be number!");
           }
 
-          const arr = this.vars.getVar(payload)?.value;
+          const headValue = this.vars.getVar(payload);
+          const headIdx = this.vars.getVarBoxIdx(payload);
+
+          if (typeof headValue != "number" || headIdx == null) throw new Error("SETARR: Head wasn't an array header.");
+
+          if (idx > headValue) {
+            throw new Error("SETARR: Out-of-bounds");
+          }
+
+          const arrElem = this.store.getBox(headIdx + idx);
+          arrElem.set(val);
+
+          /*const arr = this.vars.getVar(payload);
 
           if (!Array.isArray(arr)) {
             throw new Error("SETARR: Arr must be an array!");
@@ -319,8 +398,14 @@ export class VM {
 
           if (arr) {
             // Pseudocode is a 1-indexed lang.
-            arr[idx - 1] = val;
-          }
+            const maybeBox = arr[idx - 1];
+
+            if (maybeBox instanceof Box) {
+              maybeBox.set(val);
+            } else {
+              arr[idx-1] = val;
+            }
+          }*/
         }
         break;
 
