@@ -1,3 +1,98 @@
+import { Box } from "./box";
+import { Store } from "./store";
+
+export interface IEnvironment<T> {
+  getVar(varName: string): T | null;
+  getVarBoxIdx(varName: string): number | null;
+  setVar(varName: string, value: T): void;
+  setVar(varName: string, value: T): void;
+  makeReference(old: string | number, newName: string): void;
+
+  enterScope(boundary: boolean): void;
+  leaveScope(): void;
+
+  reset(): void;
+}
+
+type Sentinel = { readonly kind: "sentinel"; boundary: boolean }
+type Value = {readonly kind: "value"; name: string; points: number}
+
+type EnvVar = Sentinel | Value;
+
+export class Environment<T> implements IEnvironment<T> {
+  variables: EnvVar[] = [];
+
+  constructor(private store: Store) {}
+
+  getVar(varName: string): T | null {
+    const idx = this.getVarBoxIdx(varName);
+
+    if (idx != null) {
+      return this.store.get(idx);
+    }
+
+    return null;
+  }
+
+  private isBoundary(ev: EnvVar) {
+    return ev.kind == "sentinel" && ev.boundary;
+  }
+
+  getVarBoxIdx(varName: string): number | null {
+    let i = this.variables.length-1;
+
+    while (i >= 0) {
+      const current = this.variables[i]
+      if (this.isBoundary(current)) return null;
+      if (current.kind == "value" && current.name == varName) return current.points;
+
+      i--;
+    }
+
+    return null;
+  }
+
+  setVar(varName: string, value: T): void {
+    const boxIdx = this.getVarBoxIdx(varName);
+
+    if (boxIdx) {
+      this.store.set(boxIdx, value)
+    } else {
+      const newIdx = this.store.add(value);
+      this.variables.push({kind: "value", name: varName, points: newIdx});
+    }
+  }
+
+  makeReference(old: string | number, newName: string): void {
+    const idx = (typeof old == "string") ? this.getVarBoxIdx(old) : old;
+
+    if (idx == null) {
+      throw new Error("makeReference: Idx was null.");
+    }
+
+    this.variables.push({kind: "value", name: newName, points: idx});
+  }
+
+  enterScope(boundary: boolean): void {
+    this.variables.push({kind: "sentinel", boundary});
+  }
+
+  leaveScope(): void {
+    const scopeIdx = this.variables.findLastIndex((e) => e.kind == "sentinel");
+
+    if (scopeIdx == -1) {
+      throw new Error("No active scope!");
+    }
+
+    this.variables = this.variables.slice(0, scopeIdx);
+  }
+
+  reset(): void {
+    this.variables = [];
+  }
+}
+
+/*
 type Sentinel = { readonly kind: "sentinel"; boundary: boolean };
 // type Value<T> = { kind: "value"; key: string; value: T };
 //
@@ -112,3 +207,5 @@ export class Environment<T> implements IEnvironment<T> {
     this.variables = this.variables.slice(0, scopeIdx);
   }
 }
+
+*/

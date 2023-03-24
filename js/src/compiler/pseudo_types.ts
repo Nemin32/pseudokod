@@ -74,7 +74,7 @@ export class ArithmeticBinOp {
 export class Variable {
   readonly kind = ASTKind.VARIABLE;
 
-  constructor(public name: string) {}
+  constructor(public name: string, public isReference: boolean) {}
 }
 
 export type Value = Atom | Variable;

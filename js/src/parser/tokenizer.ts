@@ -26,6 +26,7 @@ export enum TokenType {
   FORSTART,
   FOREND,
   NYIL,
+  REFERENCE,
 
   /* Special */
   NUMBER,
@@ -178,6 +179,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
     ["]", TokenType.CBRACKET],
     [":", TokenType.COLON],
     [",", TokenType.COMMA],
+    ["&", TokenType.REFERENCE],
 
     ["<-", TokenType.NYIL],
     ["-tól", TokenType.FORSTART],
@@ -379,7 +381,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
       (
         str,
         idx,
-      ) => (["&&", "||"].includes(str) ? new PseudoToken(TokenType.LOGICOP, str, idx) : null),
+      ) => (["és", "vagy"].includes(str) ? new PseudoToken(TokenType.LOGICOP, str, idx) : null),
     );
   }
 

@@ -7,6 +7,8 @@ export enum OpCode {
   DEBUG,
   ESCOPE,
   FJMP,
+  ADDRESS,
+  ARRADDR,
   GETARR,
   GETVAR,
   JMP,

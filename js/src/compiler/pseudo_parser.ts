@@ -83,9 +83,9 @@ const parseBool: P<Atom> = P.matchToken(TT.BOOLEAN).bindResult((token) =>
 );
 
 /* Variable */
-const parseVariable: P<Variable> = P.matchToken(TT.SYMBOL).bindResult((token) =>
-  new Variable(token.lexeme)
-);
+const parseVariable: P<Variable> = P.matchToken(TT.REFERENCE).maybe().bind(isRef => P.matchToken(TT.SYMBOL).bindResult((token) =>
+  new Variable(token.lexeme, isRef !== null)
+));
 
 /* Array Index */
 const parseArrayIndex: P<ArrayIndex> = parseVariable.bind((variable) =>

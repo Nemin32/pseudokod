@@ -74,9 +74,9 @@ export class ASTCompiler {
   }
 
   visitArrayIndex(ast: ArrayIndex) {
-    this.visitVariable(ast.variable);
+    //this.visitVariable(ast.variable);
     this.visitExpression(ast.index);
-    this.createOp(OpCode.GETARR, null);
+    this.createOp(ast.variable.isReference ? OpCode.ARRADDR : OpCode.GETARR, ast.variable.name);
   }
 
   visitFunctionCall(ast: FunctionCall) {
@@ -94,7 +94,7 @@ export class ASTCompiler {
   }
 
   visitVariable(ast: Variable) {
-    this.createOp(OpCode.GETVAR, ast.name);
+    this.createOp(ast.isReference ? OpCode.ADDRESS : OpCode.GETVAR, ast.name);
   }
 
   visitValue(ast: Value) {
@@ -109,8 +109,8 @@ export class ASTCompiler {
   /* Statements */
   visitArrayAssignment(ast: ArrayAssignment) {
     this.visitExpression(ast.length);
-    this.createOp(OpCode.MKARR, null);
-    this.createOp(OpCode.SETVAR, ast.variable.name);
+    this.createOp(OpCode.MKARR, ast.variable.name);
+    //this.createOp(OpCode.SETVAR, ast.variable.name);
   }
 
   visitArrayElementAssignment(ast: ArrayElementAssignment) {
