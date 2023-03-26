@@ -39,7 +39,7 @@ export class Debug {
 }
 
 /* Expressions */
-export type AtomValue = number | string | boolean | Array<AtomValue>;
+export type AtomValue = number | string | boolean;
 
 export class Atom {
   readonly kind = ASTKind.ATOM;

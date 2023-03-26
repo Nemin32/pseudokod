@@ -1,4 +1,4 @@
-export class Stack<T> {
+export class Stack<T extends number | string | boolean> {
   private stack: Array<T> = [];
 
   constructor(private callback: (stack: T[]) => void) {}
@@ -16,11 +16,25 @@ export class Stack<T> {
     // this.callback(this.stack);
   }
 
-  pop(): T {
+  pop<K extends keyof StT>(type: K): StT[K]
+  {
     if (this.stack.length == 0) {
       throw new Error("Stack is empty!");
     }
 
-    return this.stack.pop() as T;
+    const val = this.stack.pop() as T;
+
+    if (type !== "any" && typeof val != type) {
+      throw new Error("");
+    }
+
+    return val as unknown as StT[K];
   }
+}
+
+interface StT {
+  "string": string,
+  "number": number,
+  "boolean": boolean,
+  "any": any
 }

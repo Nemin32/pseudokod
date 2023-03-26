@@ -1,5 +1,7 @@
 import { Box } from "./box.ts";
 
+type ArrayHead = {length: number, start: number};
+
 export class Store {
   counter: number = 0;
   boxes: Box<any>[] = [];
@@ -25,7 +27,7 @@ export class Store {
     return this.internal_add(value, true).start;
   }
 
-  private internal_add<T>(value: T | T[], root: boolean): {box: Box<any>, start: number} {
+  private internal_add<T>(value: T | T[], root: boolean): {box: Box<T | ArrayHead>, start: number} {
     if (!Array.isArray(value)) {
       const box = new Box(value);
       const start = this.counter;
@@ -48,14 +50,38 @@ export class Store {
     return {box, start};
   }
 
-  arrayGet(idx: number): any[] {
-    const head = this.get(idx);
-    const arr: any[] = [];
-
-    if (typeof head != "object" || !head.hasOwnProperty("length") || !head.hasOwnProperty("start")) {
-      throw new Error("arrayGet: Not an array pointer head.");
+  getArrayElementBoxIndex(headIdx: number, offset: number): number {
+    const head = this.get(headIdx);
+    if (!this.isArrayHead(head)) {
+      throw new Error("getArrayElementBoxIndex: Not an array head pointer.");
     }
 
+    if (offset > head.length) {
+      throw new Error("getArrayElementBoxIndex: Out-of-bounds");
+    }
+
+    return head.start + offset;
+  }
+
+  getArrayElement<T>(headIdx: number, offset: number): T {
+    return this.get(this.getArrayElementBoxIndex(headIdx, offset));
+  }
+
+  isArrayHead(head: object): head is ArrayHead {
+    if (typeof head == "object" && head.hasOwnProperty("length") && head.hasOwnProperty("start")) {
+      return true;
+    }
+
+    return false;
+  }
+
+  getArray(idx: number): any[] {
+    const head = this.get(idx);
+    if (!this.isArrayHead(head)) {
+      throw new Error("arrayGet: Not an array head pointer.");
+    }
+
+    const arr: any[] = [];
     for (let i = 0; i < head.length; i++) {
       arr.push(this.get(head.start + i))
     }

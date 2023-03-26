@@ -2,8 +2,8 @@ import { Box } from "./box";
 import { Store } from "./store";
 
 export interface IEnvironment<T> {
-  getVar(varName: string): T | null;
-  getVarBoxIdx(varName: string): number | null;
+  getVar(varName: string): T;
+  getBoxIndex(varName: string): number;
   setVar(varName: string, value: T): void;
   setVar(varName: string, value: T): void;
   makeReference(old: string | number, newName: string): void;
@@ -24,8 +24,30 @@ export class Environment<T> implements IEnvironment<T> {
 
   constructor(private store: Store) {}
 
-  getVar(varName: string): T | null {
-    const idx = this.getVarBoxIdx(varName);
+  getVar(varName: string): T {
+    const value = this.getVarOrNull(varName);
+
+    if (value === null) {
+      throw new Error("Variable " + varName + " is not set.");
+      
+    }
+
+    return value;
+  }
+
+  getBoxIndex(varName: string): number {
+    const idx = this.getBoxIndexOrNull(varName);
+
+    if (idx === null) {
+      throw new Error("Variable " + varName + " is not set.");
+      
+    }
+
+    return idx;
+  }
+
+  private getVarOrNull(varName: string): T | null {
+    const idx = this.getBoxIndexOrNull(varName);
 
     if (idx != null) {
       return this.store.get(idx);
@@ -38,7 +60,7 @@ export class Environment<T> implements IEnvironment<T> {
     return ev.kind == "sentinel" && ev.boundary;
   }
 
-  getVarBoxIdx(varName: string): number | null {
+  private getBoxIndexOrNull(varName: string): number | null {
     let i = this.variables.length-1;
 
     while (i >= 0) {
@@ -53,7 +75,7 @@ export class Environment<T> implements IEnvironment<T> {
   }
 
   setVar(varName: string, value: T): void {
-    const boxIdx = this.getVarBoxIdx(varName);
+    const boxIdx = this.getBoxIndexOrNull(varName);
 
     if (boxIdx) {
       this.store.set(boxIdx, value)
@@ -64,7 +86,7 @@ export class Environment<T> implements IEnvironment<T> {
   }
 
   makeReference(old: string | number, newName: string): void {
-    const idx = (typeof old == "string") ? this.getVarBoxIdx(old) : old;
+    const idx = (typeof old == "string") ? this.getBoxIndexOrNull(old) : old;
 
     if (idx == null) {
       throw new Error("makeReference: Idx was null.");
