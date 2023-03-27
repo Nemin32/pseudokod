@@ -100,16 +100,16 @@ class MainDriver {
 
     const AST = parseProgram(this.tokens);
 
-    if (AST) {
-      this.byteCode = ASTCompiler.compile(AST);
-
-      console.log(astToDiv(AST))
-      this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST))) //.innerText = astToString(AST);
+    if (AST.kind == "capture") {
+      this.byteCode = ASTCompiler.compile(AST.value);
+      this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST.value))) //.innerText = astToString(AST);
 
       this.dumper.generateSpans(this.byteCode);
       this.dumper.show(this.getElem(domElemName.vmInstructions));
 
       this.vm.setup(this.byteCode);
+    } else {
+      throw new Error(AST.value + " : " + AST.where.index);
     }
   };
 

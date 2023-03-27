@@ -10,8 +10,6 @@ export function divMaker(root: nestedString): HTMLDivElement | HTMLSpanElement {
   if (typeof head == "string") {
     const type = document.createElement("span");
 
-    console.log(head)
-
     type.innerText = head
     div.appendChild(type);
   }
@@ -32,8 +30,6 @@ function spanMaker(str: string): HTMLSpanElement {
   span.innerText = str;
   return span;
 }
-
-
 
 export function astToDiv(ast: AST): nestedString {
   if (Array.isArray(ast)) {

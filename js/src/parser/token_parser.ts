@@ -31,12 +31,17 @@ export class TokenToASTParser<T> {
     };
   }
 
-  run(input: Token[]): T | null {
+  run(input: Token[]): Capture<Token, T> | CError<T, Error>
+   {
     const results = this.exec(this.wrap(input));
     const capture = (results.filter((c) => c.kind == "capture" && c.done()) as Capture<
       Token,
       T
-    >[]).at(0)?.value ?? null; // .map((c) => c.value)
+    >[]).at(0) ?? null;
+
+    if (capture == null) {
+      return (results[0] as CError<T, Error>)
+    }
 
     return capture;
   }
