@@ -172,3 +172,46 @@ A kulcsszó használatakor az értelmező futtatása rögtön megszakad. Ezután
     <block> ::= <statement>*
 
 A kifejezések és utasítások közötti különbségeket később tárgyaljuk. A program szintaxisfájának gyökere egy <block> elem.
+
+---
+
+# Változók és értékeik tárolása
+
+Mikor először elkezdtem fejleszteni az értelmezőt, úgy véltem elég egy helyen tárolni a változókat és az értékeiket. Ehhez egy dinamikus tömböt használtam, mely a következő szabályok szerint működik:
+
+* A tömb minden eleme háromféle értéket vehet fel:
+  * **Érték:** Ez egy kulcs-érték pár, mely egy változót és annak értékét jelöli. A kulcs minden esetben egy karakterlánc, míg az érték egy JavaScript primitív.
+  * **Referencia:** Ez egy mutató-cím pár, mely mindkét eleme karakterlánc. Használatát lentebb fejtem ki.
+  * **Határelem:** Lényege, hogy a különböző scope-okat elhatárolja egymástól. Tartalmaz egy logikai értéket, mely meghatározza, hogy a kereső-algoritmus (lásd lentebb) áthaladhat-e rajta.
+* A tömbhöz hozzáadhatunk új változókat és ezek referenciáit. Felülírás esetén a tömbben található érték frissül.
+* A listából ezen kívül lehetőségünk van elemeket is lekérni, ehhez jobbról-balra lépkedünk át a lista elemein, a következő algoritmus alapján:
+  1. A jelenlegi elem változó és a kulcsa a keresett kulcs? Ha igen, akkor visszatérünk az értékével. Ha nem, tovább...
+  2. A jelenlegi elem referencia és a mutató értéke megegyezik a keresett kulccsal? Ha igen, újraindítjuk a keresést, új kulcs a mutatóhoz tartozó érték. Ha nem, tovább...
+  3. Határelemhez értünk? Ha igen és a benne tárolt érték hamis (tehát nem függvényhatár), lépjük át és folytassuk a keresést. Ha határelem és az érték igaz, a keresés megszakad, hibát dobunk.
+* Törlés esetén ismét jobbról-balra keresést indítunk az első határelemig vagy, annak hiányában, a tömb legelejééig. Ettől az elemtől, a tömb végééig törlünk minden elemet.
+
+Ezen szabályok segítségével szimuláljuk a változók elérésének és manipulálásának modern programozási nyelvekben megszokott működését.
+
+A rendszer jól működött egyszerű változók esetén, ám tesztelés közben rájöttem, hogy mivel ezek a változók nevei alapján működnek, a jelenlegi kód nem képes tömbök elemeire mutató referenciákat létrehozni. Ezt demonstrálandó, ha feltételezzük egy x nevezetű tömb létezését, akkor az i. elemre való referencia létrehozásánál a függvény az "x[i]" paramétert adta át a referenciakészítő függvénynek, mely értelemszerűen nem talált ilyen nevű változót.
+
+## Virtuális memória
+
+E hiba kiküszöbölésére a változók nevét és azok értékeit kettébontottam. A fentebb vázolt rendszer innentől csupán határelemeket és változókat tárol, az utóbbiba pedig nem bármilyen JS primitívet, hanem csak számokat helyezhetünk. Ezeket a számokat pedig egy leegyszerűsített memóriamodell megcímkézésére használjuk fel.
+
+Ehhez először is bevezetjük az értelmező által használt memóriát, mely hatféle művelettel rendelkezik:
+
+- Egy érték elhelyezése/frissítése/lekérése a memóriából,
+- Egy tömb elhelyezése/frissítése/lekérése a memóriából,
+
+A memóriát egy egyszerű dinamikus tömbbel ábrázoljuk. Elhelyezés esetén az utolsó elem után új elemet adunk a listához. A két lekérő és frissítő művelet paraméterként fogad még egy indexet is, mely a feljebb bevezetett számértékeknek felel meg és a memóriaként szolgáló tömb indexelésére szolgál.
+
+### Tömbök tárolása
+
+A tömbök eltárolása egy fokkal komplexebb probléma, mint az elsőre tűnhet. Ugyan az egydimenziós tömbök tárolása triviális, amint ezek egymásba ágyazására kerül sor (melyre a Pszeudokód lehetőséget ad) a naív módszer nem alkalmazható.
+
+[leírás arról hogy is működik]
+
+Ennek kiküszöbölésére bevezetjük a tömb "fejek" fogalmát. Ez egy olyan különleges elem, mely tartalmazza a tömb hosszát és kezdetét. Így bármilyen értékre való referencia készítése triviálissá válik, hisz:
+
+- Normális értékek esetén csupán annak indexét tároljuk el a referenciaváltozóban.
+- Tömb esetén pedig a fej segítségével ki tudjuk számolni a tömb bárhányadik elemének indexét.
