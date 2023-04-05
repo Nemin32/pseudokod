@@ -1,7 +1,92 @@
-import { Box } from "./box.ts";
+import { AtomValue, Value } from "../compiler/pseudo_types.ts";
+import { Box, IBox } from "./box.ts";
 
-type ArrayHead = {length: number, start: number};
+type ArrayHead = { length: number; start: number };
 
+function splitArray<T>(array: T[], n: number): [T[], T, T[]] {
+  return [array.slice(0, n - 1), array[n], array.slice(n + 1)];
+}
+
+type StoreValue = AtomValue | ArrayHead;
+
+type NestedArray = AtomValue | (AtomValue | NestedArray)[]
+type NestedBoxArray = StoreValue | (StoreValue | NestedBoxArray)[]
+
+export class ImmutableStore {
+  private constructor(readonly counter: number, readonly boxes: IBox<StoreValue>[]) {}
+  static init() {
+    return new ImmutableStore(0, []);
+  }
+
+  get(idx: number): NestedArray {
+    if (idx > this.counter) throw new Error(`Addressed memory (${idx}) is outside bounds (${this.counter}).`);
+
+    const value = this.boxes[idx].get();
+
+    // Value is ArrayHead
+    if (typeof value == "object") {
+      return this.getArray(value);
+    }
+
+    return value;
+  }
+
+  getArray(value: ArrayHead): NestedArray {
+    const output: NestedArray = []
+
+    for (let i = 0; i < value.length; i++) {
+      output.push(this.get(value.start + i));
+    }
+
+    return output;
+  }
+
+  getBox(idx: number): IBox<StoreValue> {
+    return this.boxes[idx];
+  }
+
+  set(idx: number, value: StoreValue): ImmutableStore {
+    const [bh, box, bt] = splitArray(this.boxes, idx);
+    const newBox = box.set(value);
+    return new ImmutableStore(this.counter, [...bh, newBox, ...bt]);
+  }
+
+  add(value: NestedArray): [ImmutableStore, number] {
+    const [boxes, counter, index, { box, start }] = this.inner_add([], this.counter, 0, value, true);
+    return [new ImmutableStore(counter + index, [...this.boxes, ...boxes]), start];
+  }
+
+  private inner_add(
+    boxes: IBox<StoreValue>[],
+    counter: number,
+    index: number,
+    value: NestedBoxArray,
+    root: boolean
+  ): [IBox<StoreValue>[], number, number, { box: IBox<StoreValue>; start: number }] {
+    if (!Array.isArray(value)) {
+      const box = Box.init(value);
+      const start = index;
+
+      if (root) {
+        boxes[index++] = box;
+      }
+
+      return [boxes, counter, index, { box, start }];
+    }
+
+    const offset = root ? 1 : 0;
+    const [_, __, newIndex, obj] = this.inner_add(boxes, counter, index, { length: value.length, start: counter + index + offset }, root);
+    index = newIndex + value.length;
+
+    for (let i = 0; i < value.length; i++) {
+      boxes[i + offset] = this.inner_add(boxes, counter, index, value[i], false)[3].box;
+    }
+
+    return [boxes, counter, index, obj];
+  }
+}
+
+/*
 export class Store {
   counter: number = 0;
   boxes: Box<any>[] = [];
@@ -89,3 +174,5 @@ export class Store {
     return arr;
   }
 }
+
+*/

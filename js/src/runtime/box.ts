@@ -9,22 +9,32 @@ export enum ValueType {
 
 export interface IBox<T> {
   get(): T;
-  set(value: T): void;
+  set(value: T): IBox<T>;
+  incrementRc(): IBox<T>;
+  decrementRc(): IBox<T>;
 }
 
 export class Box<T> implements IBox<T> {
   readonly kind: "box" = "box";
   //type: ValueType = ValueType.VOID;
-
-  //rc = 0;
-
-  constructor(private value: T) {}
+  private constructor(readonly rc: number, readonly value: T) {}
+  static init<T>(value: T) {return new Box(1, value)}
 
   get(): T {
     return this.value;
   }
 
-  set(value: T): void {
-    this.value = value;
+  set(value: T): IBox<T> {
+    return new Box(this.rc, value);
+  }
+
+  incrementRc(): IBox<T> {
+    return new Box(this.rc+1, this.value);
+  }
+
+  decrementRc(): IBox<T> {
+    if (this.rc == 0) throw new Error("RC was already 0!");
+    
+    return new Box(this.rc-1, this.value);
   }
 }

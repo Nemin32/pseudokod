@@ -1,3 +1,35 @@
+import { Value } from "../compiler/pseudo_types";
+
+export class ImmutableStack {
+  constructor(private stack: Readonly<Array<Value>> = []) {}
+
+  get length() {
+    return this.stack.length;
+  }
+
+  reset(): ImmutableStack {
+    return new ImmutableStack();
+  }
+
+  push(val: Value): ImmutableStack {
+    return new ImmutableStack([...this.stack, val]);
+  }
+
+  pop<K extends keyof StT>(type: K): [StT[K], ImmutableStack] {
+    if (this.stack.length == 0) {
+      throw new Error("Stack is empty!");
+    }
+
+    const [val, ...rest] = this.stack;
+
+    if (type !== "any" && typeof val != type) {
+      throw new Error("Expected type was " + type + ", but received " + typeof val + ".");
+    }
+
+    return [val as StT[K], new ImmutableStack(rest)];
+  }
+}
+
 export class Stack<T extends number | string | boolean> {
   private stack: Array<T> = [];
 
@@ -16,8 +48,7 @@ export class Stack<T extends number | string | boolean> {
     // this.callback(this.stack);
   }
 
-  pop<K extends keyof StT>(type: K): StT[K]
-  {
+  pop<K extends keyof StT>(type: K): StT[K] {
     if (this.stack.length == 0) {
       throw new Error("Stack is empty!");
     }
@@ -33,8 +64,8 @@ export class Stack<T extends number | string | boolean> {
 }
 
 interface StT {
-  "string": string,
-  "number": number,
-  "boolean": boolean,
-  "any": any
+  string: string;
+  number: number;
+  boolean: boolean;
+  any: any;
 }

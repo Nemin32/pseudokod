@@ -1,6 +1,82 @@
+import { AtomValue } from "../compiler/pseudo_types";
 import { Box } from "./box";
-import { Store } from "./store";
+import { ImmutableStore } from "./store";
 
+type Sentinel = { readonly kind: "sentinel"; boundary: boolean }
+type EnvValue = {readonly kind: "value"; name: string; points: number}
+
+type EnvVar = Sentinel | EnvValue;
+
+export class ImmutableEnvironment {
+  private constructor(readonly variables: EnvVar[]) {}
+  public static init() {return new ImmutableEnvironment([]);}
+
+  getVariable(store: ImmutableStore, name: string) {
+    const index = this.getBoxIndex(name);
+    const value = store.get(index);
+
+    if (value == null) {
+      throw new Error(`Variable "${name}" points to invalid memory.`);
+    }
+
+    return value;
+  }
+
+  getBoxIndex(name: string): number {
+    const index = this.lookup(name);
+
+    if (index == null) {
+      throw new Error(`Can't find variable "${name}"!`)
+    }
+
+    return index;
+  }
+
+  setVariable(store: ImmutableStore, name: string, value: AtomValue): [ImmutableStore, ImmutableEnvironment] {
+    const [newStore, index] = store.add(value);
+
+    return [
+      newStore,
+      new ImmutableEnvironment([...this.variables, {kind: "value", name, points: index}])
+    ]
+  }
+
+  makeReference(oldName: string | number, newName: string): ImmutableEnvironment {
+    const index = (typeof oldName == "string") ? this.getBoxIndex(oldName) : oldName;
+    return new ImmutableEnvironment([...this.variables, {kind: "value", name: newName, points: index}])
+  }
+
+  enterScope(boundary: boolean): ImmutableEnvironment {
+    return new ImmutableEnvironment([...this.variables, {kind: "sentinel", boundary}]);
+  }
+
+  leaveScope(): ImmutableEnvironment {
+    const scopeIdx = this.variables.findLastIndex((e) => e.kind == "sentinel");
+
+    if (scopeIdx == -1) {
+      throw new Error("No active scope!");
+    }
+
+    return new ImmutableEnvironment(this.variables.slice(0, scopeIdx));
+  }
+
+  private lookup(name: string): number | null {
+    let idx = this.variables.length-1;
+
+    while (idx >= 0) {
+      const current = this.variables[idx];
+
+      if (current.kind == "sentinel" && current.boundary) return null;
+      if (current.kind == "value" && current.name == name) return current.points;
+
+      idx--;
+    }
+
+    return null;
+  }
+}
+
+/*
 export interface IEnvironment<T> {
   getVar(varName: string): T;
   getBoxIndex(varName: string): number;
@@ -13,11 +89,6 @@ export interface IEnvironment<T> {
 
   reset(): void;
 }
-
-type Sentinel = { readonly kind: "sentinel"; boundary: boolean }
-type Value = {readonly kind: "value"; name: string; points: number}
-
-type EnvVar = Sentinel | Value;
 
 export class Environment<T> implements IEnvironment<T> {
   variables: EnvVar[] = [];
@@ -113,121 +184,4 @@ export class Environment<T> implements IEnvironment<T> {
     this.variables = [];
   }
 }
-
-/*
-type Sentinel = { readonly kind: "sentinel"; boundary: boolean };
-// type Value<T> = { kind: "value"; key: string; value: T };
-//
-
-class ValueWrapper<T> {
-  readonly kind: string = "value";
-  constructor(readonly key: string, private _value: T) {}
-
-  get value() {
-    return this._value;
-  }
-
-  set value(val: T) {
-    this._value = val;
-  }
-}
-
-class Reference<T> {
-  readonly kind: string = "reference";
-  constructor(readonly key: string, readonly points: ValueWrapper<T>) {}
-}
-
-type EnvVar<T> = Sentinel | ValueWrapper<T> | Reference<T>;
-
-export interface IEnvironment<T> {
-  getVar(varName: string): ValueWrapper<T> | null;
-  setVar(varName: string, value: T): void;
-  makeReference(oldName: string, newName: string): void;
-
-  enterScope(boundary: boolean): void;
-  leaveScope(): void;
-
-  reset(): void;
-}
-
-export class Environment<T> implements IEnvironment<T> {
-  variables: Array<EnvVar<T>> = [];
-
-  reset() {
-    this.variables = [];
-  }
-
-  private isSentinel(elem: EnvVar<T>): elem is Sentinel {
-    return elem.kind == "sentinel";
-  }
-
-  private isRef(elem: EnvVar<T>): elem is Reference<T> {
-    return elem.kind == "reference";
-  }
-
-  getVar(varName: string, jump = false): ValueWrapper<T> | null {
-    for (let i = this.variables.length - 1; i >= 0; i--) {
-      const elem: EnvVar<T> = this.variables[i];
-
-      if (this.isSentinel(elem)) {
-        if (elem.boundary) {
-          if (jump) {
-            jump = false;
-          } else {
-            return null;
-          }
-        }
-
-        continue;
-      }
-
-      if (this.isRef(elem)) {
-        if (elem.key == varName) {
-          return elem.points;
-        }
-      } else {
-        if (elem.key == varName) {
-          return elem;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  setVar(varName: string, value: T): void {
-    const variable = this.getVar(varName);
-
-    if (variable) {
-      variable.value = value;
-    } else {
-      this.variables.push(new ValueWrapper(varName, value));
-    }
-  }
-
-  makeReference(oldName: string, newName: string): void {
-    const variable = this.getVar(oldName, true);
-
-    if (variable === null) {
-      throw new Error(`Variable ${oldName} doesn't exist!`);
-    }
-
-    this.variables.push(new Reference(newName, variable));
-  }
-
-  enterScope(boundary: boolean): void {
-    this.variables.push({ kind: "sentinel", boundary });
-  }
-
-  leaveScope(): void {
-    const scopeIdx = this.variables.findLastIndex((e) => e.kind == "sentinel");
-
-    if (scopeIdx == -1) {
-      throw new Error("No active scope!");
-    }
-
-    this.variables = this.variables.slice(0, scopeIdx);
-  }
-}
-
 */
