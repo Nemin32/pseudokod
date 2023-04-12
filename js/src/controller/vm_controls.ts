@@ -3,7 +3,7 @@ import { ASTCompiler } from "../compiler/pseudo_compiler.js";
 import { parseProgram } from "../compiler/pseudo_parser.js";
 import { astToDiv, astToString, divMaker } from "../debug/ast_printer.js";
 import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.js";
-import { VM } from "../runtime/vm.js";
+import { IBindings, IVM, VM } from "../runtime/vm.js";
 import { ByteCodeDumper } from "./bytecode_dumper.js";
 import { colorize } from "./syntax_highlight.js";
 
@@ -48,11 +48,10 @@ class MainDriver {
   private tokens: PseudoToken[] = [];
   private byteCode: ByteCode[] = [];
 
-  private vm: VM;
+  private vm: IVM|null = null;
   private dumper: ByteCodeDumper = new ByteCodeDumper();
 
-  private constructor() {
-    this.vm = new VM({
+  private bindings: IBindings = {
       out: (value) => {
         const output = this.getElem(domElemName.standardOutput);
         output.innerText += value + "\n";
@@ -68,8 +67,9 @@ class MainDriver {
 
         stackInspector.innerText = output;
       },
-    });
-  }
+    }
+
+  private constructor() {}
 
   public attach = () => {
     this.getElem(domElemName.codeInput).addEventListener("input", this.onInput);
@@ -107,20 +107,24 @@ class MainDriver {
       this.dumper.generateSpans(this.byteCode);
       this.dumper.show(this.getElem(domElemName.vmInstructions));
 
-      this.vm.setup(this.byteCode);
+      this.vm = VM.init(this.byteCode, this.bindings);
     } else {
       throw new Error(AST.value + " : " + AST.where.index);
     }
   };
 
   public onRun = () => {
-    this.vm.run();
-    this.dumper.setHighlight(this.vm.ip);
+    if (this.vm) {
+      this.vm.run();
+      this.dumper.setHighlight(this.vm.lastState().ip);
+    }
   };
 
   public onInstStep = () => {
-    this.vm.step();
-    this.dumper.setHighlight(this.vm.ip);
+    if (this.vm) {
+      this.vm.step();
+      this.dumper.setHighlight(this.vm.lastState().ip);
+    }
   };
 
   public onLineStep = () => {};

@@ -4,7 +4,7 @@ import { Box, IBox } from "./box.ts";
 type ArrayHead = { length: number; start: number };
 
 function splitArray<T>(array: T[], n: number): [T[], T, T[]] {
-  return [array.slice(0, n - 1), array[n], array.slice(n + 1)];
+  return [array.slice(0, n), array[n], array.slice(n+1)];
 }
 
 type StoreValue = AtomValue | ArrayHead;
@@ -23,8 +23,7 @@ export class ImmutableStore {
 
     const value = this.boxes[idx].get();
 
-    // Value is ArrayHead
-    if (typeof value == "object") {
+    if (this.isArrayHead(value)) {
       return this.getArray(value);
     }
 
@@ -70,7 +69,7 @@ export class ImmutableStore {
 
   add(value: NestedArray): [ImmutableStore, number] {
     const [boxes, counter, index, { box, start }] = this.inner_add([], this.counter, 0, value, true);
-    return [new ImmutableStore(counter + index, [...this.boxes, ...boxes]), start];
+    return [new ImmutableStore(counter + index, [...this.boxes, ...boxes]), counter];
   }
 
   private inner_add(

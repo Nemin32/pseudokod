@@ -33,6 +33,13 @@ export class ImmutableEnvironment {
   }
 
   setVariable(store: ImmutableStore, name: string, value: AtomValue): [ImmutableStore, ImmutableEnvironment] {
+    const idx = this.lookup(name);
+
+    if (idx != null) {
+      const newStore = store.set(idx, value);
+      return [newStore, this];
+    }
+
     const [newStore, index] = store.add(value);
 
     return [
