@@ -9,8 +9,8 @@ function splitArray<T>(array: T[], n: number): [T[], T, T[]] {
 
 type StoreValue = AtomValue | ArrayHead;
 
-type NestedArray = AtomValue | (AtomValue | NestedArray)[]
-type NestedBoxArray = StoreValue | (StoreValue | NestedBoxArray)[]
+type NestedArray = AtomValue | (AtomValue | NestedArray)[];
+type NestedBoxArray = StoreValue | (StoreValue | NestedBoxArray)[];
 
 export class ImmutableStore {
   private constructor(readonly counter: number, readonly boxes: IBox<StoreValue>[]) {}
@@ -32,7 +32,7 @@ export class ImmutableStore {
   }
 
   getArray(value: ArrayHead): NestedArray {
-    const output: NestedArray = []
+    const output: NestedArray = [];
 
     for (let i = 0; i < value.length; i++) {
       output.push(this.get(value.start + i));
@@ -43,6 +43,23 @@ export class ImmutableStore {
 
   getBox(idx: number): IBox<StoreValue> {
     return this.boxes[idx];
+  }
+
+  getArrayElementBoxIndex(arrayPtr: number, offset: number): number {
+    const arrayHead = this.get(arrayPtr);
+
+    if (!this.isArrayHead(arrayHead)) throw new Error("Pointer wasn't pointing at array head.");
+    if (offset > arrayHead.length) throw new Error("Out-of-bounds.");
+
+    return arrayHead.start + offset;
+  }
+
+  getArrayElementBox(arrayPtr: number, offset: number): IBox<StoreValue> {
+    return this.getBox(this.getArrayElementBoxIndex(arrayPtr, offset));
+  }
+
+  getArrayElement(arrayPtr: number, offset: number): NestedArray {
+    return this.get(this.getArrayElementBoxIndex(arrayPtr, offset));
   }
 
   set(idx: number, value: StoreValue): ImmutableStore {
@@ -83,6 +100,14 @@ export class ImmutableStore {
     }
 
     return [boxes, counter, index, obj];
+  }
+
+  isArrayHead(head: any): head is ArrayHead {
+    if (typeof head == "object" && head.hasOwnProperty("length") && head.hasOwnProperty("start")) {
+      return true;
+    }
+
+    return false;
   }
 }
 

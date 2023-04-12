@@ -1,7 +1,10 @@
-import { Value } from "../compiler/pseudo_types";
+import { Atom } from "../compiler/pseudo_types";
+
+type Value = Atom["value"]
 
 export class ImmutableStack {
-  constructor(private stack: Readonly<Array<Value>> = []) {}
+  private constructor(private stack: Readonly<Array<Value>> = []) {}
+  public static init() {return new ImmutableStack([])}
 
   get length() {
     return this.stack.length;
