@@ -1,3 +1,5 @@
+import { IBox } from "./interfaces.ts";
+
 export enum ValueType {
   VOID,
   NUMBER, 
@@ -5,13 +7,6 @@ export enum ValueType {
   BOOL,
   ARRAY,
   REFERENCE,
-}
-
-export interface IBox<T> {
-  get(): T;
-  set(value: T): IBox<T>;
-  incrementRc(): IBox<T>;
-  decrementRc(): IBox<T>;
 }
 
 export class Box<T> implements IBox<T> {

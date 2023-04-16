@@ -1,18 +1,13 @@
 import { AtomValue, Value } from "../compiler/pseudo_types.ts";
-import { Box, IBox } from "./box.ts";
-
-type ArrayHead = { length: number; start: number };
+import { Box } from "./box.ts";
+import { ArrayHead, IBox, IStore, NestedArray, NestedBoxArray, StoreValue } from "./interfaces.ts";
 
 function splitArray<T>(array: T[], n: number): [T[], T, T[]] {
-  return [array.slice(0, n), array[n], array.slice(n+1)];
+  return [array.slice(0, n), array[n], array.slice(n + 1)];
 }
 
-type StoreValue = AtomValue | ArrayHead;
 
-type NestedArray = AtomValue | (AtomValue | NestedArray)[];
-type NestedBoxArray = StoreValue | (StoreValue | NestedBoxArray)[];
-
-export class ImmutableStore {
+export class ImmutableStore implements IStore {
   private constructor(readonly counter: number, readonly boxes: IBox<StoreValue>[]) {}
   static init() {
     return new ImmutableStore(0, []);
@@ -101,7 +96,7 @@ export class ImmutableStore {
     return [boxes, counter, index, obj];
   }
 
-  isArrayHead(head: any): head is ArrayHead {
+  private isArrayHead(head: any): head is ArrayHead {
     if (typeof head == "object" && head.hasOwnProperty("length") && head.hasOwnProperty("start")) {
       return true;
     }

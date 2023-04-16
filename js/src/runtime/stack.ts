@@ -1,74 +1,36 @@
-import { Atom } from "../compiler/pseudo_types";
+import { IStack, NestedArray, StringToType } from "./interfaces";
 
-type Value = Atom["value"]
-
-export class ImmutableStack {
-  private constructor(private stack: Readonly<Array<Value>> = []) {}
-  public static init() {return new ImmutableStack([])}
+export class Stack implements IStack {
+  private constructor(private stack: Readonly<Array<NestedArray>> = []) {}
+  public static init() {return new Stack([])}
 
   get length() {
     return this.stack.length;
   }
 
-  reset(): ImmutableStack {
-    return new ImmutableStack();
+  reset(): IStack {
+    return new Stack();
   }
 
-  push(val: Value): ImmutableStack {
-    return new ImmutableStack([...this.stack, val]);
+  push(val: NestedArray): IStack {
+    return new Stack([...this.stack, val]);
   }
 
-  pop<K extends keyof StT>(type: K): [StT[K], ImmutableStack] {
+  private checkType<K extends keyof StringToType>(type: K, value: NestedArray): value is StringToType[K] {
+    return (type == "any") || (type == "array" && Array.isArray(value)) || (typeof value == type);
+  }
+
+  pop<K extends keyof StringToType>(type: K): [StringToType[K], IStack] {
     if (this.stack.length == 0) {
       throw new Error("Stack is empty!");
     }
 
     const [val, ...rest] = this.stack;
 
-    if (type !== "any" && typeof val != type) {
+    if (this.checkType(type, val)) {
       throw new Error("Expected type was " + type + ", but received " + typeof val + ".");
     }
 
-    return [val as StT[K], new ImmutableStack(rest)];
+    return [val as StringToType[K], new Stack(rest)];
   }
-}
-
-export class Stack<T extends number | string | boolean> {
-  private stack: Array<T> = [];
-
-  constructor(private callback: (stack: T[]) => void) {}
-
-  get length() {
-    return this.stack.length;
-  }
-
-  reset() {
-    this.stack = [];
-  }
-
-  push(val: T) {
-    this.stack.push(val);
-    // this.callback(this.stack);
-  }
-
-  pop<K extends keyof StT>(type: K): StT[K] {
-    if (this.stack.length == 0) {
-      throw new Error("Stack is empty!");
-    }
-
-    const val = this.stack.pop() as T;
-
-    if (type !== "any" && typeof val != type) {
-      throw new Error("");
-    }
-
-    return val as unknown as StT[K];
-  }
-}
-
-interface StT {
-  string: string;
-  number: number;
-  boolean: boolean;
-  any: any;
 }

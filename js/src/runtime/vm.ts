@@ -1,11 +1,8 @@
-import { ByteCode, OpCode } from "../compiler/opcodes.js";
-import { Atom } from "../compiler/pseudo_types.js";
-import { ImmutableStack } from "./stack.js";
-import { ImmutableEnvironment } from "./environment.js";
-import { ImmutableStore } from "./store.js";
-
-type NoArrValue = Atom["value"];
-type Value = NoArrValue;
+import { ByteCode, OpCode } from "../compiler/opcodes";
+import { VariableStore } from "./environment";
+import { IBindings, IVM, State } from "./interfaces.js";
+import { Stack } from "./stack";
+import { ImmutableStore } from "./store";
 
 function handleCalc(exp1: number, exp2: number, op: string): number {
   switch (op as string) {
@@ -54,38 +51,15 @@ function handleLogic(exp1: boolean, exp2: boolean, op: string): boolean {
   }
 }
 
-export interface IBindings {
-  out: (value: Value) => void;
-  stack: (stack: Value[]) => void;
-}
-
-type State = Readonly<{
-  stack: ImmutableStack;
-  store: ImmutableStore;
-  variables: ImmutableEnvironment;
-  ipStack: Array<number>;
-  ip: number;
-  stopped: boolean;
-}>;
-
-export interface IVM {
-  run(): void;
-  fetch(): ByteCode;
-  execute(lastState: State, instruction: ByteCode): State;
-  step(): boolean;
-  reset(): void;
-  lastState(): State
-}
-
 export class VM implements IVM {
   jumpTable = new Map<string, number>();
   private constructor(private tape: Array<ByteCode>, private states: Array<State>, private bindings: IBindings) {}
 
   static generateInitialState(): State {
     return {
-      stack: ImmutableStack.init(),
+      stack: Stack.init(),
       store: ImmutableStore.init(),
-      variables: ImmutableEnvironment.init(),
+      variables: VariableStore.init(),
       ipStack: [],
       ip: 0,
       stopped: false,
@@ -283,8 +257,6 @@ export class VM implements IVM {
     const instruction = this.fetch();
     const nextState = this.execute(lastState, instruction);
     this.states.push({...nextState, stopped: false});
-
-    console.log(nextState)
 
     return nextState.stopped;
   }

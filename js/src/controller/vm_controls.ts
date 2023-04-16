@@ -1,9 +1,10 @@
 import { ByteCode } from "../compiler/opcodes.js";
 import { ASTCompiler } from "../compiler/pseudo_compiler.js";
 import { parseProgram } from "../compiler/pseudo_parser.js";
-import { astToDiv, astToString, divMaker } from "../debug/ast_printer.js";
+import { astToDiv, divMaker } from "../debug/ast_printer.js";
 import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.js";
-import { IBindings, IVM, VM } from "../runtime/vm.js";
+import { IVM, IBindings } from "../runtime/interfaces.js";
+import { VM } from "../runtime/vm.js";
 import { ByteCodeDumper } from "./bytecode_dumper.js";
 import { colorize } from "./syntax_highlight.js";
 
