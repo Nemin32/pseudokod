@@ -1,5 +1,5 @@
-import { ByteCode } from "../compiler/opcodes";
-import { AtomValue } from "../compiler/pseudo_types";
+import { ByteCode } from "../compiler/opcodes.ts";
+import { AtomValue } from "../compiler/pseudo_types.ts";
 
 export type NestedArray = AtomValue | (AtomValue | NestedArray)[];
 

@@ -1,4 +1,4 @@
-import { AST, ASTKind, Block, Parameter } from "../compiler/pseudo_types.js";
+import { AST, ASTKind, Block, Parameter } from "../compiler/pseudo_types.ts";
 
 type nestedString = Array<string | nestedString>;
 

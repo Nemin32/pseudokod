@@ -1,8 +1,8 @@
-import { ByteCode, OpCode } from "../compiler/opcodes";
-import { VariableStore } from "./environment";
-import { IBindings, IVM, State } from "./interfaces.js";
-import { Stack } from "./stack";
-import { ImmutableStore } from "./store";
+import { ByteCode, OpCode } from "../compiler/opcodes.ts";
+import { VariableStore } from "./environment.ts";
+import { IBindings, IVM, State } from "./interfaces.ts";
+import { Stack } from "./stack.ts";
+import { ImmutableStore } from "./store.ts";
 
 function handleCalc(exp1: number, exp2: number, op: string): number {
   switch (op as string) {

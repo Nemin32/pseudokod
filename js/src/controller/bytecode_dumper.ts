@@ -1,4 +1,4 @@
-import { ByteCode, OpCode } from "../compiler/opcodes.js";
+import { ByteCode, OpCode } from "../compiler/opcodes.ts";
 
 export class ByteCodeDumper {
   spans: HTMLSpanElement[] = [];

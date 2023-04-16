@@ -1,5 +1,5 @@
-import { PseudoToken, TokenType as TT } from "../parser/tokenizer.js";
-import { TokenToASTParser as P } from "../parser/token_parser.js";
+import { PseudoToken, TokenType as TT } from "../parser/tokenizer.ts";
+import { TokenToASTParser as P } from "../parser/token_parser.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -25,7 +25,7 @@ import {
   Statement,
   Variable,
   While,
-} from "./pseudo_types.js";
+} from "./pseudo_types.ts";
 
 /* = Groupings = */
 

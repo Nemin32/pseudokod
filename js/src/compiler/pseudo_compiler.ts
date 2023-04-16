@@ -1,4 +1,4 @@
-import { ByteCode, OpCode } from "./opcodes.js";
+import { ByteCode, OpCode } from "./opcodes.ts";
 import {
   ArithmeticBinOp,
   ArrayAssignment,
@@ -26,7 +26,7 @@ import {
   Value,
   Variable,
   While,
-} from "./pseudo_types.js";
+} from "./pseudo_types.ts";
 
 export class ASTCompiler {
   bytecode: Array<ByteCode> = [];

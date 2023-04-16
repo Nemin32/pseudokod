@@ -1,4 +1,4 @@
-import { PseudoToken, TokenType } from "../parser/tokenizer.js";
+import { PseudoToken, TokenType } from "../parser/tokenizer.ts";
 
 const colors: [TokenType[], string][] = [
   [[TokenType.NUMBER], "#b16286"],

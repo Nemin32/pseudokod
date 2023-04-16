@@ -1,4 +1,4 @@
-import { PseudoToken, TokenType } from "./tokenizer.js";
+import { PseudoToken, TokenType } from "./tokenizer.ts";
 
 type Error = string;
 type Token = PseudoToken;

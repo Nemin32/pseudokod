@@ -1,12 +1,12 @@
-import { ByteCode } from "../compiler/opcodes.js";
-import { ASTCompiler } from "../compiler/pseudo_compiler.js";
-import { parseProgram } from "../compiler/pseudo_parser.js";
-import { astToDiv, divMaker } from "../debug/ast_printer.js";
-import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.js";
-import { IVM, IBindings } from "../runtime/interfaces.js";
-import { VM } from "../runtime/vm.js";
-import { ByteCodeDumper } from "./bytecode_dumper.js";
-import { colorize } from "./syntax_highlight.js";
+import { ByteCode } from "../compiler/opcodes.ts";
+import { ASTCompiler } from "../compiler/pseudo_compiler.ts";
+import { parseProgram } from "../compiler/pseudo_parser.ts";
+import { astToDiv, divMaker } from "../debug/ast_printer.ts";
+import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.ts";
+import { IVM, IBindings } from "../runtime/interfaces.ts";
+import { VM } from "../runtime/vm.ts";
+import { ByteCodeDumper } from "./bytecode_dumper.ts";
+import { colorize } from "./syntax_highlight.ts";
 
 // Main entry point.
 self.addEventListener("load", () => {

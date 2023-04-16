@@ -1,4 +1,4 @@
-import { Atom } from "./pseudo_types.js";
+import { Atom } from "./pseudo_types.ts";
 
 export enum OpCode {
   CALC,
