@@ -1,7 +1,3 @@
-import { parseProgram } from "../compiler/pseudo_parser.ts";
-import { AST } from "../compiler/pseudo_types.ts";
-import { Tokenizer } from "../parser/tokenizer.ts";
-
 export enum BaseType {
   NUMBER,
   STRING,
@@ -22,9 +18,11 @@ export abstract class Type {
     if (!compare(this, type)) throw new Error(message ?? "Expected type '" + type.show() + "', got '" + this.show() + "'.");
     return true;
   }
+
+  toString(): string {return this.show();}
 }
 
-export class SimpleType extends Type {
+class SimpleType extends Type {
   constructor(readonly t: BaseType) {
     super();
   }

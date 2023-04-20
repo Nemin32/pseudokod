@@ -1,7 +1,9 @@
 import { AST, ASTKind, Expression } from "../compiler/pseudo_types.ts";
 import { Tokenizer } from "../parser/tokenizer.ts";
 import { parseProgram } from "../compiler/pseudo_parser.ts";
-import { Type, Env, AndType, STRING, NUMBER, LOGIC, BaseType, compare, OrType, NONE, strToType, UNKNOWN, simplify } from "./typechecker_utils.ts";
+import { Type, Env, AndType, STRING, NUMBER, LOGIC, BaseType, compare, OrType, NONE, strToType, simplify } from "./typechecker_utils.ts";
+
+const funcEnv: Map<string, { parameters: { name: string; type: Type }[]; returnType: Type }> = new Map();
 
 function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
   if (Array.isArray(input)) {
@@ -124,6 +126,7 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
     case ASTKind.RETURN:
       return typeCheck(input.value, env);
 
+    case ASTKind.DOWHILE:
     case ASTKind.WHILE: {
       const [pT, nEnv] = typeCheck(input.pred, env);
 
@@ -150,13 +153,70 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       throw new Error(`Variable ${input.name} was not found.`);
     }
 
-    case ASTKind.ARRASSIGN:
-    case ASTKind.ARRELEMASSIGN:
-    case ASTKind.ARRINDEX:
-    case ASTKind.DOWHILE:
+    case ASTKind.ARRELEMASSIGN: {
+      const vName = input.arrayIndex.variable.name;
+      const vT = env.get(vName);
+      const [iT, _] = typeCheck(input.arrayIndex.index, env);
+      const [eT, __] = typeCheck(input.value, env);
+
+      if (!vT) throw new Error(`Variable ${vName} not found.`);
+
+      iT.ensure(NUMBER);
+      eT.ensure(vT);
+
+      return [NONE, env];
+    }
+
+    case ASTKind.ARRASSIGN: {
+      const vName = input.variable.name;
+      const t = strToType(input.type);
+      const nEnv = new Map(env);
+
+      const [lT, _] = typeCheck(input.length, env);
+      lT.ensure(NUMBER);
+
+      return [NONE, nEnv.set(vName, t)];
+    }
+
+    case ASTKind.ARRINDEX: {
+      const vName = input.variable.name;
+      const [iT, _] = typeCheck(input.index, env);
+      const t = env.get(vName);
+
+      if (!t) throw new Error(`Variable ${vName} not found.`);
+
+      iT.ensure(NUMBER);
+
+      return [t, env];
+    }
+
     case ASTKind.FUNCCALL:
-    case ASTKind.FUNCDECL:
-      break;
+      {
+        const paramTypes: Type[] = input.parameters.map((p) => typeCheck(p, env)[0]);
+        const expectedTypes = funcEnv.get(input.functionName);
+
+        if (!expectedTypes) throw new Error("Can't find function named " + input.functionName + ".");
+
+        if (paramTypes.length != expectedTypes.parameters.length)
+          throw new Error(`Parameter amount mismatch, expected ${expectedTypes.parameters.length}, got ${paramTypes.length}`);
+
+        for (let i = 0; i < paramTypes.length; i++) {
+          if (!compare(paramTypes[i], expectedTypes.parameters[i].type))
+            throw new Error(`Mismatch in '${expectedTypes.parameters[i].name}'. Expected ${expectedTypes.parameters[i].type.show()}, got ${paramTypes[i].show()}`);
+        }
+
+        return [expectedTypes.returnType, env];
+      }
+
+    case ASTKind.FUNCDECL: {
+      const parameters = input.parameters.map<{ name: string; type: Type }>((p) => ({ name: p.name, type: strToType(p.type) }));
+      const fEnv = input.parameters.map<[string, Type]>((p) => [p.name, strToType(p.type)]);
+      const merged = new Map(Array.from(new Map(env).entries()).concat(fEnv));
+      const returnType = typeCheck(input.body, merged)[0];
+      funcEnv.set(input.name, { parameters, returnType });
+
+      return [NONE, env];
+    }
 
     case ASTKind.PARAMETER: {
       const t = strToType(input.type);
@@ -167,12 +227,8 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
     }
 
     default:
-      console.log(input);
-      return [UNKNOWN, env];
+      throw new Error("Unexpected input: " + input);
   }
-
-  console.log(input);
-  return [UNKNOWN, env];
 }
 
 function typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
