@@ -1,5 +1,4 @@
-import { AST, ASTKind } from "./pseudo_types.ts";
-import { ASTCompiler } from "./pseudo_compiler.ts";
+import { AST, ASTKind, Expression, Parameter, Statement } from "./pseudo_types.ts";
 import { Tokenizer } from "../parser/tokenizer.ts";
 import { parseProgram } from "./pseudo_parser.ts";
 
@@ -11,17 +10,25 @@ enum BaseType {
   NONE,
 }
 
-interface Type {
-  show(): string;
-  isBaseType(type: BaseType): boolean;
+abstract class Type {
+  abstract show(): string;
+  abstract isBaseType(type: BaseType): boolean;
 
-  isSimple(): this is SimpleType;
-  isOr(): this is OrType;
-  isAnd(): this is AndType;
+  abstract isSimple(): this is SimpleType;
+  abstract isOr(): this is OrType;
+  abstract isAnd(): this is AndType;
+
+  ensure(type: Type, message?: string): this is typeof type {
+    if (!compare(this, type)) throw new Error(message ?? "Expected type '" + type.show() + "', got '" + this.show() + "'.");
+    return true;
+  }
 }
 
-class SimpleType implements Type {
-  constructor(readonly t: BaseType) {}
+class SimpleType extends Type {
+  constructor(readonly t: BaseType) {
+    super();
+  }
+
   show(): string {
     switch (this.t) {
       case BaseType.NUMBER:
@@ -33,7 +40,7 @@ class SimpleType implements Type {
       case BaseType.UNKNOWN:
         return "UNKNOWN";
       case BaseType.NONE:
-        return "NONE"
+        return "NONE";
     }
   }
 
@@ -43,16 +50,26 @@ class SimpleType implements Type {
   isSimple(): this is SimpleType {
     return true;
   }
-  isOr(): boolean {
+  isOr(): this is OrType {
     return false;
   }
-  isAnd(): boolean {
+  isAnd(): this is AndType {
     return false;
   }
 }
 
-class OrType implements Type {
-  constructor(readonly t1: Type, readonly t2: Type) {}
+const [NUMBER, STRING, LOGIC, UNKNOWN, NONE] = [
+  new SimpleType(BaseType.NUMBER),
+  new SimpleType(BaseType.STRING),
+  new SimpleType(BaseType.LOGIC),
+  new SimpleType(BaseType.UNKNOWN),
+  new SimpleType(BaseType.NONE),
+];
+
+class OrType extends Type {
+  constructor(readonly t1: Type, readonly t2: Type) {
+    super();
+  }
   show(): string {
     return `${this.t1.show()} | ${this.t2.show()}`;
   }
@@ -63,30 +80,32 @@ class OrType implements Type {
   isSimple(): this is SimpleType {
     return false;
   }
-  isOr(): boolean {
+  isOr(): this is OrType {
     return true;
   }
-  isAnd(): boolean {
+  isAnd(): this is AndType {
     return false;
   }
 }
 
-class AndType implements Type {
-  constructor(readonly ts: Type[]) {}
+class AndType extends Type {
+  constructor(readonly ts: Type[]) {
+    super();
+  }
   show(): string {
     return "[" + this.ts.map((t) => t.show()).join(", ") + "]";
   }
 
-  isBaseType(type: BaseType): boolean {
+  isBaseType(_type: BaseType): boolean {
     return false;
   }
   isSimple(): this is SimpleType {
     return false;
   }
-  isOr(): boolean {
+  isOr(): this is OrType {
     return false;
   }
-  isAnd(): boolean {
+  isAnd(): this is AndType {
     return true;
   }
 }
@@ -117,12 +136,16 @@ function simplify(input: Type): Type {
       return st1;
     }
 
+    // if (compare(st1, NONE)) return st2;
+    // if (compare(st2, NONE)) return st1;
+
     return new OrType(st1, st2);
   }
 
   if (input instanceof AndType) {
-    const sts = [...new Set(input.ts.map(simplify))];
+    const sts = [...new Set(input.ts.map(simplify))] // .filter(t => !compare(t, NONE));
     if (sts.length == 1) return sts[0];
+    if (sts.length == 0) return NONE;
 
     return new AndType(sts);
   }
@@ -133,7 +156,7 @@ function simplify(input: Type): Type {
 type Env = Map<string, Type>;
 
 function typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
-  const [t, nEnv] = _typeCheck(input, env)
+  const [t, nEnv] = _typeCheck(input, env);
   return [simplify(t), nEnv];
 }
 
@@ -149,32 +172,37 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       ts.push(t);
     }
 
-    return [new AndType(ts), e]
-    // return new AndType(input.map(a => typeCheck(a, env)));
+   /*const [ts, e] = input.reduce<[ts: Type[], env: Env]>(
+      (acc: [Type[], Env], val: Statement | Parameter) => {
+        const [t, nEnv] = typeCheck(val, acc[1]);
+        return [acc[0].concat(t), nEnv];
+      },
+      [[], env]
+    );*/
+
+    return [new AndType(ts), e];
   }
 
   switch (input.kind) {
     case ASTKind.ATOM:
-      return [new SimpleType(typeof input.value == "string" ? BaseType.STRING : typeof input.value == "number" ? BaseType.NUMBER : BaseType.LOGIC), env]
+      return [typeof input.value == "string" ? STRING : typeof input.value == "number" ? NUMBER : LOGIC, env];
 
     case ASTKind.CALCBINOP: {
       const [t1, nEnv] = typeCheck(input.exp1, env);
       const [t2, nEnv2] = typeCheck(input.exp2, nEnv);
 
-      if (t1.isBaseType(BaseType.NUMBER) && t2.isBaseType(BaseType.NUMBER)) {
-        return [new SimpleType(BaseType.NUMBER), nEnv2];
-      }
+      t1.ensure(NUMBER);
+      t2.ensure(NUMBER);
 
-      throw new Error("T1 or T2 wasn't NUM.");
+      return [NUMBER, nEnv2];
     }
 
     case ASTKind.LOGICBINOP: {
       const [t1, nEnv] = typeCheck(input.exp1, env);
       const [t2, nEnv2] = typeCheck(input.exp2, nEnv);
 
-
       if (t1.isBaseType(BaseType.LOGIC) && t2.isBaseType(BaseType.LOGIC)) {
-        return [new SimpleType(BaseType.LOGIC), nEnv2];
+        return [LOGIC, nEnv2];
       }
 
       throw new Error("T1 or T2 wasn't LOG.");
@@ -185,44 +213,92 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       const [t2, nEnv2] = typeCheck(input.exp2, nEnv);
 
       if ((t1.isBaseType(BaseType.LOGIC) || t1.isBaseType(BaseType.NUMBER)) && compare(t1, t2)) {
-        return [new SimpleType(BaseType.LOGIC), nEnv2];
+        return [LOGIC, nEnv2];
       }
 
       throw new Error("T1 or T2 wasn't LOG.");
     }
 
-    
-    /*
     case ASTKind.IF: {
-      const [head, elif, elseb] = [input.headBranch, input.elIfs, input.elseBranch];
+      // ifHead
+      const [hPred, hBody] = [input.headBranch.pred, input.headBranch.body];
+      typeCheck(hPred, env);
+      let returnType = typeCheck(hBody, env)[0];
 
-      const [predT, nEnv] = typeCheck(head.pred, env)
-      if (!predT.isBaseType(BaseType.LOGIC)) throw new Error("Head wasn't LOG");
+      // elseIf
+      if (input.elIfs.length > 0) {
+        input.elIfs.forEach((e) => typeCheck(e.pred, env));
+        const elifs = input.elIfs.reduce((acc: Type, e) => new OrType(typeCheck(e.body, env)[0], acc), NONE);
 
-      const elifPreds = elif.map((elif) => typeCheck(elif.pred, env).isBaseType(BaseType.LOGIC)).every((e) => e);
-      if (!elifPreds) throw new Error("Elif wasn't LOG");
-
-      let ifT = typeCheck(head.body, env);
-
-      if (elseb) {
-        const elseT = typeCheck(elseb, env);
-        ifT = new OrType(ifT, elseT);
+        returnType = new OrType(returnType, elifs);
       }
 
-      if (elif.length > 0) {
-        const elifTs = elif.map((elif) => typeCheck(elif.body, env)).reduce((or, curr) => new OrType(or, curr));
-        ifT = new OrType(ifT, elifTs);
+      // else
+      if (input.elseBranch) {
+        returnType = new OrType(returnType, typeCheck(input.elseBranch, env)[0]);
       }
 
-      return ifT;
+      return [returnType, env];
     }
-    */
+
+    case ASTKind.COMPREHENSION: {
+      const [ts, nEnvFinal] = input.exps.reduce<[Type[], Env]>(
+        (acc: [Type[], Env], val: Expression) => {
+          const [t, nEnv] = typeCheck(val, acc[1]);
+          return [acc[0].concat(t), nEnv];
+        },
+        [[], env]
+      );
+
+      return [new AndType(ts), nEnvFinal];
+    }
+
+    case ASTKind.DEBUG:
+      return [NONE, env];
+
+    case ASTKind.FOR: {
+      const [fT, nEnv] = typeCheck(input.from, env);
+      const [tT, nEnv2] = typeCheck(input.to, nEnv);
+
+      fT.ensure(NUMBER)
+      tT.ensure(NUMBER)
+
+      nEnv2.set(input.variable.name, NUMBER);
+
+      return typeCheck(input.body, nEnv2);
+    }
+
+    case ASTKind.NOT: {
+      const [valT, nEnv] = typeCheck(input.exp, env);
+
+      valT.ensure(LOGIC)
+
+      return [LOGIC, nEnv];
+    }
+
+    case ASTKind.PRINT:
+      return [NONE, env];
+
+    case ASTKind.RETURN:
+      return typeCheck(input.value, env);
+
+    case ASTKind.WHILE: {
+      const [pT, nEnv] = typeCheck(input.pred, env);
+
+      pT.ensure(LOGIC);
+
+      return typeCheck(input.body, nEnv);
+    }
 
     case ASTKind.ASSIGNMENT: {
       const [t, nEnv] = typeCheck(input.value, env);
       const nEnv2 = new Map(nEnv);
-      nEnv2.set(input.variable.name, t)
-      return [new SimpleType(BaseType.NONE), nEnv2];
+
+      const prev = nEnv.get(input.variable.name);
+      if (prev && !compare(prev, t)) throw new Error(`Trying to set ${input.variable.name} (a ${prev.show()} value) to ${t.show()}`);
+
+      nEnv2.set(input.variable.name, t);
+      return [NONE, nEnv2];
     }
 
     case ASTKind.VARIABLE: {
@@ -232,10 +308,22 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       throw new Error(`Variable ${input.name} was not found.`);
     }
 
+    case ASTKind.ARRASSIGN:
+    case ASTKind.ARRELEMASSIGN:
+    case ASTKind.ARRINDEX:
+    case ASTKind.DOWHILE:
+    case ASTKind.FUNCCALL:
+    case ASTKind.FUNCDECL:
+    case ASTKind.PARAMETER:
+      break;
+
     default:
       console.log(input);
-      return [new SimpleType(BaseType.UNKNOWN), env];
+      return [UNKNOWN, env];
   }
+
+  console.log(input);
+  return [UNKNOWN, env];
 }
 
 const tc = (inp: string): [Type, Env] => {
