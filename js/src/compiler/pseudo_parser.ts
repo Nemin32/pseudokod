@@ -64,7 +64,7 @@ const parseParameter = P.do()
   .ignore(P.matchToken(TT.COLON))
   .bind("type", parseType)
   .ignore(P.matchToken(TT.TOMB).maybe())
-  .bindResult(({ ref, name, _type }) => new Parameter(name, ref != null));
+  .bindResult(({ ref, name, type }) => new Parameter(name, ref != null, type));
 
 const parseParamList = parseParameter.sepBy(P.matchToken(TT.COMMA)).or(P.result([])).parens();
 const parseExpressionList = parseExpression.sepBy(P.matchToken(TT.COMMA)).or(P.result([])).parens();

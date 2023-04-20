@@ -149,8 +149,7 @@ export class Assignment {
 export class Parameter {
   readonly kind = ASTKind.PARAMETER;
 
-  constructor(public name: string, public byReference: boolean) {}
-  /* class: string */
+  constructor(public name: string, public byReference: boolean, public type: string) {}
 }
 
 export class While {
