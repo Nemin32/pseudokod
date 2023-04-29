@@ -107,11 +107,14 @@ div {
 }
 
 #leftPane {
-  display: grid;
-  grid-template-rows: 96fr 4fr;
+  //display: grid;
+  //grid-template-rows: 88fr 8fr 4fr;
+  display: flex;
+  flex-direction: column;
 
   #editorContainer {
     position: relative;
+    flex-basis: 100%;
 
     #syntax,
     #input {
@@ -155,9 +158,29 @@ div {
     }
   }
 
+  #error {
+    display: none;
+    padding: 1rem;
+    gap: 1rem;
+
+    background-color: #633;
+
+    min-height: 4rem;
+    max-height: 8rem;
+    
+    img {
+      fill: white;
+    }
+
+    p {
+      margin: 0;
+    }
+  }
+
   #buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+    min-height: 4rem;
 
     & button {
       background-color: var(--bIdle);

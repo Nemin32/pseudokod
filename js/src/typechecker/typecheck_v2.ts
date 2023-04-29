@@ -1,5 +1,3 @@
-//import { parseProgram } from "../compiler/pseudo_parser.ts";
-//import { Tokenizer } from "../parser/tokenizer.ts";
 import { AST, ASTKind } from "../compiler/pseudo_types.ts";
 
 enum TypeVariants {
@@ -175,7 +173,7 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       const { type: eType, fMap: _, vMap: __ } = typeCheck(ast.value, fMap, vMap);
       const vType = vMap.get(ast.variable.name);
 
-      if (vType && !compare(vType, eType)) throw new Error(`Variable ${ast.variable.name}: Expected ${vType}, but got ${eType}.`);
+      if (vType && !compare(vType, eType)) throw new Error(`Variable ${ast.variable.name}: Expected ${show(vType)}, but got ${show(eType)}.`);
 
       const newVMap = new Map(vMap);
       newVMap.set(ast.variable.name, eType);
@@ -241,14 +239,6 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       if (!vType) throw new Error(`Variable ${ast.variable.name} not found.`);
 
       return { type: vType, fMap, vMap };
-      /*
-      if (vType.kind instanceof HeterogenousArrayType) {
-        return {
-          type: vType
-        }
-
-      }
-      */
     }
 
     case ASTKind.ARRASSIGN: {

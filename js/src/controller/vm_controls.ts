@@ -5,6 +5,7 @@ import { astToDiv, divMaker } from "../debug/ast_printer.ts";
 import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.ts";
 import { IVM, IBindings } from "../runtime/interfaces.ts";
 import { VM } from "../runtime/vm.ts";
+import { typeCheck } from "../typechecker/typecheck_v2.ts";
 import { ByteCodeDumper } from "./bytecode_dumper.ts";
 import { colorize } from "./syntax_highlight.ts";
 
@@ -28,6 +29,8 @@ const enum domElemName {
   variableInspector = "#vars div",
   stackInspector = "#stack div",
   ipStackInspector = "#ipStack div",
+
+  error = "#error"
 }
 
 class MainDriver {
@@ -49,26 +52,26 @@ class MainDriver {
   private tokens: PseudoToken[] = [];
   private byteCode: ByteCode[] = [];
 
-  private vm: IVM|null = null;
+  private vm: IVM | null = null;
   private dumper: ByteCodeDumper = new ByteCodeDumper();
 
   private bindings: IBindings = {
-      out: (value) => {
-        const output = this.getElem(domElemName.standardOutput);
-        output.innerText += value + "\n";
-        output.scrollTo(0, output.scrollHeight);
-      },
-      stack: (stack) => {
-        const stackInspector = this.getElem(domElemName.stackInspector);
+    out: (value) => {
+      const output = this.getElem(domElemName.standardOutput);
+      output.innerText += value + "\n";
+      output.scrollTo(0, output.scrollHeight);
+    },
+    stack: (stack) => {
+      const stackInspector = this.getElem(domElemName.stackInspector);
 
-        let output = "";
-        stack.forEach((s) => {
-          output += s + "\n";
-        });
+      let output = "";
+      stack.forEach((s) => {
+        output += s + "\n";
+      });
 
-        stackInspector.innerText = output;
-      },
-    }
+      stackInspector.innerText = output;
+    },
+  };
 
   private constructor() {}
 
@@ -100,17 +103,26 @@ class MainDriver {
     }
 
     const AST = parseProgram(this.tokens);
+    const error = this.getElem(domElemName.error);
 
-    if (AST.kind == "capture") {
-      this.byteCode = ASTCompiler.compile(AST.value);
-      this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST.value))) //.innerText = astToString(AST);
+    try {
+      if (AST.kind == "capture") {
+        typeCheck(AST.value, new Map(), new Map());
 
-      this.dumper.generateSpans(this.byteCode);
-      this.dumper.show(this.getElem(domElemName.vmInstructions));
+        this.byteCode = ASTCompiler.compile(AST.value);
+        this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST.value)));
 
-      this.vm = VM.init(this.byteCode, this.bindings);
-    } else {
-      throw new Error(AST.value + " : " + AST.where.index);
+        this.dumper.generateSpans(this.byteCode);
+        this.dumper.show(this.getElem(domElemName.vmInstructions));
+
+        this.vm = VM.init(this.byteCode, this.bindings);
+        error.style.display = "none";
+      } else {
+        throw new Error(AST.value + " : " + AST.where.index);
+      }
+    } catch (e) {
+      error.querySelector("p")!.innerText = e.message;
+      error.style.display = "flex";
     }
   };
 

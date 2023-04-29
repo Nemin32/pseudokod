@@ -93,11 +93,12 @@ div {
 }
 
 #leftPane {
-  display: grid;
-  grid-template-rows: 96fr 4fr;
+  display: flex;
+  flex-direction: column;
 }
 #leftPane #editorContainer {
   position: relative;
+  flex-basis: 100%;
 }
 #leftPane #editorContainer #syntax,
 #leftPane #editorContainer #input {
@@ -128,9 +129,24 @@ div {
   color: transparent;
   caret-color: white;
 }
+#leftPane #error {
+  display: none;
+  padding: 1rem;
+  gap: 1rem;
+  background-color: #633;
+  min-height: 4rem;
+  max-height: 8rem;
+}
+#leftPane #error img {
+  fill: white;
+}
+#leftPane #error p {
+  margin: 0;
+}
 #leftPane #buttons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  min-height: 4rem;
 }
 #leftPane #buttons button {
   background-color: var(--bIdle);
