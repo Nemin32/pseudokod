@@ -54,17 +54,17 @@ export const parseBlock: P<Block> = parseStatement.many1();
 
 /* = Utils = */
 
-const parseFuncName = P.matchToken(TT.FUNCNAME).bindResult((t) => t.lexeme);
+const parseFuncName = P.matchToken(TT.FUNCNAME)//.bindResult((t) => t.lexeme);
 const parseSymbol = P.matchToken(TT.SYMBOL).bindResult((t) => t.lexeme);
 const parseType = P.matchToken(TT.TYPE).bindResult((t) => t.lexeme);
 
 const parseParameter = P.do()
   .bind("ref", P.matchToken(TT.CIMSZERINT).maybe())
   .bind("name", parseSymbol)
-  .ignore(P.matchToken(TT.COLON))
+  .bindT("colon", TT.COLON)
   .bind("type", parseType)
   .bind("tomb", P.matchToken(TT.TOMB).maybe())
-  .bindResult(({ ref, name, type, tomb }) => new Parameter(name, ref != null, type + ((tomb) ? " tömb" : "") ));
+  .bindResult(({ ref, colon, name, type, tomb }) => new Parameter(ref ?? colon, name, ref != null, type + ((tomb) ? " tömb" : "") ));
 
 const parseParamList = parseParameter.sepBy(P.matchToken(TT.COMMA)).or(P.result([])).parens();
 const parseExpressionList = parseExpression.sepBy(P.matchToken(TT.COMMA)).or(P.result([])).parens();
@@ -73,69 +73,66 @@ const parseExpressionList = parseExpression.sepBy(P.matchToken(TT.COMMA)).or(P.r
 
 /* Atom */
 const parseNumber: P<Atom> = P.matchToken(TT.NUMBER).bindResult((token) =>
-  new Atom(Number(token.lexeme))
+  new Atom(token, Number(token.lexeme))
 );
 const parseString: P<Atom> = P.matchToken(TT.STRING).bindResult((token) =>
-  new Atom(token.lexeme.slice(1, token.lexeme.length - 1))
+  new Atom(token, token.lexeme.slice(1, token.lexeme.length - 1))
 );
 const parseBool: P<Atom> = P.matchToken(TT.BOOLEAN).bindResult((token) =>
-  new Atom(token.lexeme == "igaz")
+  new Atom(token, token.lexeme == "igaz")
 );
 
 /* Variable */
 const parseVariable: P<Variable> = P.matchToken(TT.REFERENCE).maybe().bind(isRef => P.matchToken(TT.SYMBOL).bindResult((token) =>
-  new Variable(token.lexeme, isRef !== null)
+  new Variable(token, token.lexeme, isRef !== null)
 ));
 
 /* Array Index */
 const parseArrayIndex: P<ArrayIndex> = parseVariable.bind((variable) =>
-  parseExpression.brackets().bindResult((index) => new ArrayIndex(variable, index))
+  parseExpression.brackets().bindResult((index) => new ArrayIndex(variable.token, variable, index))
 );
 
 /* Array Comprehension */
 const parseArrayComprehension: P<ArrayComprehension> = parseExpressionList.bindResult((exps) =>
-  new ArrayComprehension(exps)
+  new ArrayComprehension(exps[0].token, exps)
 );
 
 /* Negation */
 const parseNegate: P<Not> = P.matchToken(TT.NEGAL)
-  .right(parseExpression)
-  .bindResult((exp) => new Not(exp));
+  .bind(tok => parseExpression.bindResult((exp) => new Not(tok, exp)));
 
 /* Function Call */
 const parseFuncCall: P<FunctionCall> = P.do()
   .bind("name", parseFuncName)
   .bind("params", parseExpressionList)
-  .bindResult(({ name, params }) => new FunctionCall(name, params));
+  .bindResult(({ name, params }) => new FunctionCall(name, name.lexeme, params));
 
 /* = Statements = */
 const parseFuncDecl: P<FunctionDeclaration> = P.do()
-  .ignore(P.matchToken(TT.FUGGVENY))
+  .bindT("kw", TT.FUGGVENY)
   .bind("name", parseFuncName)
   .bind("params", parseParamList)
   .bind("body", parseBlock)
   .ignore(P.matchToken(TT.FUGGVENY).end())
-  .bindResult(({ name, params, body }) => new FunctionDeclaration(name, params, body));
+  .bindResult(({kw, name, params, body }) => new FunctionDeclaration(kw, name.lexeme, params, body));
 
 /* Print */
 const parsePrint: P<Print> = P.matchToken(TT.KIIR)
-  .right(parseExpression)
-  .bindResult((exp) => new Print(exp));
+  .bind(tok => parseExpression.bindResult((exp) => new Print(tok, exp)));
 
 /* Debug */
-const parseDebug: P<Debug> = P.matchToken(TT.DEBUG).bindResult((_) => new Debug());
+const parseDebug: P<Debug> = P.matchToken(TT.DEBUG).bindResult((tok) => new Debug(tok));
 
 /* Return */
 const parseReturn: P<Return> = P.matchToken(TT.VISSZA)
-  .right(parseExpression)
-  .bindResult((exp) => new Return(exp));
+  .bind(tok => parseExpression.bindResult((exp) => new Return(tok, exp)));
 
 /* Assignment */
 const parseAssignment: P<Assignment> = P.do()
   .bind("variable", parseVariable)
   .ignoreT(TT.NYIL)
   .bind("exp", parseExpression)
-  .bindResult(({ variable, exp }) => new Assignment(variable, exp));
+  .bindResult(({ variable, exp }) => new Assignment(variable.token, variable, exp));
 
 /* BinOps */
 
@@ -153,22 +150,10 @@ const parseLogicOp = P.matchToken(TT.LOGICOP).bindResult((t) => t.lexeme);
 
 const parseValue = parseArrayIndex.or(parseVariable).or(parseNumber).or(parseBool).or(parseString);
 const parseFactor: P<Expression> = parseValue.or(P.of(() => parseLogic).parens());
-const parseArithmAdd: P<Expression> = parseFactor.bindChain(
-  parseAddOp,
-  ({ f, a, b }) => new ArithmeticBinOp(f, a, b),
-);
-const parseArithmMul: P<Expression> = parseArithmAdd.bindChain(
-  parseMulOp,
-  ({ f, a, b }) => new ArithmeticBinOp(f, a, b),
-);
-const parseComp: P<Expression> = parseArithmMul.bindChain(
-  parseCompOp,
-  ({ f, a, b }) => new Comparison(f, a, b),
-);
-const parseLogic: P<Expression> = parseComp.bindChain(
-  parseLogicOp,
-  ({ f, a, b }) => new LogicBinOp(f, a, b),
-);
+const parseArithmAdd: P<Expression> = parseFactor.bindChain( parseAddOp, ({ f, a, b }) => new ArithmeticBinOp(null as any, f, a, b));
+const parseArithmMul: P<Expression> = parseArithmAdd.bindChain( parseMulOp, ({ f, a, b }) => new ArithmeticBinOp(null as any, f, a, b));
+const parseComp: P<Expression> = parseArithmMul.bindChain( parseCompOp, ({ f, a, b }) => new Comparison(null as any, f, a, b));
+const parseLogic: P<Expression> = parseComp.bindChain( parseLogicOp, ({ f, a, b }) => new LogicBinOp(null as any, f, a, b));
 
 /* If  */
 
@@ -177,8 +162,8 @@ const parseLogic: P<Expression> = parseComp.bindChain(
 // elágazás vége
 
 // ha PRED akkor BODY
-const parseIfHead: P<{ pred: Expression; body: Block }> = P.do()
-  .ignoreT(TT.HA)
+const parseIfHead: P<{ token: PseudoToken, pred: Expression; body: Block }> = P.do()
+  .bindT("token", TT.HA)
   .bind("pred", parseExpression)
   .ignoreT(TT.AKKOR)
   .bind("body", parseBlock)
@@ -195,7 +180,7 @@ const parseSimpleIf = P.do()
   .bind("elseB", parseElse.maybe())
   .ignoreT(TT.ELAGAZAS)
   .ignoreT(TT.VEGE)
-  .bindResult(({ head, elseB }) => new If(head, [], elseB));
+  .bindResult(({ head, elseB }) => new If(head.token, head, [], elseB));
 
 const parseIfElse = P.do()
   .bind("head", parseIfHead)
@@ -203,7 +188,7 @@ const parseIfElse = P.do()
   .bind("elseB", parseElse)
   .ignoreT(TT.ELAGAZAS)
   .ignoreT(TT.VEGE)
-  .bindResult(({ head, elseIf, elseB }) => new If(head, elseIf, elseB));
+  .bindResult(({ head, elseIf, elseB }) => new If(head.token, head, elseIf, elseB));
 
 const parseIf: P<If> = parseIfElse.or(parseSimpleIf);
 
@@ -214,18 +199,18 @@ const parseArrayAssignment = P.do()
   .ignoreT(TT.LETREHOZ)
   .bind("type", parseType.brackets())
   .bind("length", parseExpression.parens())
-  .bindResult(({ variable, type, length }) => new ArrayAssignment(variable, type, length));
+  .bindResult(({ variable, type, length }) => new ArrayAssignment(variable.token, variable, type, length));
 
 /* Array Element Assignment */
 const parseArrayElementAssignment = P.do()
   .bind("variable", parseArrayIndex)
   .ignoreT(TT.NYIL)
   .bind("exp", parseExpression)
-  .bindResult(({ variable, exp }) => new ArrayElementAssignment(variable, exp));
+  .bindResult(({ variable, exp }) => new ArrayElementAssignment(variable.token, variable, exp));
 
 /* For */
 const parseFor: P<For> = P.do()
-  .ignoreT(TT.CIKLUS)
+  .bindT("kw", TT.CIKLUS)
   .bind("variable", parseVariable)
   .ignoreT(TT.NYIL)
   .bind("fromE", parseExpression)
@@ -235,25 +220,25 @@ const parseFor: P<For> = P.do()
   .bind("body", parseBlock)
   .ignoreT(TT.CIKLUS)
   .ignoreT(TT.VEGE)
-  .bindResult(({ variable, fromE, toE, body }) => new For(variable, fromE, toE, body));
+  .bindResult(({kw, variable, fromE, toE, body }) => new For(kw, variable, fromE, toE, body));
 
 /* While */
 const parseWhile = P.do()
-  .ignoreT(TT.CIKLUS)
+  .bindT("kw",TT.CIKLUS)
   .ignoreT(TT.AMIG)
   .bind("pred", parseExpression)
   .bind("body", parseBlock)
   .ignoreT(TT.CIKLUS)
   .ignoreT(TT.VEGE)
-  .bindResult(({ pred, body }) => new While(pred, body));
+  .bindResult(({ kw, pred, body }) => new While(kw, pred, body));
 
 /* Do While */
 const parseDoWhile = P.do()
-  .ignore(P.matchToken(TT.CIKLUS))
+  .bind("kw",P.matchToken(TT.CIKLUS))
   .bind("body", parseBlock)
-  .ignore(P.matchToken(TT.AMIG))
+  .ignoreT(TT.AMIG)
   .bind("pred", parseExpression)
-  .bindResult(({ pred, body }) => new DoWhile(pred, body));
+  .bindResult(({ kw, pred, body }) => new DoWhile(kw, pred, body));
 
 /*
 function run<T>(p: P<T>, input: string) {

@@ -1,4 +1,5 @@
 import { AST, ASTKind } from "../compiler/pseudo_types.ts";
+import { PseudoToken } from "../parser/tokenizer.ts";
 
 enum TypeVariants {
   SIMPLE,
@@ -14,6 +15,10 @@ enum BaseType {
   NUMBER,
   STRING,
   LOGIC,
+}
+
+export class TypeCheckError extends Error {
+  constructor(message: string, readonly token: PseudoToken) {super(message)}
 }
 
 class SimpleType {
@@ -108,9 +113,9 @@ export type TypeCheckResult = { type: Type; fMap: FunctionTypeMap; vMap: Variabl
 const [LOGIC, NUMBER, STRING, NONE] = [new SimpleType(BaseType.LOGIC), new SimpleType(BaseType.NUMBER), new SimpleType(BaseType.STRING), new NoneType()];
 
 export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap): TypeCheckResult {
-  function ensure(ast: AST, expected: Type): Type {
+  function ensure(ast: AST & {token: PseudoToken}, expected: Type): Type {
     const actual = typeCheck(ast, fMap, vMap).type;
-    if (!compare(actual, expected)) throw new Error(`Expected ${show(expected)}, got ${show(actual)}`);
+    if (!compare(actual, expected)) throw new TypeCheckError(`Expected ${show(expected)}, got ${show(actual)}`, ast.token);
 
     return actual;
   }
@@ -160,7 +165,7 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
     case ASTKind.VARIABLE: {
       const vType = vMap.get(ast.name);
 
-      if (!vType) throw new Error(`Variable ${ast.name} not found.`);
+      if (!vType) throw new TypeCheckError(`Variable ${ast.name} not found.`, ast.token);
 
       if (ast.isReference) {
         return { type: new ReferenceType(vType), fMap, vMap };
@@ -173,7 +178,7 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       const { type: eType, fMap: _, vMap: __ } = typeCheck(ast.value, fMap, vMap);
       const vType = vMap.get(ast.variable.name);
 
-      if (vType && !compare(vType, eType)) throw new Error(`Variable ${ast.variable.name}: Expected ${show(vType)}, but got ${show(eType)}.`);
+      if (vType && !compare(vType, eType)) throw new TypeCheckError(`Variable ${ast.variable.name}: Expected ${show(vType)}, but got ${show(eType)}.`, ast.token);
 
       const newVMap = new Map(vMap);
       newVMap.set(ast.variable.name, eType);
@@ -184,15 +189,17 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       const { type: t1, ..._rest1 } = typeCheck(ast.exp1, fMap, vMap);
       const { type: t2, ..._rest2 } = typeCheck(ast.exp2, fMap, vMap);
 
-      if (!compare(t1, NUMBER)) throw new Error(`exp1: Expected NUMBER, got ${show(t1)}`);
-      if (!compare(t2, NUMBER)) throw new Error(`exp2: Expected NUMBER, got ${show(t2)}`);
+      if (!compare(t1, NUMBER)) throw new TypeCheckError(`exp1: Expected NUMBER, got ${show(t1)}`,ast.exp1.token);
+      if (!compare(t2, NUMBER)) throw new TypeCheckError(`exp2: Expected NUMBER, got ${show(t2)}`,ast.exp2.token);
 
       return { type: NUMBER, fMap, vMap };
     }
 
     case ASTKind.LOGICBINOP: {
-      //if (!compare(t1, LOGIC)) throw new Error(`exp1: Expected LOGIC, got ${show(t1)}`);
-      //if (!compare(t2, LOGIC)) throw new Error(`exp2: Expected LOGIC, got ${show(t2)}`);
+      //if (!compare(t1, LOGIC)) throw new TypeCheckError(`exp1: Expected LOGIC, got ${show(t1)}`);
+      //if (!compare(t2, LOGIC)) throw new TypeCheckError(`exp2: Expected LOGIC, got ${show(t2)}`);
+
+      console.log(ast.exp1, ast.exp2)
       ensure(ast.exp1, LOGIC);
       ensure(ast.exp2, LOGIC);
 
@@ -203,9 +210,9 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       const {type: t1, ..._rest1} = typeCheck(ast.exp1, fMap, vMap);
       const {type: t2, ..._rest2} = typeCheck(ast.exp2, fMap, vMap);
 
-      if (!compare(t1,t2)) throw new Error(`${show(t1)} and ${show(t2)} differ!`);
+      if (!compare(t1,t2)) throw new TypeCheckError(`${show(t1)} and ${show(t2)} differ!`, ast.exp1.token);
 
-      return {type: t1, fMap, vMap};
+      return {type: LOGIC, fMap, vMap};
     }
 
     case ASTKind.COMPREHENSION: {
@@ -236,7 +243,7 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
 
       const vType = vMap.get(ast.variable.name);
 
-      if (!vType) throw new Error(`Variable ${ast.variable.name} not found.`);
+      if (!vType) throw new TypeCheckError(`Variable ${ast.variable.name} not found.`, ast.token);
 
       return { type: vType, fMap, vMap };
     }
@@ -251,10 +258,10 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
 
       const aType = vMap.get(ast.arrayIndex.variable.name);
 
-      if (!aType) throw new Error(`Variable ${ast.arrayIndex.variable.name} not found.`);
+      if (!aType) throw new TypeCheckError(`Variable ${ast.arrayIndex.variable.name} not found.`, ast.token);
 
       if (!(aType instanceof ArrayType)) {
-        throw new Error(`Variable ${ast.arrayIndex.variable.name} expected to be ARRAY, but was ${show(aType)}`);
+        throw new TypeCheckError(`Variable ${ast.arrayIndex.variable.name} expected to be ARRAY, but was ${show(aType)}`, ast.token);
       }
 
       ensure(ast.value, aType.t);
@@ -265,7 +272,7 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
     case ASTKind.FUNCCALL: {
       const fMapEntry = fMap.get(ast.functionName);
 
-      if (!fMapEntry) throw new Error("Unknown function " + ast.functionName + ".");
+      if (!fMapEntry) throw new TypeCheckError("Unknown function " + ast.functionName + ".", ast.token);
 
       ast.parameters.forEach((param, idx) => {
         ensure(param, fMapEntry.parameters[idx].type)
@@ -318,7 +325,7 @@ const tc = (inp: string): TypeCheckResult => {
     return typeCheck(AST, new Map(), new Map());
   }
 
-  throw new Error("AST wasn't good.");
+  throw new TypeCheckError("AST wasn't good.");
 };
 
 function stc(inp: string): string {

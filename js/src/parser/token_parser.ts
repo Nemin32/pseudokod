@@ -212,6 +212,14 @@ class BaseDo<B extends Record<symbol | number | string, never>> {
     return new BaseDo(this.parsers.concat([parser]), this.names.concat([name]));
   }
 
+  bindT<BindName extends string>(
+    name: BindName,
+    token: TokenType,
+  ): BaseDo<B & Record<BindName, PseudoToken>> {
+    return this.bind(name, TokenToASTParser.matchToken(token))
+  }
+
+
   // deno-lint-ignore no-explicit-any
   ignore(parser: TokenToASTParser<any>): BaseDo<B> {
     return new BaseDo(this.parsers.concat([parser]), this.names.concat([""]));

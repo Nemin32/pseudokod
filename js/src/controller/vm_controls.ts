@@ -5,7 +5,7 @@ import { astToDiv, divMaker } from "../debug/ast_printer.ts";
 import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.ts";
 import { IVM, IBindings } from "../runtime/interfaces.ts";
 import { VM } from "../runtime/vm.ts";
-import { typeCheck } from "../typechecker/typecheck_v2.ts";
+import { TypeCheckError, typeCheck } from "../typechecker/typecheck_v2.ts";
 import { ByteCodeDumper } from "./bytecode_dumper.ts";
 import { colorize } from "./syntax_highlight.ts";
 
@@ -118,10 +118,14 @@ class MainDriver {
         this.vm = VM.init(this.byteCode, this.bindings);
         error.style.display = "none";
       } else {
-        throw new Error(AST.value + " : " + AST.where.index);
+        throw new Error(`(${AST.where.index}) AST Parsing error: ${AST.value}`);
       }
     } catch (e) {
-      error.querySelector("p")!.innerText = e.message;
+      if (e instanceof TypeCheckError) {
+        error.querySelector("p")!.innerText = `(${e?.token?.start}) Typechecking error: ${e.message}`
+      } else {
+        error.querySelector("p")!.innerText = e.message;
+      }
       error.style.display = "flex";
     }
   };
@@ -158,6 +162,10 @@ class MainDriver {
     } catch (e: unknown) {
       if (e instanceof TokenizeError) {
         const errorToken = tk.mkToken(TokenType.ERROR, e.input.slice(e.index), e.index)!;
+
+        console.error(e.message)
+        console.error(e.tokens)
+
         return e.tokens.concat(errorToken);
       } else {
         throw e;
