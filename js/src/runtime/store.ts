@@ -1,7 +1,189 @@
-import { AtomValue, Value } from "../compiler/pseudo_types.ts";
 import { Box } from "./box.ts";
 import { ArrayHead, IBox, IStore, NestedArray, NestedBoxArray, StoreValue } from "./interfaces.ts";
 
+enum MemCellType {
+  VALUE,
+  REFERENCE,
+}
+
+interface IMemCell {
+  id: number;
+  content: NestedArray;
+  next: IMemCell | null;
+  rc: number;
+  type: MemCellType;
+
+  shouldBeFreed(): boolean;
+  addReference(): void;
+  removeReference(): boolean;
+}
+
+interface IImmutableMemcell {
+  id: number;
+  content: NestedArray;
+  next: IMemCell | null;
+  rc: number;
+  type: MemCellType;
+
+  shouldBeFreed(): boolean;
+  addReference(): IImmutableMemcell;
+  removeReference(): [IImmutableMemcell, boolean];
+}
+
+interface IAllocator {
+  allocate(value: NestedArray): number;
+  reference(id: number): number;
+  deallocate(id: number): void;
+
+  gc(): void;
+  get(id: number, shouldDereference: boolean): IMemCell | null;
+  set(id: number, value: NestedArray): void;
+}
+
+interface IImmutableAllocator {
+  allocate(value: NestedArray): [IImmutableAllocator, number];
+  reference(id: number): [IImmutableAllocator, number];
+  deallocate(id: number): IImmutableAllocator;
+
+  gc(): IImmutableAllocator;
+  get(id: number, shouldDereference: boolean): IMemCell | null;
+  set(id: number, value: NestedArray): IImmutableAllocator;
+}
+
+class MemCell implements IMemCell {
+  next: IMemCell | null = null;
+  rc = 1;
+
+  constructor(readonly id: number, public content: NestedArray, public type: MemCellType) {}
+
+  shouldBeFreed(): boolean {
+    return this.rc == 0;
+  }
+
+  addReference(): void {
+    this.rc++;
+  }
+
+  removeReference(): boolean {
+    this.rc--;
+    return this.shouldBeFreed();
+  }
+}
+
+class Allocator implements IAllocator {
+  head: IMemCell | null = null;
+  id = 0;
+
+  allocate(value: NestedArray): number {
+    if (this.head) {
+      const tail = new MemCell(this.id++, value, MemCellType.VALUE);
+      tail.next = this.head;
+      this.head = tail;
+    } else {
+      this.head = new MemCell(this.id++, value, MemCellType.VALUE);
+    }
+
+    return this.head.id;
+  }
+
+  reference(id: number): number {
+    if (!this.head) throw new Error("Cannot make a reference with an empty list.");
+
+    const cell = this.get(id, false);
+    if (!cell) throw new Error(`Can't find MemCell with ID ${id}.`);
+    cell.addReference();
+
+    const tail = new MemCell(this.id++, id, MemCellType.REFERENCE);
+    tail.next = this.head;
+    this.head = tail;
+
+    return this.head.id;
+  }
+
+  deallocate(id: number): void {
+    const cell = this.get(id, false);
+    if (!cell) throw new Error(`Can't find MemCell with ID ${id}.`);
+    cell.removeReference();
+
+    if (cell.type == MemCellType.REFERENCE) {
+      this.get(cell.content as number, false)?.removeReference();
+    }
+  }
+
+  gc(): void {
+    while (this.head && this.head.rc == 0) {
+      this.head = this.head.next;
+    }
+
+    let current = this.head;
+
+    while (current != null) {
+      if (current.next?.shouldBeFreed()) {
+        current.next = current.next.next;
+      }
+
+      current = current.next;
+    }
+  }
+
+  get(id: number, shouldDereference: boolean): IMemCell | null {
+    let current = this.head;
+
+    while (current != null) {
+      if (current.id == id) {
+        if (!shouldDereference) return current;
+
+        if (current.type == MemCellType.REFERENCE) {
+          return this.get(current.content as number, true)
+        } else {
+          return current;
+        }
+      }
+      current = current.next;
+    }
+
+    return null;
+  }
+
+  set(id: number, value: NestedArray): void {
+    let current = this.head;
+
+    while (current != null) {
+      if (current.id == id) {
+        current.content = value;
+        return;
+      }
+      current = current.next;
+    }
+
+    throw new Error(`Can't find MemCell with ID ${id}`);
+  }
+
+  list(): void {
+    let current = this.head;
+
+    while (current != null) {
+      console.log(`${current.id}: [RC: ${current.rc}] ${current.type == MemCellType.VALUE ? "[VAL]" : "[PTR]"} ${current.content}`)
+
+      current = current.next
+    }
+  }
+}
+
+const alloc = new Allocator();
+alloc.allocate(123)
+alloc.allocate("hello")
+alloc.allocate([4,5,6])
+alloc.allocate(true)
+
+alloc.reference(1)
+alloc.reference(4)
+alloc.reference(5)
+alloc.reference(6)
+
+alloc.list()
+
+/*
 function splitArray<T>(array: T[], n: number): [T[], T, T[]] {
   return [array.slice(0, n), array[n], array.slice(n + 1)];
 }
