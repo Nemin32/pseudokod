@@ -295,10 +295,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
       len++;
     }
 
-    // if (this.index >= this.input.length) return null;
     if (len == 0) return null;
-
-    console.log(this.row, this.column, this.index)
 
     return this.mkToken(TokenType.WHITESPACE, '\n'.repeat(len))
   }

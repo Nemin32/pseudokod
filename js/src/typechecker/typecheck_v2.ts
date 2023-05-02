@@ -235,7 +235,11 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
     case ASTKind.FOR: {
       ensure(ast.from, NUMBER);
       ensure(ast.to, NUMBER);
-      return typeCheck(ast.body, fMap, vMap);
+
+      const nvMap = new Map(vMap);
+      nvMap.set(ast.variable.name, NUMBER)
+
+      return typeCheck(ast.body, fMap, nvMap);
     }
 
     case ASTKind.ARRINDEX: {
@@ -244,8 +248,9 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       const vType = vMap.get(ast.variable.name);
 
       if (!vType) throw new TypeCheckError(`Variable ${ast.variable.name} not found.`, ast.token);
+      if (!(vType instanceof ArrayType)) throw new TypeCheckError(`Variable ${ast.variable.name} was not ARRAY, but ${show(vType)}.`, ast.token);
 
-      return { type: vType, fMap, vMap };
+      return { type: ast.variable.isReference ? new ReferenceType(vType.t) : vType.t, fMap, vMap };
     }
 
     case ASTKind.ARRASSIGN: {
@@ -297,7 +302,7 @@ export function typeCheck(ast: AST, fMap: FunctionTypeMap, vMap: VariableTypeMap
       const [rType, isArr] = ast.type.split(" ")
 
       const baseType = rType == "egész" ? NUMBER : rType == "szöveg" ? STRING : LOGIC;
-      const type = isArr ? new ArrayType(baseType) : baseType;
+      const type = (isArr == "tömb") ? new ArrayType(baseType) : baseType;
 
       return {type: ast.byReference ? new ReferenceType(type) : type, fMap, vMap};
     }

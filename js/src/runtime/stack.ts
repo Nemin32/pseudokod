@@ -1,4 +1,4 @@
-import { IStack, NestedArray, StringToType } from "./interfaces";
+import { IStack, NestedArray, StringToType } from "./interfaces.ts";
 
 export class Stack implements IStack {
   private constructor(private stack: Readonly<Array<NestedArray>> = []) {}
@@ -27,7 +27,7 @@ export class Stack implements IStack {
 
     const [val, ...rest] = this.stack;
 
-    if (this.checkType(type, val)) {
+    if (!this.checkType(type, val)) {
       throw new Error("Expected type was " + type + ", but received " + typeof val + ".");
     }
 

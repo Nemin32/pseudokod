@@ -122,7 +122,7 @@ class MainDriver {
       }
     } catch (e) {
       if (e instanceof TypeCheckError) {
-        error.querySelector("p")!.innerText = `(${e?.token?.start}) Typechecking error: ${e.message}`
+        error.querySelector("p")!.innerText = `(${(e?.token?.line ?? 0)+1}:${(e?.token?.column ?? 0)+1}) Typechecking error: ${e.message}`
       } else {
         error.querySelector("p")!.innerText = e.message;
       }

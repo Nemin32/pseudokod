@@ -82,11 +82,11 @@ Egy változó bármely adattípust képes eltárolni. Ha egy változó értéké
 ### Tömbök
 
     <array_create> ::= <variable> '<-' 'Létrehoz[' <type> '](' <expression> ')'
-    <array_index> ::= <variable> '[' <expression> ']'
+    <array_index> ::= <variable> '[' <expression> (',' <expression>)* ']'
     <array_set> ::= <variable '[' <expression> ']' '<-' <expression>
     <array_shorthand> ::= '(' <expression> (',' <expression>)* ')'
 
-Tömböket kétféleképp deklarálhatunk a Pszeudokód nyelvben. Egyrészt készítetünk megadott ŧípussal és hosszal rendelkező tömböt, mely ekkor a típusnak megfelelő üres értékekkel töltődik fel (0 szám, "" szöveg, és hamis logikai érték esetén). Másrészt lehetőségünk van kézzel megadni a tömb elemeit. Ezesetben a típusoknak nem feltétlen kell egyezniük.
+Tömböket kétféleképp deklarálhatunk a Pszeudokód nyelvben. Egyrészt készítetünk megadott ŧípussal és hosszal rendelkező tömböt, mely ekkor a típusnak megfelelő üres értékekkel töltődik fel (0 szám, "" szöveg, és hamis logikai érték esetén). Másrészt lehetőségünk van kézzel megadni a tömb elemeit. Ezesetben a típusoknak nem feltétlen kell egyezniük. Tömbök értékeinek lekérése esetén nem a C-ből megszokott `tömb[x][y]` szintaxist használjuk, hanem ehelyett a C#-ból ismert `tömb[x, y]`-t.
 
 ### Cím lekérése
 
