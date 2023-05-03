@@ -16,6 +16,8 @@ interface IMemCell {
   shouldBeFreed(): boolean;
   addReference(): void;
   removeReference(): boolean;
+
+  clone(): IMemCell
 }
 
 interface IImmutableMemcell {
@@ -38,6 +40,8 @@ interface IAllocator {
   gc(): void;
   get(id: number, shouldDereference: boolean): IMemCell | null;
   set(id: number, value: NestedArray): void;
+
+  clone(): IAllocator
 }
 
 interface IImmutableAllocator {
@@ -67,6 +71,13 @@ class MemCell implements IMemCell {
   removeReference(): boolean {
     this.rc--;
     return this.shouldBeFreed();
+  }
+
+  clone(): IMemCell {
+      const newCell = new MemCell(this.id, structuredClone(this.content), this.type)
+      newCell.next = (this.next == null) ? null : this.next.clone();
+
+      return newCell;
   }
 }
 
@@ -167,6 +178,14 @@ class Allocator implements IAllocator {
 
       current = current.next
     }
+  }
+
+  clone(): IAllocator {
+    const newA = new Allocator()
+    newA.id = this.id;
+    newA.head = (this.head == null) ? null : this.head.clone();
+
+    return newA;
   }
 }
 
