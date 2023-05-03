@@ -13,7 +13,7 @@ export class Stack implements IStack {
   }
 
   push(val: NestedArray): IStack {
-    return new Stack([...this.stack, val]);
+    return new Stack([val, ...this.stack]);
   }
 
   private checkType<K extends keyof StringToType>(type: K, value: NestedArray): value is StringToType[K] {

@@ -1,12 +1,12 @@
-import { AtomValue } from "../compiler/pseudo_types";
-import { EnvVar, IVariableStore } from "./interfaces";
-import { ImmutableStore } from "./store";
+import { AtomValue } from "../compiler/pseudo_types.ts";
+import { EnvVar, IVariableStore } from "./interfaces.ts";
+import { MemAllocator } from "./store.ts";
 
 export class VariableStore implements IVariableStore {
   private constructor(readonly variables: EnvVar[]) {}
   public static init() {return new VariableStore([]);}
 
-  getVariable(store: ImmutableStore, name: string) {
+  getVariable(store: MemAllocator, name: string) {
     const index = this.getBoxIndex(name);
     const value = store.get(index);
 
@@ -27,18 +27,18 @@ export class VariableStore implements IVariableStore {
     return index;
   }
 
-  setVariable(store: ImmutableStore, name: string, value: AtomValue): [ImmutableStore, VariableStore] {
+  setVariable(store: MemAllocator, name: string, value: AtomValue): [MemAllocator, VariableStore] {
     const idx = this.lookup(name);
 
     if (idx != null) {
-      const newStore = store.set(idx, value);
-      return [newStore, this];
+      store.set(idx, value);
+      return [store, this];
     }
 
-    const [newStore, index] = store.add(value);
+    const index = store.alloc(value);
 
     return [
-      newStore,
+      store,
       new VariableStore([...this.variables, {kind: "value", name, points: index}])
     ]
   }

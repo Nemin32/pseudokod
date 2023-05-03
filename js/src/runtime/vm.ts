@@ -2,7 +2,7 @@ import { ByteCode, OpCode } from "../compiler/opcodes.ts";
 import { VariableStore } from "./environment.ts";
 import { IBindings, IVM, State } from "./interfaces.ts";
 import { Stack } from "./stack.ts";
-import { ImmutableStore } from "./store.ts";
+import { MemAllocator } from "./store.ts";
 
 function handleCalc(exp1: number, exp2: number, op: string): number {
   switch (op as string) {
@@ -58,7 +58,7 @@ export class VM implements IVM {
   static generateInitialState(): State {
     return {
       stack: Stack.init(),
-      store: ImmutableStore.init(),
+      store: new MemAllocator(),// ImmutableStore.init(),
       variables: VariableStore.init(),
       ipStack: [],
       ip: 0,
@@ -85,8 +85,9 @@ export class VM implements IVM {
     return newAddr;
   }
 
-  execute(lastState: State, instruction: ByteCode): State {
-    const { stack, store, variables, ipStack, ip, stopped } = lastState;
+  execute(_lastState: State, instruction: ByteCode): State {
+    const lastState = {..._lastState, store: _lastState.store.clone()}
+    const { stack, store, variables, ipStack, ip, stopped: _stopped } = lastState;
     const { opCode, payload } = instruction;
 
     switch (opCode) {
@@ -166,12 +167,13 @@ export class VM implements IVM {
 
         if (newAddress === undefined) throw new Error("IP Stack was empty!");
 
-        const [value, newStack] = payload == null ? stack.pop("any") : [null, stack];
+        const newVars = variables.leaveScope();
 
-        if (value == null) {
-          return { ...lastState, stack: newStack, ipStack: ipStack.slice(0, -1), ip: newAddress };
+        if (payload == null) {
+          const [_value, newStack] = stack.pop("any") 
+          return { ...lastState, variables: newVars, stack: newStack, ipStack: ipStack.slice(0, -1), ip: newAddress };
         } else {
-          return { ...lastState, stack: newStack, ipStack: ipStack.slice(0, -1), ip: newAddress };
+          return { ...lastState, variables: newVars, ipStack: ipStack.slice(0, -1), ip: newAddress };
         }
       }
 
@@ -179,26 +181,37 @@ export class VM implements IVM {
         return { ...lastState, stack: stack.push(variables.getBoxIndex(payload as string)), ip: ip + 1 };
 
       case OpCode.ARRADDR: {
+        console.log(stack)
         const [offset, newStack] = stack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
 
-        return { ...lastState, stack: newStack.push(store.getArrayElementBoxIndex(headIdx, offset)), ip: ip + 1 };
+        console.log(headIdx, offset)
+
+        //return { ...lastState, stack: newStack.push(store.get(headIdx + offset, false)!.content), ip: ip + 1 };
+
+        const arr = store.find(headIdx);
+        console.log(arr.children[offset-1].id)
+        return { ...lastState, stack: newStack.push(arr.children[offset-1].id), ip: ip + 1 };
       }
 
       case OpCode.GETARR: {
         const [offset, newStack] = stack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
 
-        return { ...lastState, stack: newStack.push(store.getArrayElement(headIdx, offset - 1) as any), ip: ip + 1 };
+        const arr = store.get(headIdx)
+        if (!Array.isArray(arr)) throw new Error(`${headIdx} was not array.`);
+        
+        return { ...lastState, stack: newStack.push(arr[offset-1]), ip: ip + 1 };
       }
 
       case OpCode.SETARR: {
-        const [offset, newStack] = stack.pop("number");
-        const [value, newStack2] = newStack.pop("any");
+        const [value, newStack] = stack.pop("any");
+        const [offset, newStack2] = newStack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
-        const arrayIndex = store.getArrayElementBoxIndex(headIdx, offset - 1);
 
-        return { ...lastState, stack: newStack2, store: store.set(arrayIndex, value), ip: ip + 1 };
+        store.setArr(headIdx, [offset-1], value);
+
+        return { ...lastState, stack: newStack2, ip: ip + 1 };
       }
 
       case OpCode.VALARR: {

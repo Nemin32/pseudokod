@@ -214,26 +214,26 @@ class MemBlock {
     public children: MemBlock[] = []
   ) {}
 
-  copy(prev: number | null): MemBlock {
-    return new MemBlock(this.id, this.length, this.index, prev, this.next?.copy(this.id), this.children.map(c => c.copy(c.previous)))
+  clone(prev: number | null): MemBlock {
+    return new MemBlock(this.id, this.length, this.index, prev, this.next?.clone(this.id), this.children.map(c => c.clone(c.previous)))
   }
 }
 
 class MemCell {
   public constructor(public rc: number, public content: AtomValue) {}
 
-  copy(): MemCell {return new MemCell(this.rc, this.content)}
+  clone(): MemCell {return new MemCell(this.rc, this.content)}
 }
 
-class MemAllocator {
+export class MemAllocator {
   constructor(
   public head: MemBlock | null = null,
   public memory: (MemCell | null)[] = [],
   public id = 0,
   ) {}
 
-  copy(): MemAllocator {
-    return new MemAllocator(this.head?.copy(null), this.memory.map(m => m?.copy() ?? null), this.id);
+  public clone(): MemAllocator {
+    return new MemAllocator(this.head?.clone(null), this.memory.map(m => m?.clone() ?? null), this.id);
   }
 
   private copyJSIntoMemory(value: NestedArray, start: number, _needsBlock: boolean): MemBlock[] {
@@ -389,7 +389,7 @@ console.log("Setting arr[1,1] to 99.")
 alloc.setArr(8, [1,1], 99)
 console.log("Post-set:", alloc.memory)
 
-const newAlloc = alloc.copy()
+const newAlloc = alloc.clone()
 alloc.dealloc(8, true)
 alloc.gc()
 

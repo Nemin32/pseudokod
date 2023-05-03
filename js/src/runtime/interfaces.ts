@@ -1,5 +1,6 @@
 import { ByteCode } from "../compiler/opcodes.ts";
 import { AtomValue } from "../compiler/pseudo_types.ts";
+import { MemAllocator } from "./store.ts";
 
 export type NestedArray = AtomValue | (AtomValue | NestedArray)[];
 
@@ -41,10 +42,10 @@ export type EnvVar = Sentinel | EnvValue;
 export interface IVariableStore {
   enterScope(boundary: boolean): IVariableStore
   getBoxIndex(name: string): number 
-  getVariable(store: IStore, name: string): NestedArray
+  getVariable(store: MemAllocator, name: string): NestedArray
   leaveScope(): IVariableStore
   makeReference(oldName: string | number, newName: string): IVariableStore
-  setVariable(store: IStore, name: string, value: AtomValue): [IStore, IVariableStore] 
+  setVariable(store: MemAllocator, name: string, value: AtomValue): [MemAllocator, IVariableStore] 
 }
 //#endregion
 
@@ -77,7 +78,7 @@ export interface IBindings {
 
 export type State = Readonly<{
   stack: IStack;
-  store: IStore;
+  store: MemAllocator;
   variables: IVariableStore;
   ipStack: Array<number>;
   ip: number;
