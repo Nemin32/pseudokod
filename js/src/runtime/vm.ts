@@ -1,6 +1,6 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.ts";
 import { VariableStore } from "./environment.ts";
-import { IBindings, IVM, State } from "./interfaces.ts";
+import { IBindings, IVM, NestedArray, State } from "./interfaces.ts";
 import { Stack } from "./stack.ts";
 import { MemAllocator } from "./store.ts";
 
@@ -200,6 +200,9 @@ export class VM implements IVM {
 
         const arr = store.get(headIdx)
         if (!Array.isArray(arr)) throw new Error(`${headIdx} was not array.`);
+
+        if (offset - 1 >= arr.length) throw new Error("Out of bounds.");
+        
         
         return { ...lastState, stack: newStack.push(arr[offset-1]), ip: ip + 1 };
       }
@@ -227,10 +230,10 @@ export class VM implements IVM {
 
         arr.reverse();
 
-        return { ...lastState, stack: curr_stack.push(arr as any), ip: ip + 1 };
+        return { ...lastState, stack: curr_stack.push(arr as NestedArray), ip: ip + 1 };
       }
       case OpCode.MKARR:
-        return { ...lastState, stack: stack.push(Array(payload as number).fill(0) as any), ip: ip + 1 };
+        return { ...lastState, stack: stack.push(Array(payload as number).fill(0) as number[]), ip: ip + 1 };
 
       case OpCode.MKREF: {
         const [source, newStack] = stack.pop("any");
@@ -242,7 +245,8 @@ export class VM implements IVM {
       }
 
       case OpCode.GETVAR:
-        return { ...lastState, stack: stack.push(variables.getVariable(store, payload as string) as any), ip: ip + 1 };
+        return { ...lastState, stack: stack.push(variables.getVariable(store, payload as string)), ip: ip + 1 };
+
       case OpCode.SETVAR: {
         const [value, newStack] = stack.pop("any");
         const [newStore, newVars] = variables.setVariable(store, payload as string, value);

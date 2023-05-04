@@ -131,9 +131,18 @@ class MainDriver {
   };
 
   public onRun = () => {
+    const error = this.getElem(domElemName.error);
+
     if (this.vm) {
+      try {
       this.vm.run();
       this.dumper.setHighlight(this.vm.lastState().ip);
+        error.querySelector("p")!.innerText = "";
+      error.style.display = "none";
+      } catch(e) {
+        error.querySelector("p")!.innerText = e.message;
+      error.style.display = "flex";
+      }
     }
   };
 
@@ -162,9 +171,6 @@ class MainDriver {
     } catch (e: unknown) {
       if (e instanceof TokenizeError) {
         const errorToken = tk.mkToken(TokenType.ERROR, e.input.slice(e.index), e.index)!;
-
-        console.error(e.message)
-        console.error(e.tokens)
 
         return e.tokens.concat(errorToken);
       } else {
