@@ -1,4 +1,4 @@
-import { Atom } from "./pseudo_types.ts";
+import { AST, Atom, Block, Parameter } from "./pseudo_types.ts";
 
 export enum OpCode {
   CALC,
@@ -31,4 +31,5 @@ export enum OpCode {
 export type ByteCode = {
   opCode: OpCode;
   payload: Atom["value"] | null;
+  ast: Exclude<AST, Block | Parameter[]>
 };

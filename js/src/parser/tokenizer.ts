@@ -288,7 +288,7 @@ export class Tokenizer extends SimpleParser<PseudoToken> {
   parseNewLine(): PseudoToken | null {
     let len = 0;
 
-    while (this.index < this.input.length && this.input[this.index] == "\n") {
+    if (this.index < this.input.length && this.input[this.index] == "\n") {
       this.row++;
       this.column = 0;
       this.index++;

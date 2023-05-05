@@ -1,4 +1,6 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.ts";
+import { VM } from "../runtime/vm.ts";
+import { MainDriver } from "./vm_controls.ts";
 
 export class ByteCodeDumper {
   spans: HTMLSpanElement[] = [];
@@ -6,7 +8,7 @@ export class ByteCodeDumper {
 
   indent = -2;
 
-  private generateSpan(idx: number, bc: ByteCode): HTMLSpanElement {
+  private generateSpan(idx: number, bc: ByteCode, driver: MainDriver): HTMLSpanElement {
     const span = document.createElement("span");
     const pre = document.createElement("pre");
     span.appendChild(pre);
@@ -25,11 +27,13 @@ export class ByteCodeDumper {
       this.indent -= 2;
     }
 
+    span.addEventListener("mouseover", () => {driver.highlighted = bc.ast.token.line; driver.onInput();})
+
     return span;
   }
 
-  generateSpans(byteCode: ByteCode[]) {
-    this.spans = byteCode.map((bc, idx) => this.generateSpan(idx, bc));
+  generateSpans(byteCode: ByteCode[], driver: MainDriver) {
+    this.spans = byteCode.map((bc, idx) => this.generateSpan(idx, bc, driver));
     this.setHighlight(0);
   }
 

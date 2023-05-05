@@ -6,6 +6,7 @@ import {
   ArrayElementAssignment,
   ArrayIndex,
   Assignment,
+  AST,
   ASTKind,
   Atom,
   Block,
@@ -38,12 +39,12 @@ export class ASTCompiler {
     return comp.bytecode;
   }
 
-  createOp(op: OpCode, payload: ByteCode["payload"]) {
-    this.bytecode.push({ opCode: op, payload });
+  createOp(op: OpCode, payload: ByteCode["payload"], ast: Exclude<AST, Block | Parameter[]>) {
+    this.bytecode.push({ opCode: op, payload, ast });
   }
 
-  visitDebug(_ast: Debug) {
-    this.createOp(OpCode.DEBUG, null);
+  visitDebug(ast: Debug) {
+    this.createOp(OpCode.DEBUG, null, ast);
   }
 
   /* Expressions */
@@ -51,50 +52,50 @@ export class ASTCompiler {
     this.visitExpression(ast.exp1);
     this.visitExpression(ast.exp2);
 
-    this.createOp(OpCode.CALC, ast.op);
+    this.createOp(OpCode.CALC, ast.op, ast);
   }
 
   visitComparison(ast: Comparison) {
     this.visitExpression(ast.exp1);
     this.visitExpression(ast.exp2);
 
-    this.createOp(OpCode.COMP, ast.op);
+    this.createOp(OpCode.COMP, ast.op, ast);
   }
 
   visitLogicBinOp(ast: LogicBinOp) {
     this.visitExpression(ast.exp1);
     this.visitExpression(ast.exp2);
 
-    this.createOp(OpCode.LOGIC, ast.op);
+    this.createOp(OpCode.LOGIC, ast.op, ast);
   }
 
   visitArrayComprehension(ast: ArrayComprehension) {
     ast.exps.forEach((e) => this.visitExpression(e));
-    this.createOp(OpCode.VALARR, ast.exps.length);
+    this.createOp(OpCode.VALARR, ast.exps.length, ast);
   }
 
   visitArrayIndex(ast: ArrayIndex) {
     //this.visitVariable(ast.variable);
     this.visitExpression(ast.index);
-    this.createOp(ast.variable.isReference ? OpCode.ARRADDR : OpCode.GETARR, ast.variable.name);
+    this.createOp(ast.variable.isReference ? OpCode.ARRADDR : OpCode.GETARR, ast.variable.name, ast);
   }
 
   visitFunctionCall(ast: FunctionCall) {
     ast.parameters.forEach((e) => this.visitExpression(e));
-    this.createOp(OpCode.CALL, ast.functionName);
+    this.createOp(OpCode.CALL, ast.functionName, ast);
   }
 
   visitNot(ast: Not) {
     this.visitExpression(ast.exp);
-    this.createOp(OpCode.NOT, null);
+    this.createOp(OpCode.NOT, null, ast);
   }
 
   visitAtom(ast: Atom) {
-    this.createOp(OpCode.PUSH, ast.value);
+    this.createOp(OpCode.PUSH, ast.value, ast);
   }
 
   visitVariable(ast: Variable) {
-    this.createOp(ast.isReference ? OpCode.ADDRESS : OpCode.GETVAR, ast.name);
+    this.createOp(ast.isReference ? OpCode.ADDRESS : OpCode.GETVAR, ast.name, ast);
   }
 
   visitValue(ast: Value) {
@@ -109,19 +110,19 @@ export class ASTCompiler {
   /* Statements */
   visitArrayAssignment(ast: ArrayAssignment) {
     this.visitExpression(ast.length);
-    this.createOp(OpCode.MKARR, ast.variable.name);
-    //this.createOp(OpCode.SETVAR, ast.variable.name);
+    this.createOp(OpCode.MKARR, ast.variable.name, ast);
+    //this.createOp(OpCode.SETVAR, ast.variable.name, ast);
   }
 
   visitArrayElementAssignment(ast: ArrayElementAssignment) {
     this.visitExpression(ast.value);
     this.visitExpression(ast.arrayIndex.index);
-    this.createOp(OpCode.SETARR, ast.arrayIndex.variable.name);
+    this.createOp(OpCode.SETARR, ast.arrayIndex.variable.name, ast);
   }
 
   visitAssignment(ast: Assignment) {
     this.visitExpression(ast.value);
-    this.createOp(OpCode.SETVAR, ast.variable.name);
+    this.createOp(OpCode.SETVAR, ast.variable.name, ast);
   }
 
   visitFor(ast: For) {
@@ -129,44 +130,44 @@ export class ASTCompiler {
 
     const varName = ast.variable.name;
 
-    this.createOp(OpCode.ESCOPE, null);
+    this.createOp(OpCode.ESCOPE, null, ast);
 
     // From...
     this.visitExpression(ast.from);
-    this.createOp(OpCode.SETVAR, varName);
+    this.createOp(OpCode.SETVAR, varName, ast);
 
     // To...
-    this.createOp(OpCode.LABEL, "for_" + label);
+    this.createOp(OpCode.LABEL, "for_" + label, ast);
 
-    this.createOp(OpCode.GETVAR, varName);
+    this.createOp(OpCode.GETVAR, varName, ast);
     this.visitExpression(ast.to);
-    this.createOp(OpCode.COMP, "<=");
+    this.createOp(OpCode.COMP, "<=", ast);
 
-    this.createOp(OpCode.FJMP, "for_end_" + label);
+    this.createOp(OpCode.FJMP, "for_end_" + label, ast);
 
     this.visitBlock(ast.body);
 
     // var := var + 1
-    this.createOp(OpCode.GETVAR, varName);
-    this.createOp(OpCode.PUSH, 1);
-    this.createOp(OpCode.CALC, "+");
-    this.createOp(OpCode.SETVAR, varName);
+    this.createOp(OpCode.GETVAR, varName, ast);
+    this.createOp(OpCode.PUSH, 1, ast);
+    this.createOp(OpCode.CALC, "+", ast);
+    this.createOp(OpCode.SETVAR, varName, ast);
 
-    this.createOp(OpCode.JMP, "for_" + label);
-    this.createOp(OpCode.LABEL, "for_end_" + label);
-    this.createOp(OpCode.LSCOPE, null);
+    this.createOp(OpCode.JMP, "for_" + label, ast);
+    this.createOp(OpCode.LABEL, "for_end_" + label, ast);
+    this.createOp(OpCode.LSCOPE, null, ast);
   }
 
   visitDoWhile(ast: DoWhile) {
     const label = ++this.labelId;
 
-    this.createOp(OpCode.LABEL, "do_while_" + label);
+    this.createOp(OpCode.LABEL, "do_while_" + label, ast);
 
     this.visitBlock(ast.body);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.TJMP, "do_while_" + label);
+    this.createOp(OpCode.TJMP, "do_while_" + label, ast);
   }
 
   visitExpression(ast: Expression) {
@@ -197,17 +198,17 @@ export class ASTCompiler {
 
   visitParameter(ast: Parameter) {
     if (ast.byReference) {
-      this.createOp(OpCode.MKREF, ast.name);
+      this.createOp(OpCode.MKREF, ast.name, ast);
     } else {
-      this.createOp(OpCode.SETVAR, ast.name);
+      this.createOp(OpCode.SETVAR, ast.name, ast);
     }
   }
 
   visitFunctionDeclaration(ast: FunctionDeclaration) {
-    this.createOp(OpCode.JMP, ast.name + "_end");
-    this.createOp(OpCode.LABEL, ast.name);
+    this.createOp(OpCode.JMP, ast.name + "_end", ast);
+    this.createOp(OpCode.LABEL, ast.name, ast);
 
-    this.createOp(OpCode.ESCOPE, "func");
+    this.createOp(OpCode.ESCOPE, "func", ast);
 
     Array.from(ast.parameters)
       .reverse()
@@ -217,11 +218,11 @@ export class ASTCompiler {
       this.visitStatement(stmt);
     }
 
-    this.createOp(OpCode.LSCOPE, null);
+    this.createOp(OpCode.LSCOPE, null, ast);
 
-    this.createOp(OpCode.RETURN, null);
+    this.createOp(OpCode.RETURN, null, ast);
 
-    this.createOp(OpCode.LABEL, ast.name + "_end");
+    this.createOp(OpCode.LABEL, ast.name + "_end", ast);
   }
 
   visitIf(ast: If) {
@@ -229,23 +230,23 @@ export class ASTCompiler {
 
     // Head
     this.visitExpression(ast.headBranch.pred);
-    this.createOp(OpCode.FJMP, "else_" + headId);
+    this.createOp(OpCode.FJMP, "else_" + headId, ast);
 
     this.visitBlock(ast.headBranch.body);
-    this.createOp(OpCode.JMP, "if_end_" + headId);
+    this.createOp(OpCode.JMP, "if_end_" + headId, ast);
 
     // Else If
-    this.createOp(OpCode.LABEL, "else_" + headId);
+    this.createOp(OpCode.LABEL, "else_" + headId, ast);
     for (const elIf of ast.elIfs) {
       const label = ++this.labelId;
 
       this.visitExpression(elIf.pred);
-      this.createOp(OpCode.FJMP, "if_else_" + label);
+      this.createOp(OpCode.FJMP, "if_else_" + label, ast);
 
       this.visitBlock(elIf.body);
 
-      this.createOp(OpCode.JMP, "if_end_" + headId);
-      this.createOp(OpCode.LABEL, "if_else_" + label);
+      this.createOp(OpCode.JMP, "if_end_" + headId, ast);
+      this.createOp(OpCode.LABEL, "if_else_" + label, ast);
     }
 
     // Else
@@ -253,17 +254,17 @@ export class ASTCompiler {
       this.visitBlock(ast.elseBranch);
     }
 
-    this.createOp(OpCode.LABEL, "if_end_" + headId);
+    this.createOp(OpCode.LABEL, "if_end_" + headId, ast);
   }
 
   visitBlock(ast: Block) {
-    this.createOp(OpCode.ESCOPE, null);
+    this.createOp(OpCode.ESCOPE, null, ast[0]);
 
     for (const stmt of ast) {
       this.visitStatement(stmt);
     }
 
-    this.createOp(OpCode.LSCOPE, null);
+    this.createOp(OpCode.LSCOPE, null, ast[ast.length-1]);
   }
 
   visitStatement(ast: Statement) {
@@ -288,7 +289,7 @@ export class ASTCompiler {
         return this.visitFor(ast);
       case ASTKind.FUNCCALL: {
         this.visitFunctionCall(ast);
-        return this.createOp(OpCode.VOID, null);
+        return this.createOp(OpCode.VOID, null, ast);
       }
       case ASTKind.FUNCDECL:
         return this.visitFunctionDeclaration(ast);
@@ -315,27 +316,27 @@ export class ASTCompiler {
 
   visitPrint(ast: Print) {
     this.visitExpression(ast.value);
-    this.createOp(OpCode.PRINT, null);
+    this.createOp(OpCode.PRINT, null, ast);
   }
 
   visitReturn(ast: Return) {
     this.visitExpression(ast.value);
-    this.createOp(OpCode.RETURN, "exp");
+    this.createOp(OpCode.RETURN, "exp", ast);
   }
 
   visitWhile(ast: While) {
     const label = ++this.labelId;
 
-    this.createOp(OpCode.LABEL, "wpred_" + label);
+    this.createOp(OpCode.LABEL, "wpred_" + label, ast);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.FJMP, "wend_" + label);
+    this.createOp(OpCode.FJMP, "wend_" + label, ast);
 
     this.visitBlock(ast.body);
 
-    this.createOp(OpCode.JMP, "wpred_" + label);
+    this.createOp(OpCode.JMP, "wpred_" + label, ast);
 
-    this.createOp(OpCode.LABEL, "wend_" + label);
+    this.createOp(OpCode.LABEL, "wend_" + label, ast);
   }
 }

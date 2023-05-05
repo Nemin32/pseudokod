@@ -23,6 +23,8 @@ const enum domElemName {
   lineStepButton = "#stepLine",
   runButton = "#run",
 
+  lineNumbers = "#lineNumbers",
+
   /* Program output */
   standardOutput = "#output div",
   vmInstructions = "#code div",
@@ -33,7 +35,7 @@ const enum domElemName {
   error = "#error"
 }
 
-class MainDriver {
+export class MainDriver {
   getElem = <T extends HTMLElement = HTMLElement>(name: domElemName): T => {
     const elem = this.domElems.get(name) ?? document.querySelector<T>(name);
 
@@ -75,6 +77,8 @@ class MainDriver {
 
   private constructor() {}
 
+  highlighted = 0;
+
   public attach = () => {
     this.getElem(domElemName.codeInput).addEventListener("input", this.onInput);
     this.getElem(domElemName.codeInput).addEventListener("scroll", this.onScroll);
@@ -89,12 +93,14 @@ class MainDriver {
   public onInput = () => {
     const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
     const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
+    const linums = this.getElem<HTMLDivElement>(domElemName.lineNumbers)
 
     // Tokenize
     this.tokens = this.tokenize(input);
 
+    console.log(this.highlighted)
     // Colorize
-    colorize(syntax, this.tokens);
+    colorize(syntax, linums, this.tokens, {hover: this.highlighted, active: this.vm?.fetch().ast.token.line ?? -1});
   };
 
   public onCompile = () => {
@@ -112,7 +118,7 @@ class MainDriver {
         this.byteCode = ASTCompiler.compile(AST.value);
         this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST.value)));
 
-        this.dumper.generateSpans(this.byteCode);
+        this.dumper.generateSpans(this.byteCode, this);
         this.dumper.show(this.getElem(domElemName.vmInstructions));
 
         this.vm = VM.init(this.byteCode, this.bindings);
@@ -150,6 +156,7 @@ class MainDriver {
     if (this.vm) {
       this.vm.step();
       this.dumper.setHighlight(this.vm.lastState().ip);
+      this.onInput()
     }
   };
 
@@ -158,8 +165,9 @@ class MainDriver {
   public onScroll = () => {
     const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
     const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
+    const lines = this.getElem<HTMLDivElement>(domElemName.lineNumbers)
 
-    syntax.scrollTop = input.scrollTop;
+    lines.scrollTop = syntax.scrollTop = input.scrollTop;
   };
 
   private tokenize = (inputElem: HTMLTextAreaElement): PseudoToken[] => {

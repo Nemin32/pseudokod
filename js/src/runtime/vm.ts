@@ -1,4 +1,6 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.ts";
+import { AST, Block, Parameter } from "../compiler/pseudo_types.ts";
+import { PseudoToken } from "../parser/tokenizer.ts";
 import { VariableStore } from "./environment.ts";
 import { IBindings, IVM, NestedArray, State } from "./interfaces.ts";
 import { Stack } from "./stack.ts";
@@ -51,6 +53,15 @@ function handleLogic(exp1: boolean, exp2: boolean, op: string): boolean {
   }
 }
 
+class VMError extends Error {
+  token: PseudoToken;
+
+  constructor(ast: Exclude<AST, Block | Parameter[]>, message: string) {
+    super(message);
+    this.token = ast.token;
+  }
+}
+
 export class VM implements IVM {
   jumpTable = new Map<string, number>();
   private constructor(private tape: Array<ByteCode>, private states: Array<State>, private bindings: IBindings) {}
@@ -58,7 +69,7 @@ export class VM implements IVM {
   static generateInitialState(): State {
     return {
       stack: Stack.init(),
-      store: new MemAllocator(),// ImmutableStore.init(),
+      store: new MemAllocator(), // ImmutableStore.init(),
       variables: VariableStore.init(),
       ipStack: [],
       ip: 0,
@@ -86,7 +97,7 @@ export class VM implements IVM {
   }
 
   execute(_lastState: State, instruction: ByteCode): State {
-    const lastState = {..._lastState, store: _lastState.store.clone()}
+    const lastState = { ..._lastState, store: _lastState.store.clone() };
     const { stack, store, variables, ipStack, ip, stopped: _stopped } = lastState;
     const { opCode, payload } = instruction;
 
@@ -170,7 +181,7 @@ export class VM implements IVM {
         const newVars = variables.leaveScope();
 
         if (payload == null) {
-          const [_value, newStack] = stack.pop("any") 
+          const [_value, newStack] = stack.pop("any");
           return { ...lastState, variables: newVars, stack: newStack, ipStack: ipStack.slice(0, -1), ip: newAddress };
         } else {
           return { ...lastState, variables: newVars, ipStack: ipStack.slice(0, -1), ip: newAddress };
@@ -181,30 +192,29 @@ export class VM implements IVM {
         return { ...lastState, stack: stack.push(variables.getBoxIndex(payload as string)), ip: ip + 1 };
 
       case OpCode.ARRADDR: {
-        console.log(stack)
+        console.log(stack);
         const [offset, newStack] = stack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
 
-        console.log(headIdx, offset)
+        console.log(headIdx, offset);
 
         //return { ...lastState, stack: newStack.push(store.get(headIdx + offset, false)!.content), ip: ip + 1 };
 
         const arr = store.find(headIdx);
-        console.log(arr.children[offset-1].id)
-        return { ...lastState, stack: newStack.push(arr.children[offset-1].id), ip: ip + 1 };
+        console.log(arr.children[offset - 1].id);
+        return { ...lastState, stack: newStack.push(arr.children[offset - 1].id), ip: ip + 1 };
       }
 
       case OpCode.GETARR: {
         const [offset, newStack] = stack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
 
-        const arr = store.get(headIdx)
+        const arr = store.get(headIdx);
         if (!Array.isArray(arr)) throw new Error(`${headIdx} was not array.`);
 
         if (offset - 1 >= arr.length) throw new Error("Out of bounds.");
-        
-        
-        return { ...lastState, stack: newStack.push(arr[offset-1]), ip: ip + 1 };
+
+        return { ...lastState, stack: newStack.push(arr[offset - 1]), ip: ip + 1 };
       }
 
       case OpCode.SETARR: {
@@ -212,7 +222,7 @@ export class VM implements IVM {
         const [offset, newStack2] = newStack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
 
-        store.setArr(headIdx, [offset-1], value);
+        store.setArr(headIdx, [offset - 1], value);
 
         return { ...lastState, stack: newStack2, ip: ip + 1 };
       }
@@ -273,7 +283,7 @@ export class VM implements IVM {
 
     const instruction = this.fetch();
     const nextState = this.execute(lastState, instruction);
-    this.states.push({...nextState, stopped: false});
+    this.states.push({ ...nextState, stopped: false });
 
     return nextState.stopped;
   }

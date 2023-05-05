@@ -97,6 +97,31 @@ div {
   flex-direction: column;
 }
 #leftPane #editorContainer {
+  flex-basis: 100%;
+  display: flex;
+}
+#leftPane #editorContainer #lineNumbers {
+  width: 36px;
+  height: 100%;
+  font-family: monospace;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+#leftPane #editorContainer #lineNumbers .example::-webkit-scrollbar {
+  display: none;
+}
+#leftPane #editorContainer #lineNumbers > span {
+  text-align: right;
+  padding: 0 0.25rem;
+  height: 22px;
+}
+#leftPane #editorContainer #lineNumbers > span:nth-child(odd) {
+  background-color: #242424;
+}
+#leftPane #editorContainer #text {
   position: relative;
   flex-basis: 100%;
 }
@@ -123,6 +148,12 @@ div {
 }
 #leftPane #editorContainer #syntax > span.highlight {
   background-color: #484848;
+}
+#leftPane #editorContainer #syntax > span.hover {
+  background-color: #484848;
+}
+#leftPane #editorContainer #syntax > span.active {
+  background-color: #333;
 }
 #leftPane #editorContainer #input {
   background-color: transparent;
@@ -200,9 +231,6 @@ div {
 }
 #rightPane #code div span.current {
   background-color: #242424;
-}
-#rightPane #code div span.highlight {
-  background-color: #484848;
 }
 #rightPane #code div span pre {
   margin: 0;
