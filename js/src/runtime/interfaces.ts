@@ -13,8 +13,6 @@ export interface IBox<T> {
 }
 //#endregion
 
-
-
 //#region Stack
 export interface StringToType {
   any: any;
@@ -25,31 +23,27 @@ export interface StringToType {
 }
 
 export interface IStack {
-  get length(): number
-  pop<K extends keyof StringToType>(type: K): [StringToType[K], IStack]
-  push(val: NestedArray): IStack
-  reset(): IStack
+  get length(): number;
+  pop<K extends keyof StringToType>(type: K): [StringToType[K], IStack];
+  push(val: NestedArray): IStack;
+  reset(): IStack;
 }
 //#endregion
 
-
-
 //#region Variable Store
-type Sentinel = { readonly kind: "sentinel"; boundary: boolean }
-type EnvValue = {readonly kind: "value"; name: string; points: number}
+type Sentinel = { readonly kind: "sentinel"; boundary: boolean };
+type EnvValue = { readonly kind: "value"; name: string; points: number };
 export type EnvVar = Sentinel | EnvValue;
 
 export interface IVariableStore {
-  enterScope(boundary: boolean): IVariableStore
-  getBoxIndex(name: string): number 
-  getVariable(store: MemAllocator, name: string): NestedArray
-  leaveScope(): IVariableStore
-  makeReference(oldName: string | number, newName: string): IVariableStore
-  setVariable(store: MemAllocator, name: string, value: AtomValue): [MemAllocator, IVariableStore] 
+  enterScope(boundary: boolean): IVariableStore;
+  getBoxIndex(name: string): number;
+  getVariable(store: MemAllocator, name: string): NestedArray;
+  leaveScope(): IVariableStore;
+  makeReference(oldName: string | number, newName: string): IVariableStore;
+  setVariable(store: MemAllocator, name: string, value: AtomValue): [MemAllocator, IVariableStore];
 }
 //#endregion
-
-
 
 //#region Store
 export type ArrayHead = { length: number; start: number };
@@ -65,10 +59,8 @@ export type IStore = {
   getArrayElementBoxIndex(arrayPtr: number, offset: number): number;
   getBox(idx: number): IBox<StoreValue>;
   set(idx: number, value: StoreValue): IStore;
-}
+};
 //#endregion
-
-
 
 //#region VM
 export interface IBindings {
@@ -83,6 +75,7 @@ export type State = Readonly<{
   ipStack: Array<number>;
   ip: number;
   stopped: boolean;
+  line: number
 }>;
 
 export interface IVM {
@@ -91,6 +84,7 @@ export interface IVM {
   execute(lastState: State, instruction: ByteCode): State;
   step(): boolean;
   reset(): void;
-  lastState(): State
+  lastState(): State;
+  lineStep(): boolean;
 }
 //#endregion

@@ -21,7 +21,7 @@ function gatherHTMLElements() {
   };
 
   return Object.fromEntries(
-    Object.entries(soughtElems).map(([k, v]) => [k, document.querySelector(v)])
+    Object.entries(soughtElems).map(([k, v]) => [k, document.querySelector(v)]),
   );
 }
 
@@ -32,7 +32,7 @@ window.addEventListener("load", () => {
     elems.stackInspector,
     elems.variableInspector,
     elems.ipStackInspector,
-    elems.vmInstructions
+    elems.vmInstructions,
   );
 
   let environment = null;
@@ -41,7 +41,7 @@ window.addEventListener("load", () => {
   const populateOverlay = () => {
     elems.syntaxHighlightOverlay.innerHTML = "";
     SyntaxHighlight.colorSyntax(elems.codeInput.value).forEach((s) =>
-      elems.syntaxHighlightOverlay.appendChild(s)
+      elems.syntaxHighlightOverlay.appendChild(s),
     );
   };
 
@@ -53,9 +53,7 @@ window.addEventListener("load", () => {
   });
 
   elems.compileButton.addEventListener("click", () => {
-    environment = new PseudoVisitor.generateLinearEnvironment(
-      elems.codeInput.value
-    );
+    environment = new PseudoVisitor.generateLinearEnvironment(elems.codeInput.value);
     executor = new PseudoVisitor.LinearExecutor(environment, callbacks);
 
     elems.standardOutput.innerText = "";

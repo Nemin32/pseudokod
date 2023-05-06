@@ -1,9 +1,23 @@
 import { AST, ASTKind, Expression } from "../compiler/pseudo_types.ts";
 import { Tokenizer } from "../parser/tokenizer.ts";
 import { parseProgram } from "../compiler/pseudo_parser.ts";
-import { Type, Env, AndType, STRING, NUMBER, LOGIC, BaseType, compare, OrType, NONE, strToType, simplify, SimpleType } from "./typechecker_utils.ts";
+import {
+  Type,
+  Env,
+  AndType,
+  STRING,
+  NUMBER,
+  LOGIC,
+  BaseType,
+  compare,
+  OrType,
+  NONE,
+  strToType,
+  simplify,
+} from "./typechecker_utils.ts";
 
-const funcEnv: Map<string, { parameters: { name: string; type: Type }[]; returnType: Type }> = new Map();
+const funcEnv: Map<string, { parameters: { name: string; type: Type }[]; returnType: Type }> =
+  new Map();
 
 class TypeCheckError extends Error {
   constructor(msg: string) {
@@ -21,7 +35,12 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       e = new Map(nE);
       //console.log(ast, t, e, nE)
 
-      if ([ASTKind.FOR, ASTKind.RETURN, ASTKind.WHILE, ASTKind.DOWHILE, ASTKind.IF].some((e) => ast.kind == e)) ts.push(t);
+      if (
+        [ASTKind.FOR, ASTKind.RETURN, ASTKind.WHILE, ASTKind.DOWHILE, ASTKind.IF].some(
+          (e) => ast.kind === e,
+        )
+      )
+        ts.push(t);
     }
 
     /*const [ts, e] = input.reduce<[ts: Type[], env: Env]>(
@@ -37,7 +56,10 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
 
   switch (input.kind) {
     case ASTKind.ATOM:
-      return [typeof input.value == "string" ? STRING : typeof input.value == "number" ? NUMBER : LOGIC, env];
+      return [
+        typeof input.value === "string" ? STRING : typeof input.value === "number" ? NUMBER : LOGIC,
+        env,
+      ];
 
     case ASTKind.CALCBINOP: {
       const [t1, nEnv] = typeCheck(input.exp1, env);
@@ -79,7 +101,10 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       // elseIf
       if (input.elIfs.length > 0) {
         input.elIfs.forEach((e) => typeCheck(e.pred, env));
-        const elifs = input.elIfs.reduce((acc: Type, e) => new OrType(typeCheck(e.body, env)[0], acc), NONE);
+        const elifs = input.elIfs.reduce(
+          (acc: Type, e) => new OrType(typeCheck(e.body, env)[0], acc),
+          NONE,
+        );
 
         returnType = new OrType(returnType, elifs);
       }
@@ -98,10 +123,10 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
           const [t, nEnv] = typeCheck(val, acc[1]);
           return [acc[0].concat(t), nEnv];
         },
-        [[], env]
+        [[], env],
       );
 
-      const isHomogenous = ts.every(e => compare(e, ts[0]));
+      const isHomogenous = ts.every((e) => compare(e, ts[0]));
 
       return [isHomogenous ? NUMBER : new AndType(ts), nEnvFinal];
     }
@@ -150,7 +175,10 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       const nEnv2 = new Map(nEnv);
 
       const prev = nEnv.get(input.variable.name);
-      if (prev && !compare(prev, t)) throw new TypeCheckError(`Trying to set ${input.variable.name} (a ${prev.show()} value) to ${t.show()}`);
+      if (prev && !compare(prev, t))
+        throw new TypeCheckError(
+          `Trying to set ${input.variable.name} (a ${prev.show()} value) to ${t.show()}`,
+        );
 
       nEnv2.set(input.variable.name, t);
       return [NONE, nEnv2];
@@ -204,15 +232,20 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
       const paramTypes: Type[] = input.parameters.map((p) => typeCheck(p, env)[0]);
       const expectedTypes = funcEnv.get(input.functionName);
 
-      if (!expectedTypes) throw new TypeCheckError("Can't find function named " + input.functionName + ".");
+      if (!expectedTypes)
+        throw new TypeCheckError(`Can't find function named ${input.functionName}.`);
 
-      if (paramTypes.length != expectedTypes.parameters.length)
-        throw new TypeCheckError(`Parameter amount mismatch, expected ${expectedTypes.parameters.length}, got ${paramTypes.length}`);
+      if (paramTypes.length !== expectedTypes.parameters.length)
+        throw new TypeCheckError(
+          `Parameter amount mismatch, expected ${expectedTypes.parameters.length}, got ${paramTypes.length}`,
+        );
 
       for (let i = 0; i < paramTypes.length; i++) {
         if (!compare(paramTypes[i], expectedTypes.parameters[i].type))
           throw new TypeCheckError(
-            `Mismatch in '${expectedTypes.parameters[i].name}'. Expected ${expectedTypes.parameters[i].type.show()}, got ${paramTypes[i].show()}`
+            `Mismatch in '${expectedTypes.parameters[i].name}'. Expected ${expectedTypes.parameters[
+              i
+            ].type.show()}, got ${paramTypes[i].show()}`,
           );
       }
 
@@ -221,7 +254,7 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
 
     case ASTKind.FUNCDECL: {
       const parameters = input.parameters.map<{ name: string; type: Type }>((p) => {
-        console.log(p.type)
+        console.log(p.type);
         return { name: p.name, type: strToType(p.type) };
       });
 
@@ -242,7 +275,7 @@ function _typeCheck(input: AST, env: Map<string, Type>): [Type, Env] {
     }
 
     default:
-      throw new TypeCheckError("Unexpected input: " + input);
+      throw new TypeCheckError(`Unexpected input: ${input}`);
   }
 }
 
@@ -256,7 +289,7 @@ const tc = (inp: string): [Type, Env] => {
   const tokens = tk.parse();
   const parsed = parseProgram(tokens);
 
-  if (parsed.kind == "capture") {
+  if (parsed.kind === "capture") {
     const AST = parsed.value;
 
     return typeCheck(AST, new Map());
@@ -272,5 +305,5 @@ kiír x
 függvény vége
 
 Teszt((1, 2, 3))
-`)[0].show()
+`)[0].show(),
 );

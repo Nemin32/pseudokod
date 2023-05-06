@@ -5,7 +5,7 @@ export const generateCallbacks = (
   stackOutput,
   varOutput,
   ipStackOutput,
-  vmInstructionsOutput
+  vmInstructionsOutput,
 ) => {
   return {
     output: (val) => outputFunction(output, val),
@@ -13,8 +13,7 @@ export const generateCallbacks = (
     popStack: () => popStackCallback(stackOutput),
     variableSet: (variable) => variableSetCallback(varOutput, variable),
     scopeLeave: (variables) => scopeLeaveCallback(varOutput, variables),
-    boot: (instructions) =>
-      generateVMInstructionList(vmInstructionsOutput, instructions),
+    boot: (instructions) => generateVMInstructionList(vmInstructionsOutput, instructions),
     step: (ip) => stepCallback(vmInstructionsOutput, ip),
     funcCall: (name, ip) => funcCallCallback(ipStackOutput, name, ip),
     funcEnd: () => funcEndCallback(ipStackOutput),
@@ -23,9 +22,9 @@ export const generateCallbacks = (
 
 // TODO: Dirty. Refactor.
 const funcCallCallback = (div, name, ip) => {
-  div.innerHTML =
-    `<div><span>${name}</span><span>${padRight(ip, 4, "0")}</span></div>` +
-    div.innerHTML;
+  div.innerHTML = `<div><span>${name}</span><span>${padRight(ip, 4, "0")}</span></div>${
+    div.innerHTML
+  }`;
 };
 
 const funcEndCallback = (div) => {
@@ -40,7 +39,7 @@ const stepCallback = (vmInstructions, ip) => {
 };
 
 const pushStackCallback = (div, value) => {
-  let span = document.createElement("input");
+  const span = document.createElement("input");
   span.value = value.toString();
 
   span.addEventListener("input", () => {
@@ -53,7 +52,7 @@ const pushStackCallback = (div, value) => {
 };
 
 const popStackCallback = (div) => {
-  let toBeRemoved = div.querySelector("*:not(.deleted)");
+  const toBeRemoved = div.querySelector("*:not(.deleted)");
   toBeRemoved.className = "deleted";
 
   setTimeout(() => {
@@ -62,9 +61,9 @@ const popStackCallback = (div) => {
 };
 
 const _generateVarHTML = (variable) => {
-  let row = document.createElement("div");
+  const row = document.createElement("div");
 
-  let label = document.createElement("span");
+  const label = document.createElement("span");
   label.className = "varname";
   label.innerText = variable.key;
 
@@ -72,7 +71,7 @@ const _generateVarHTML = (variable) => {
   type.className = "type";
   type.innerText = variable.type;*/
 
-  let editor = document.createElement("input");
+  const editor = document.createElement("input");
   editor.className = "value";
   editor.value = variable.value;
 
@@ -87,8 +86,8 @@ const _generateVarHTML = (variable) => {
 const variableSetCallback = (div, variables) => {
   div.innerHTML = "";
 
-  for (let variable of variables) {
-    let newElem = _generateVarHTML(variable);
+  for (const variable of variables) {
+    const newElem = _generateVarHTML(variable);
     div.appendChild(newElem);
   }
 };
@@ -96,8 +95,8 @@ const variableSetCallback = (div, variables) => {
 const scopeLeaveCallback = (div, variables) => {
   div.innerHTML = "";
 
-  for (let variable of variables) {
-    let newElem = _generateVarHTML(variable);
+  for (const variable of variables) {
+    const newElem = _generateVarHTML(variable);
     div.appendChild(newElem);
   }
 };
@@ -131,7 +130,7 @@ const colorizeOpcode = (opcode, indent) => {
 
   const paddedOpcode = " ".repeat(indent) + opcode;
 
-  for (let color in colors) {
+  for (const color in colors) {
     if (colors[color].includes(opcode)) {
       return `<pre style="color: ${color}">${paddedOpcode}</pre>`;
     }
@@ -179,7 +178,7 @@ const instructionToSpan = (instruction, indent, ip, isSeparator) => {
 
 const generateVMInstructionList = (vmInstructionsOutput, instructions) => {
   let indent = 2;
-  let spans = [];
+  const spans = [];
 
   const indentIn = ["endIf", "loop", "functionEnd", "elIf", "else"];
   const indentOut = ["if", "elIf", "else", "functionDef", "while"];
@@ -189,7 +188,7 @@ const generateVMInstructionList = (vmInstructionsOutput, instructions) => {
       indent -= 2;
     }
 
-    const isSeparator = arr[Math.max(0, ip - 1)].lineNum != instruction.lineNum;
+    const isSeparator = arr[Math.max(0, ip - 1)].lineNum !== instruction.lineNum;
     spans.push(instructionToSpan(instruction, indent, ip, isSeparator));
 
     if (indentOut.includes(instruction.opcode)) {

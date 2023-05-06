@@ -77,7 +77,11 @@ export class ASTCompiler {
   visitArrayIndex(ast: ArrayIndex) {
     //this.visitVariable(ast.variable);
     this.visitExpression(ast.index);
-    this.createOp(ast.variable.isReference ? OpCode.ARRADDR : OpCode.GETARR, ast.variable.name, ast);
+    this.createOp(
+      ast.variable.isReference ? OpCode.ARRADDR : OpCode.GETARR,
+      ast.variable.name,
+      ast,
+    );
   }
 
   visitFunctionCall(ast: FunctionCall) {
@@ -137,13 +141,13 @@ export class ASTCompiler {
     this.createOp(OpCode.SETVAR, varName, ast);
 
     // To...
-    this.createOp(OpCode.LABEL, "for_" + label, ast);
+    this.createOp(OpCode.LABEL, `for_${label}`, ast);
 
     this.createOp(OpCode.GETVAR, varName, ast);
     this.visitExpression(ast.to);
     this.createOp(OpCode.COMP, "<=", ast);
 
-    this.createOp(OpCode.FJMP, "for_end_" + label, ast);
+    this.createOp(OpCode.FJMP, `for_end_${label}`, ast);
 
     this.visitBlock(ast.body);
 
@@ -153,21 +157,21 @@ export class ASTCompiler {
     this.createOp(OpCode.CALC, "+", ast);
     this.createOp(OpCode.SETVAR, varName, ast);
 
-    this.createOp(OpCode.JMP, "for_" + label, ast);
-    this.createOp(OpCode.LABEL, "for_end_" + label, ast);
+    this.createOp(OpCode.JMP, `for_${label}`, ast);
+    this.createOp(OpCode.LABEL, `for_end_${label}`, ast);
     this.createOp(OpCode.LSCOPE, null, ast);
   }
 
   visitDoWhile(ast: DoWhile) {
     const label = ++this.labelId;
 
-    this.createOp(OpCode.LABEL, "do_while_" + label, ast);
+    this.createOp(OpCode.LABEL, `do_while_${label}`, ast);
 
     this.visitBlock(ast.body);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.TJMP, "do_while_" + label, ast);
+    this.createOp(OpCode.TJMP, `do_while_${label}`, ast);
   }
 
   visitExpression(ast: Expression) {
@@ -205,7 +209,7 @@ export class ASTCompiler {
   }
 
   visitFunctionDeclaration(ast: FunctionDeclaration) {
-    this.createOp(OpCode.JMP, ast.name + "_end", ast);
+    this.createOp(OpCode.JMP, `${ast.name}_end`, ast);
     this.createOp(OpCode.LABEL, ast.name, ast);
 
     this.createOp(OpCode.ESCOPE, "func", ast);
@@ -222,7 +226,7 @@ export class ASTCompiler {
 
     this.createOp(OpCode.RETURN, null, ast);
 
-    this.createOp(OpCode.LABEL, ast.name + "_end", ast);
+    this.createOp(OpCode.LABEL, `${ast.name}_end`, ast);
   }
 
   visitIf(ast: If) {
@@ -230,23 +234,23 @@ export class ASTCompiler {
 
     // Head
     this.visitExpression(ast.headBranch.pred);
-    this.createOp(OpCode.FJMP, "else_" + headId, ast);
+    this.createOp(OpCode.FJMP, `else_${headId}`, ast);
 
     this.visitBlock(ast.headBranch.body);
-    this.createOp(OpCode.JMP, "if_end_" + headId, ast);
+    this.createOp(OpCode.JMP, `if_end_${headId}`, ast);
 
     // Else If
-    this.createOp(OpCode.LABEL, "else_" + headId, ast);
+    this.createOp(OpCode.LABEL, `else_${headId}`, ast);
     for (const elIf of ast.elIfs) {
       const label = ++this.labelId;
 
       this.visitExpression(elIf.pred);
-      this.createOp(OpCode.FJMP, "if_else_" + label, ast);
+      this.createOp(OpCode.FJMP, `if_else_${label}`, ast);
 
       this.visitBlock(elIf.body);
 
-      this.createOp(OpCode.JMP, "if_end_" + headId, ast);
-      this.createOp(OpCode.LABEL, "if_else_" + label, ast);
+      this.createOp(OpCode.JMP, `if_end_${headId}`, ast);
+      this.createOp(OpCode.LABEL, `if_else_${label}`, ast);
     }
 
     // Else
@@ -254,7 +258,7 @@ export class ASTCompiler {
       this.visitBlock(ast.elseBranch);
     }
 
-    this.createOp(OpCode.LABEL, "if_end_" + headId, ast);
+    this.createOp(OpCode.LABEL, `if_end_${headId}`, ast);
   }
 
   visitBlock(ast: Block) {
@@ -264,7 +268,7 @@ export class ASTCompiler {
       this.visitStatement(stmt);
     }
 
-    this.createOp(OpCode.LSCOPE, null, ast[ast.length-1]);
+    this.createOp(OpCode.LSCOPE, null, ast[ast.length - 1]);
   }
 
   visitStatement(ast: Statement) {
@@ -310,7 +314,7 @@ export class ASTCompiler {
       case ASTKind.COMPREHENSION:
         return this.visitArrayComprehension(ast);
       default:
-        throw new Error("Unhandled kind: " + ASTKind[ast.kind]);
+        throw new Error(`Unhandled kind: ${ASTKind[ast.kind]}`);
     }
   }
 
@@ -327,16 +331,16 @@ export class ASTCompiler {
   visitWhile(ast: While) {
     const label = ++this.labelId;
 
-    this.createOp(OpCode.LABEL, "wpred_" + label, ast);
+    this.createOp(OpCode.LABEL, `wpred_${label}`, ast);
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.FJMP, "wend_" + label, ast);
+    this.createOp(OpCode.FJMP, `wend_${label}`, ast);
 
     this.visitBlock(ast.body);
 
-    this.createOp(OpCode.JMP, "wpred_" + label, ast);
+    this.createOp(OpCode.JMP, `wpred_${label}`, ast);
 
-    this.createOp(OpCode.LABEL, "wend_" + label, ast);
+    this.createOp(OpCode.LABEL, `wend_${label}`, ast);
   }
 }

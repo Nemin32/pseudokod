@@ -1,35 +1,35 @@
 import { AST, Atom, Block, Parameter } from "./pseudo_types.ts";
 
 export enum OpCode {
-  CALC,
-  CALL,
-  COMP,
-  DEBUG,
-  ESCOPE,
-  FJMP,
-  ADDRESS,
-  ARRADDR,
-  GETARR,
-  GETVAR,
-  JMP,
-  LABEL,
-  LOGIC,
-  LSCOPE,
-  MKARR,
-  MKREF,
-  NOT,
-  PRINT,
-  PUSH,
-  RETURN,
-  SETARR,
-  SETVAR,
-  TJMP,
-  VALARR,
-  VOID,
+  CALC = 0,
+  CALL = 1,
+  COMP = 2,
+  DEBUG = 3,
+  ESCOPE = 4,
+  FJMP = 5,
+  ADDRESS = 6,
+  ARRADDR = 7,
+  GETARR = 8,
+  GETVAR = 9,
+  JMP = 10,
+  LABEL = 11,
+  LOGIC = 12,
+  LSCOPE = 13,
+  MKARR = 14,
+  MKREF = 15,
+  NOT = 16,
+  PRINT = 17,
+  PUSH = 18,
+  RETURN = 19,
+  SETARR = 20,
+  SETVAR = 21,
+  TJMP = 22,
+  VALARR = 23,
+  VOID = 24,
 }
 
 export type ByteCode = {
   opCode: OpCode;
   payload: Atom["value"] | null;
-  ast: Exclude<AST, Block | Parameter[]>
+  ast: Exclude<AST, Block | Parameter[]>;
 };

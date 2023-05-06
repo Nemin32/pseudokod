@@ -10,10 +10,10 @@ export enum BaseType {
 }
 
 enum TypeVariant {
-  SIMPLE,
-  ARRAY,
-  OR,
-  AND,
+  SIMPLE = 0,
+  ARRAY = 1,
+  OR = 2,
+  AND = 3,
 }
 
 export abstract class Type {
@@ -34,7 +34,8 @@ export abstract class Type {
   }
 
   ensure(type: Type, message?: string): this is typeof type {
-    if (!compare(this, type)) throw new Error(message ?? "Expected type '" + type.show() + "', got '" + this.show() + "'.");
+    if (!compare(this, type))
+      throw new Error(message ?? `Expected type '${type.show()}', got '${this.show()}'.`);
     return true;
   }
 
@@ -83,7 +84,7 @@ export class SimpleType extends Type {
   }
 
   isBaseType(type: BaseType): boolean {
-    return this.t == type;
+    return this.t === type;
   }
 }
 
@@ -95,7 +96,7 @@ export class ArrayType extends Type {
   }
 
   show(): string {
-    return this.inner.show() + " ARRAY";
+    return `${this.inner.show()} ARRAY`;
   }
 
   isBaseType(type: BaseType): boolean {
@@ -131,9 +132,9 @@ export function strToType(str: string): Type {
     }
   })();
 
-  if (t == BaseType.UNKNOWN) return UNKNOWN;
+  if (t === BaseType.UNKNOWN) return UNKNOWN;
 
-  return new SimpleType(t | (second == "tömb" ? BaseType.ARRAY : 0));
+  return new SimpleType(t | (second === "tömb" ? BaseType.ARRAY : 0));
 }
 
 export class OrType extends Type {
@@ -153,7 +154,6 @@ export class OrType extends Type {
   isBaseType(type: BaseType): boolean {
     return this.t1.isBaseType(type) && this.t2.isBaseType(type);
   }
-
 }
 
 export class AndType extends Type {
@@ -168,7 +168,7 @@ export class AndType extends Type {
   }
 
   show(): string {
-    return "[" + this.ts.map((t) => t.show()).join(", ") + "]";
+    return `[${this.ts.map((t) => t.show()).join(", ")}]`;
   }
 
   isBaseType(_type: BaseType): boolean {
@@ -186,11 +186,15 @@ export class AndType extends Type {
 }
 
 export function compare(t1: Type, t2: Type): boolean {
-  if (t1.isSimple() && t2.isSimple()) return t1.t == t2.t && t1.isArr == t2.isArr;
+  if (t1.isSimple() && t2.isSimple()) return t1.t === t2.t && t1.isArr === t2.isArr;
 
-  if (t1.isOr() && t2.isOr()) return (compare(t1.t1, t2.t1) && compare(t1.t2, t2.t2)) || (compare(t1.t1, t2.t2) && compare(t1.t2, t2.t1));
+  if (t1.isOr() && t2.isOr())
+    return (
+      (compare(t1.t1, t2.t1) && compare(t1.t2, t2.t2)) ||
+      (compare(t1.t1, t2.t2) && compare(t1.t2, t2.t1))
+    );
 
-  if (t1.isAnd() && t2.isAnd() && t1.ts.length == t2.ts.length) {
+  if (t1.isAnd() && t2.isAnd() && t1.ts.length === t2.ts.length) {
     const st1s = t1.ts.toSorted();
     const st2s = t2.ts.toSorted();
 
@@ -219,8 +223,8 @@ export function simplify(input: Type): Type {
 
   if (input instanceof AndType) {
     const sts = [...new Set(input.ts.map(simplify))]; // .filter(t => !compare(t, NONE));
-    if (sts.length == 1) return sts[0];
-    if (sts.length == 0) return NONE;
+    if (sts.length === 1) return sts[0];
+    if (sts.length === 0) return NONE;
 
     return new AndType(sts);
   }

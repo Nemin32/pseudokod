@@ -11,7 +11,7 @@ export const colorSyntax = (input) => {
   const mapLine = (line) => {
     const colorTags = colors.reduce(
       (line, [rx, color]) => line.replaceAll(rx, `[<${color}>]$&[<>]`),
-      line
+      line,
     );
 
     return colorTags
@@ -24,7 +24,7 @@ export const colorSyntax = (input) => {
   return input.split("\n").map((line) => {
     const span = document.createElement("span");
 
-    if (line != "") {
+    if (line !== "") {
       span.innerHTML = mapLine(line);
 
       const num = lineNum;

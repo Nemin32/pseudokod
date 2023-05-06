@@ -1,5 +1,4 @@
 import { ByteCode, OpCode } from "../compiler/opcodes.ts";
-import { VM } from "../runtime/vm.ts";
 import { MainDriver } from "./vm_controls.ts";
 
 export class ByteCodeDumper {
@@ -13,7 +12,7 @@ export class ByteCodeDumper {
     const pre = document.createElement("pre");
     span.appendChild(pre);
 
-    if (bc.opCode == OpCode.ESCOPE) {
+    if (bc.opCode === OpCode.ESCOPE) {
       this.indent += 2;
     }
 
@@ -23,11 +22,14 @@ export class ByteCodeDumper {
 
     pre.innerText = `${ip}: ${op} ${payload}`;
 
-    if (bc.opCode == OpCode.LSCOPE) {
+    if (bc.opCode === OpCode.LSCOPE) {
       this.indent -= 2;
     }
 
-    span.addEventListener("mouseover", () => {driver.highlighted = bc.ast.token.line; driver.onInput();})
+    span.addEventListener("mouseover", () => {
+      driver.highlighted = bc.ast.token.line;
+      driver.onInput();
+    });
 
     return span;
   }

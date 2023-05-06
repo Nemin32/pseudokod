@@ -14,7 +14,7 @@ self.addEventListener("load", () => {
   MainDriver.getInstance().attach();
 });
 
-const enum domElemName {
+enum domElemName {
   /* User controls */
   codeInput = "#input",
   syntaxHighlightOverlay = "#syntax",
@@ -32,7 +32,8 @@ const enum domElemName {
   stackInspector = "#stack div",
   ipStackInspector = "#ipStack div",
 
-  error = "#error"
+  error = "#error",
+  errorText = "#error p",
 }
 
 export class MainDriver {
@@ -85,6 +86,7 @@ export class MainDriver {
     this.getElem(domElemName.compileButton).addEventListener("click", this.onCompile);
     this.getElem(domElemName.runButton).addEventListener("click", this.onRun);
     this.getElem(domElemName.instStepButton).addEventListener("click", this.onInstStep);
+    this.getElem(domElemName.lineStepButton).addEventListener("click", this.onLineStep);
 
     this.onScroll();
     this.onInput();
@@ -93,26 +95,30 @@ export class MainDriver {
   public onInput = () => {
     const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
     const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
-    const linums = this.getElem<HTMLDivElement>(domElemName.lineNumbers)
+    const linums = this.getElem<HTMLDivElement>(domElemName.lineNumbers);
 
     // Tokenize
     this.tokens = this.tokenize(input);
 
-    console.log(this.highlighted)
+    console.log(this.highlighted);
     // Colorize
-    colorize(syntax, linums, this.tokens, {hover: this.highlighted, active: this.vm?.fetch().ast.token.line ?? -1});
+    colorize(syntax, linums, this.tokens, {
+      hover: this.highlighted,
+      active: this.vm?.fetch().ast.token.line ?? -1,
+    });
   };
 
   public onCompile = () => {
-    if (this.tokens.at(-1)?.type == TokenType.ERROR) {
+    if (this.tokens.at(-1)?.type === TokenType.ERROR) {
       return;
     }
 
     const AST = parseProgram(this.tokens);
     const error = this.getElem(domElemName.error);
+    const errorText = this.getElem(domElemName.errorText);
 
     try {
-      if (AST.kind == "capture") {
+      if (AST.kind === "capture") {
         typeCheck(AST.value, new Map(), new Map());
 
         this.byteCode = ASTCompiler.compile(AST.value);
@@ -128,9 +134,11 @@ export class MainDriver {
       }
     } catch (e) {
       if (e instanceof TypeCheckError) {
-        error.querySelector("p")!.innerText = `(${(e?.token?.line ?? 0)+1}:${(e?.token?.column ?? 0)+1}) Typechecking error: ${e.message}`
+        errorText.innerText = `(${(e?.token?.line ?? 0) + 1}:${
+          (e?.token?.column ?? 0) + 1
+        }) Typechecking error: ${e.message}`;
       } else {
-        error.querySelector("p")!.innerText = e.message;
+        errorText.innerText = e.message;
       }
       error.style.display = "flex";
     }
@@ -138,16 +146,17 @@ export class MainDriver {
 
   public onRun = () => {
     const error = this.getElem(domElemName.error);
+    const errorText = this.getElem(domElemName.errorText);
 
     if (this.vm) {
       try {
-      this.vm.run();
-      this.dumper.setHighlight(this.vm.lastState().ip);
-        error.querySelector("p")!.innerText = "";
-      error.style.display = "none";
-      } catch(e) {
-        error.querySelector("p")!.innerText = e.message;
-      error.style.display = "flex";
+        this.vm.run();
+        this.dumper.setHighlight(this.vm.lastState().ip);
+        errorText.innerText = "";
+        error.style.display = "none";
+      } catch (e) {
+        errorText.innerText = e.message;
+        error.style.display = "flex";
       }
     }
   };
@@ -156,16 +165,22 @@ export class MainDriver {
     if (this.vm) {
       this.vm.step();
       this.dumper.setHighlight(this.vm.lastState().ip);
-      this.onInput()
+      this.onInput();
     }
   };
 
-  public onLineStep = () => {};
+  public onLineStep = () => {
+    if (this.vm) {
+      this.vm.lineStep();
+      this.dumper.setHighlight(this.vm.lastState().ip);
+      this.onInput();
+    }
+  };
 
   public onScroll = () => {
     const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
     const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
-    const lines = this.getElem<HTMLDivElement>(domElemName.lineNumbers)
+    const lines = this.getElem<HTMLDivElement>(domElemName.lineNumbers);
 
     lines.scrollTop = syntax.scrollTop = input.scrollTop;
   };
@@ -178,6 +193,7 @@ export class MainDriver {
       return tk.parse();
     } catch (e: unknown) {
       if (e instanceof TokenizeError) {
+        // rome-ignore lint: noNonNullAssertion
         const errorToken = tk.mkToken(TokenType.ERROR, e.input.slice(e.index), e.index)!;
 
         return e.tokens.concat(errorToken);
@@ -189,7 +205,7 @@ export class MainDriver {
 
   private static instance: MainDriver | null = null;
   static getInstance(): MainDriver {
-    if (MainDriver.instance == null) {
+    if (MainDriver.instance === null) {
       MainDriver.instance = new MainDriver();
     }
 

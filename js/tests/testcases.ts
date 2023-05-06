@@ -1,4 +1,3 @@
-
 export const primitive_tests = {
   name: "Primitívek",
   tests: [
@@ -19,7 +18,7 @@ export const math_tests = {
     { name: "Osztás", input: "kiír 9 / 3", output: 3 },
     { name: "Modulo", input: "kiír 8 mod 5", output: 3 },
   ],
-}
+};
 
 export const comparison_tests = {
   name: "Összehasonlítások",
@@ -33,7 +32,7 @@ export const comparison_tests = {
     { name: ">= - ugyanaz", input: "kiír 5 >= 5", output: true },
     { name: ">= - nagyobb", input: "kiír 5 >= 4", output: true },
   ],
-}
+};
 
 export const if_tests = {
   name: "Elágazások",
@@ -68,7 +67,7 @@ export const if_tests = {
             elágazás vége`,
     },
   ],
-}
+};
 
 export const variable_tests = {
   name: "Változók",
@@ -106,7 +105,7 @@ export const variable_tests = {
             elágazás vége`,
     },
   ],
-}; 
+};
 
 export const function_tests = {
   name: "Függvények",
@@ -172,7 +171,7 @@ export const function_tests = {
       output: 5,
     },
   ],
-}
+};
 
 export const return_tests = {
   name: "Visszatérés",
@@ -220,7 +219,7 @@ export const return_tests = {
       output: 6,
     },
   ],
-}
+};
 
 export const array_tests = {
   name: "Tömbök",
@@ -249,4 +248,4 @@ export const array_tests = {
       output: 5,
     },
   ],
-}
+};

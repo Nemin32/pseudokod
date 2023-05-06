@@ -5,7 +5,8 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
-    "eslint": "^8.23.1"
+    "eslint": "^8.23.1",
+    "rome": "^12.0.0"
   },
   "devDependencies": {
     "esbuild": "^0.15.11"

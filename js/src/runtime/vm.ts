@@ -19,16 +19,16 @@ function handleCalc(exp1: number, exp2: number, op: string): number {
     case "mod":
       return exp1 % exp2;
     default:
-      throw new Error("CALC: Payload was " + op);
+      throw new Error(`CALC: Payload was ${op}`);
   }
 }
 
 function handleComp(exp1: number | boolean, exp2: number | boolean, op: string): boolean {
   switch (op) {
     case "=":
-      return exp1 == exp2;
+      return exp1 === exp2;
     case "=/=":
-      return exp1 != exp2;
+      return exp1 !== exp2;
     case "<=":
       return exp1 <= exp2;
     case ">=":
@@ -38,7 +38,7 @@ function handleComp(exp1: number | boolean, exp2: number | boolean, op: string):
     case ">":
       return exp1 > exp2;
     default:
-      throw new Error("COMP: Payload was " + op);
+      throw new Error(`COMP: Payload was ${op}`);
   }
 }
 
@@ -49,7 +49,7 @@ function handleLogic(exp1: boolean, exp2: boolean, op: string): boolean {
     case "vagy":
       return exp1 || exp2;
     default:
-      throw new Error("LOGIC: Payload was " + op);
+      throw new Error(`LOGIC: Payload was ${op}`);
   }
 }
 
@@ -64,7 +64,11 @@ class VMError extends Error {
 
 export class VM implements IVM {
   jumpTable = new Map<string, number>();
-  private constructor(private tape: Array<ByteCode>, private states: Array<State>, private bindings: IBindings) {}
+  private constructor(
+    private tape: Array<ByteCode>,
+    private states: Array<State>,
+    private bindings: IBindings,
+  ) {}
 
   static generateInitialState(): State {
     return {
@@ -74,6 +78,7 @@ export class VM implements IVM {
       ipStack: [],
       ip: 0,
       stopped: false,
+      line: -1,
     };
   }
 
@@ -82,15 +87,15 @@ export class VM implements IVM {
   }
 
   lastState(): State {
-    return this.states.at(-1)!;
+    return this.states[this.states.length - 1];
   }
 
   findLabelAddress(label: string): number {
     const addr = this.jumpTable.get(label);
     if (addr !== undefined) return addr;
 
-    const newAddr = this.tape.findIndex((bc) => bc.opCode == OpCode.LABEL && bc.payload == label);
-    if (newAddr == -1) throw new Error("No such label: " + label);
+    const newAddr = this.tape.findIndex((bc) => bc.opCode === OpCode.LABEL && bc.payload === label);
+    if (newAddr === -1) throw new Error(`No such label: ${label}`);
 
     this.jumpTable.set(label, newAddr);
     return newAddr;
@@ -132,46 +137,73 @@ export class VM implements IVM {
 
       case OpCode.TJMP: {
         const [value, newStack] = stack.pop("boolean");
-        return { ...lastState, stack: newStack, ip: value ? this.findLabelAddress(payload as string) : ip + 1 };
+        return {
+          ...lastState,
+          stack: newStack,
+          ip: value ? this.findLabelAddress(payload as string) : ip + 1,
+        };
       }
 
       case OpCode.FJMP: {
         const [value, newStack] = stack.pop("boolean");
-        return { ...lastState, stack: newStack, ip: !value ? this.findLabelAddress(payload as string) : ip + 1 };
+        return {
+          ...lastState,
+          stack: newStack,
+          ip: !value ? this.findLabelAddress(payload as string) : ip + 1,
+        };
       }
 
       case OpCode.CALC: {
         const [exp1, newStack] = stack.pop("number");
         const [exp2, newStack2] = newStack.pop("number");
 
-        return { ...lastState, stack: newStack2.push(handleCalc(exp1, exp2, payload as string)), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: newStack2.push(handleCalc(exp1, exp2, payload as string)),
+          ip: ip + 1,
+        };
       }
 
       case OpCode.COMP: {
         const [exp1, newStack] = stack.pop("any");
         const [exp2, newStack2] = newStack.pop("any");
 
-        if (!(typeof exp1 == "boolean" || typeof exp1 == "number") || !(typeof exp2 == "boolean" || typeof exp2 == "number")) {
+        if (
+          !(typeof exp1 === "boolean" || typeof exp1 === "number") ||
+          !(typeof exp2 === "boolean" || typeof exp2 === "number")
+        ) {
           throw new Error("COMP: Exp1 or Exp2 isn't num|bool.");
         }
 
-        return { ...lastState, stack: newStack2.push(handleComp(exp1, exp2, payload as string)), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: newStack2.push(handleComp(exp1, exp2, payload as string)),
+          ip: ip + 1,
+        };
       }
 
       case OpCode.LOGIC: {
         const [exp1, newStack] = stack.pop("boolean");
         const [exp2, newStack2] = newStack.pop("boolean");
 
-        return { ...lastState, stack: newStack2.push(handleLogic(exp1, exp2, payload as string)), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: newStack2.push(handleLogic(exp1, exp2, payload as string)),
+          ip: ip + 1,
+        };
       }
 
       case OpCode.ESCOPE:
-        return { ...lastState, variables: variables.enterScope(payload == "func"), ip: ip + 1 };
+        return { ...lastState, variables: variables.enterScope(payload === "func"), ip: ip + 1 };
       case OpCode.LSCOPE:
         return { ...lastState, variables: variables.leaveScope(), ip: ip + 1 };
 
       case OpCode.CALL:
-        return { ...lastState, ipStack: ipStack.concat(ip + 1), ip: this.findLabelAddress(payload as string) };
+        return {
+          ...lastState,
+          ipStack: ipStack.concat(ip + 1),
+          ip: this.findLabelAddress(payload as string),
+        };
 
       case OpCode.RETURN: {
         const newAddress = ipStack.at(-1);
@@ -180,27 +212,37 @@ export class VM implements IVM {
 
         const newVars = variables.leaveScope();
 
-        if (payload == null) {
+        if (payload === null) {
           const [_value, newStack] = stack.pop("any");
-          return { ...lastState, variables: newVars, stack: newStack, ipStack: ipStack.slice(0, -1), ip: newAddress };
+          return {
+            ...lastState,
+            variables: newVars,
+            stack: newStack,
+            ipStack: ipStack.slice(0, -1),
+            ip: newAddress,
+          };
         } else {
-          return { ...lastState, variables: newVars, ipStack: ipStack.slice(0, -1), ip: newAddress };
+          return {
+            ...lastState,
+            variables: newVars,
+            ipStack: ipStack.slice(0, -1),
+            ip: newAddress,
+          };
         }
       }
 
       case OpCode.ADDRESS:
-        return { ...lastState, stack: stack.push(variables.getBoxIndex(payload as string)), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: stack.push(variables.getBoxIndex(payload as string)),
+          ip: ip + 1,
+        };
 
       case OpCode.ARRADDR: {
-        console.log(stack);
         const [offset, newStack] = stack.pop("number");
         const headIdx = variables.getBoxIndex(payload as string);
-
-        console.log(headIdx, offset);
-
-        //return { ...lastState, stack: newStack.push(store.get(headIdx + offset, false)!.content), ip: ip + 1 };
-
         const arr = store.find(headIdx);
+
         console.log(arr.children[offset - 1].id);
         return { ...lastState, stack: newStack.push(arr.children[offset - 1].id), ip: ip + 1 };
       }
@@ -243,19 +285,32 @@ export class VM implements IVM {
         return { ...lastState, stack: curr_stack.push(arr as NestedArray), ip: ip + 1 };
       }
       case OpCode.MKARR:
-        return { ...lastState, stack: stack.push(Array(payload as number).fill(0) as number[]), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: stack.push(Array(payload as number).fill(0) as number[]),
+          ip: ip + 1,
+        };
 
       case OpCode.MKREF: {
         const [source, newStack] = stack.pop("any");
-        if (!(typeof source == "number" || typeof source == "string")) {
+        if (!(typeof source === "number" || typeof source === "string")) {
           throw new Error("MKREF: Source must be string or number.");
         }
 
-        return { ...lastState, stack: newStack, variables: variables.makeReference(source, payload as string), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: newStack,
+          variables: variables.makeReference(source, payload as string),
+          ip: ip + 1,
+        };
       }
 
       case OpCode.GETVAR:
-        return { ...lastState, stack: stack.push(variables.getVariable(store, payload as string)), ip: ip + 1 };
+        return {
+          ...lastState,
+          stack: stack.push(variables.getVariable(store, payload as string)),
+          ip: ip + 1,
+        };
 
       case OpCode.SETVAR: {
         const [value, newStack] = stack.pop("any");
@@ -264,7 +319,7 @@ export class VM implements IVM {
       }
     }
 
-    throw new Error("Unimplemented opCode: " + opCode);
+    throw new Error(`Unimplemented opCode: ${opCode}`);
   }
 
   run(): void {
@@ -272,20 +327,31 @@ export class VM implements IVM {
   }
 
   fetch(): ByteCode {
-    const lastState = this.states.at(-1)!;
+    const lastState = this.lastState();
     return this.tape[lastState.ip];
   }
 
   step(): boolean {
-    const lastState = this.states.at(-1)!;
+    const lastState = this.lastState();
 
     if (lastState.ip >= this.tape.length) return true;
 
     const instruction = this.fetch();
     const nextState = this.execute(lastState, instruction);
-    this.states.push({ ...nextState, stopped: false });
+    this.states.push({ ...nextState, stopped: false, line: instruction.ast.token.line });
 
     return nextState.stopped;
+  }
+
+  lineStep(): boolean {
+    const line = this.lastState().line;
+    let nextLine = -1;
+
+    while (line !== nextLine && this.step()) {
+      nextLine = this.lastState().line
+    }
+
+    return this.lastState().stopped
   }
 
   reset(): void {

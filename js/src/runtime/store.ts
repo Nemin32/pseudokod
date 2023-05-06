@@ -8,29 +8,42 @@ class MemBlock {
     public index: number,
     public previous: number | null, //MemBlock | null = null,
     public next: MemBlock | null = null,
-    public children: MemBlock[] = []
+    public children: MemBlock[] = [],
   ) {}
 
   clone(prev: number | null): MemBlock {
-    return new MemBlock(this.id, this.length, this.index, prev, this.next?.clone(this.id), this.children.map(c => c.clone(c.previous)))
+    return new MemBlock(
+      this.id,
+      this.length,
+      this.index,
+      prev,
+      this.next?.clone(this.id),
+      this.children.map((c) => c.clone(c.previous)),
+    );
   }
 }
 
 class MemCell {
   public constructor(public rc: number, public content: AtomValue) {}
 
-  clone(): MemCell {return new MemCell(this.rc, this.content)}
+  clone(): MemCell {
+    return new MemCell(this.rc, this.content);
+  }
 }
 
 export class MemAllocator {
   constructor(
-  public head: MemBlock | null = null,
-  public memory: (MemCell | null)[] = [],
-  public id = 0,
+    public head: MemBlock | null = null,
+    public memory: (MemCell | null)[] = [],
+    public id = 0,
   ) {}
 
   public clone(): MemAllocator {
-    return new MemAllocator(this.head?.clone(null), this.memory.map(m => m?.clone() ?? null), this.id);
+    return new MemAllocator(
+      this.head?.clone(null),
+      this.memory.map((m) => m?.clone() ?? null),
+      this.id,
+    );
   }
 
   private copyJSIntoMemory(value: NestedArray, start: number, _needsBlock: boolean): MemBlock[] {
@@ -90,7 +103,8 @@ export class MemAllocator {
 
   alloc(value: NestedArray): number {
     const length = this.realLength(value);
-    return this.copyJSIntoMemory(value, this.findEmptySpace(length) ?? this.memory.length, true)[0].id;
+    return this.copyJSIntoMemory(value, this.findEmptySpace(length) ?? this.memory.length, true)[0]
+      .id;
   }
 
   dealloc(id: number, deallocChildren: boolean) {
@@ -98,15 +112,16 @@ export class MemAllocator {
 
     if (deallocChildren) block.children.forEach((c) => this.dealloc(c.id, true));
 
-    if (block == this.head) {
-      this.head = this.head.next;
+    if (block.previous == null) {
+      this.head = this.head?.next ?? null;
     } else {
-      this.find(block.previous!).next = block.next;
+      this.find(block.previous).next = block.next;
     }
 
-    if (!deallocChildren || block.children.length == 0) {
+    if (!deallocChildren || block.children.length === 0) {
       for (let i = block.index; i < block.index + block.length; i++) {
-        if (this.memory[i] != null) {
+        if (this.memory[i]) {
+          //rome-ignore lint: noNonNullAssertion
           this.memory[i]!.rc -= 1;
         }
       }
@@ -117,7 +132,7 @@ export class MemAllocator {
     let current = this.head;
 
     while (current) {
-      if (current.id == id) return current;
+      if (current.id === id) return current;
 
       current = current.next;
     }
@@ -127,7 +142,7 @@ export class MemAllocator {
 
   gc() {
     for (let i = 0; i < this.memory.length; i++) {
-      if (this.memory[i]?.rc == 0) {
+      if (this.memory[i]?.rc === 0) {
         this.memory[i] = null;
       }
     }
@@ -137,11 +152,19 @@ export class MemAllocator {
     const block = this.find(id);
 
     for (let i = 0; i < block.length; i++) {
+      //rome-ignore lint: noNonNullAssertion
       this.memory[block.index + i]!.rc += 1;
     }
 
-    const newBlock = new MemBlock(this.id++, block.length, block.index, null, this.head, block.children)
-    if (this.head) this.head.previous = newBlock.id
+    const newBlock = new MemBlock(
+      this.id++,
+      block.length,
+      block.index,
+      null,
+      this.head,
+      block.children,
+    );
+    if (this.head) this.head.previous = newBlock.id;
     this.head = newBlock;
 
     return newBlock.id;
@@ -152,6 +175,7 @@ export class MemAllocator {
 
     if (!this.memory.at(block.index)) throw new Error(`No memory at ${block.index}.`);
 
+    //rome-ignore lint: noNonNullAssertion
     this.memory[block.index]!.content = value;
   }
 
@@ -163,16 +187,18 @@ export class MemAllocator {
       block = block.children[elem];
     }
 
+    //rome-ignore lint: noNonNullAssertion
     this.memory[block.index]!.content = value;
   }
 
   get(id: number): NestedArray {
-    const block = this.find(id)
+    const block = this.find(id);
 
-    if (block.children.length == 0) {
+    if (block.children.length === 0) {
+      //rome-ignore lint: noNonNullAssertion
       return this.memory[block.index]!.content;
     }
 
-    return block.children.map(c => this.get(c.id));
+    return block.children.map((c) => this.get(c.id));
   }
 }

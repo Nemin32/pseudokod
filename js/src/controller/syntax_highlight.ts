@@ -21,19 +21,23 @@ const colors: [TokenType[], string][] = [
 const kwColor = "#fb4934";
 
 const tokenToColor = (token: PseudoToken, previous: PseudoToken): string => {
-  const type = token.type == TokenType.VEGE ? previous.type : token.type;
+  const type = token.type === TokenType.VEGE ? previous.type : token.type;
   return colors.find(([types, _]) => types.includes(type))?.[1] ?? kwColor;
 };
 
-const tokenToSpan = (token: PseudoToken, previous: PseudoToken, lineNumber: { hover: number; active: number }): HTMLSpanElement => {
+const tokenToSpan = (
+  token: PseudoToken,
+  previous: PseudoToken,
+  lineNumber: { hover: number; active: number },
+): HTMLSpanElement => {
   const span = document.createElement("span");
 
   span.style.whiteSpace = "pre";
   span.innerText = token.lexeme;
   span.style.color = tokenToColor(token, previous);
 
-  if (token.line == lineNumber.hover) span.classList.add("hover");
-  if (token.line == lineNumber.active) span.classList.add("active");
+  if (token.line === lineNumber.hover) span.classList.add("hover");
+  if (token.line === lineNumber.active) span.classList.add("active");
 
   return span;
 };
@@ -46,26 +50,33 @@ const generateLinum = (token: PseudoToken, lineNumber: { hover: number; active: 
 
   span.innerText = String(token.line + 1);
 
-  if (token.line == lineNumber.hover) span.classList.add("hover");
-  if (token.line == lineNumber.active) span.classList.add("active");
+  if (token.line === lineNumber.hover) span.classList.add("hover");
+  if (token.line === lineNumber.active) span.classList.add("active");
 
   return span;
 };
 
-export const colorize = (overlay: HTMLDivElement, linumDiv: HTMLDivElement, tokens: PseudoToken[], lineNumber: { hover: number; active: number }) => {
+export const colorize = (
+  overlay: HTMLDivElement,
+  linumDiv: HTMLDivElement,
+  tokens: PseudoToken[],
+  lineNumber: { hover: number; active: number },
+) => {
   const spans: HTMLSpanElement[] = tokensToSpan(tokens, lineNumber);
 
-  const linums = tokens.reduce<{spans: HTMLSpanElement[], linum: number}>((acc, token) =>  {
-    if (token.line != acc.linum) {
-      return {
-        spans: acc.spans.concat([generateLinum(token, lineNumber)]),
-        linum: token.line
-      } 
-    } else {
-      return acc
-    }
-
-  }, {spans: [], linum: -1});
+  const linums = tokens.reduce<{ spans: HTMLSpanElement[]; linum: number }>(
+    (acc, token) => {
+      if (token.line !== acc.linum) {
+        return {
+          spans: acc.spans.concat([generateLinum(token, lineNumber)]),
+          linum: token.line,
+        };
+      } else {
+        return acc;
+      }
+    },
+    { spans: [], linum: -1 },
+  );
 
   overlay.replaceChildren(...spans);
   linumDiv.replaceChildren(...linums.spans.slice(0, -1));

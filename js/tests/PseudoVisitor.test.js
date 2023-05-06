@@ -11,9 +11,7 @@ const generateTest = (testInstance) =>
   test(testInstance.name, () => {
     r(testInstance.input);
     expect(mockOutput.mock.calls.length).toBe(testInstance.times ?? 1);
-    expect(mockOutput.mock.results[0].value).toStrictEqual(
-      testInstance.output ?? "OK"
-    );
+    expect(mockOutput.mock.results[0].value).toStrictEqual(testInstance.output ?? "OK");
   });
 
 const generateTestGroup = (groupDetails) =>

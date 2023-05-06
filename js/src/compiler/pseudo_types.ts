@@ -3,27 +3,27 @@
 import { PseudoToken } from "../parser/tokenizer.ts";
 
 export enum ASTKind {
-  ARRASSIGN,
-  ARRELEMASSIGN,
-  ARRINDEX,
-  ASSIGNMENT,
-  ATOM,
-  CALCBINOP,
-  COMPBINOP,
-  COMPREHENSION,
-  DEBUG,
-  DOWHILE,
-  FOR,
-  FUNCCALL,
-  FUNCDECL,
-  IF,
-  LOGICBINOP,
-  NOT,
-  PARAMETER,
-  PRINT,
-  RETURN,
-  VARIABLE,
-  WHILE,
+  ARRASSIGN = 0,
+  ARRELEMASSIGN = 1,
+  ARRINDEX = 2,
+  ASSIGNMENT = 3,
+  ATOM = 4,
+  CALCBINOP = 5,
+  COMPBINOP = 6,
+  COMPREHENSION = 7,
+  DEBUG = 8,
+  DOWHILE = 9,
+  FOR = 10,
+  FUNCCALL = 11,
+  FUNCDECL = 12,
+  IF = 13,
+  LOGICBINOP = 14,
+  NOT = 15,
+  PARAMETER = 16,
+  PRINT = 17,
+  RETURN = 18,
+  VARIABLE = 19,
+  WHILE = 20,
 }
 
 export class Debug {
@@ -41,7 +41,7 @@ export class Atom {
   constructor(
     readonly token: PseudoToken,
 
-    public value: AtomValue
+    public value: AtomValue,
   ) {}
 }
 
@@ -65,7 +65,7 @@ export class ArithmeticBinOp {
 
     public op: string,
     public exp1: Expression,
-    public exp2: Expression
+    public exp2: Expression,
   ) {}
 }
 
@@ -85,7 +85,7 @@ export class Comparison {
 
     public op: string,
     public exp1: Expression,
-    public exp2: Expression
+    public exp2: Expression,
   ) {}
 }
 
@@ -96,7 +96,7 @@ export class FunctionCall {
     readonly token: PseudoToken,
 
     public functionName: string,
-    public parameters: Array<Expression>
+    public parameters: Array<Expression>,
   ) {}
 }
 
@@ -113,11 +113,19 @@ export class LogicBinOp {
 
     public op: string,
     public exp1: Expression,
-    public exp2: Expression
+    public exp2: Expression,
   ) {}
 }
 
-export type Expression = ArrayComprehension | ArrayIndex | ArithmeticBinOp | Comparison | FunctionCall | LogicBinOp | Not | Value;
+export type Expression =
+  | ArrayComprehension
+  | ArrayIndex
+  | ArithmeticBinOp
+  | Comparison
+  | FunctionCall
+  | LogicBinOp
+  | Not
+  | Value;
 
 /* Statements */
 export class Print {
@@ -134,7 +142,7 @@ export class If {
 
     public headBranch: { pred: Expression; body: Block },
     public elIfs: Array<{ pred: Expression; body: Block }>,
-    public elseBranch: Block | null
+    public elseBranch: Block | null,
   ) {}
 }
 
@@ -147,7 +155,12 @@ export class Assignment {
 export class Parameter {
   readonly kind = ASTKind.PARAMETER;
 
-  constructor(readonly token: PseudoToken, public name: string, public byReference: boolean, public type: string) {}
+  constructor(
+    readonly token: PseudoToken,
+    public name: string,
+    public byReference: boolean,
+    public type: string,
+  ) {}
 }
 
 export class While {
@@ -171,7 +184,7 @@ export class For {
     public variable: Variable,
     public from: Expression,
     public to: Expression,
-    public body: Block
+    public body: Block,
   ) {}
 }
 
@@ -182,7 +195,7 @@ export class ArrayElementAssignment {
     readonly token: PseudoToken,
 
     public arrayIndex: ArrayIndex,
-    public value: Expression
+    public value: Expression,
   ) {}
 }
 
@@ -194,7 +207,7 @@ export class ArrayAssignment {
 
     public variable: Variable,
     public type: string,
-    public length: Expression
+    public length: Expression,
   ) {}
 }
 
@@ -212,7 +225,7 @@ export class FunctionDeclaration {
 
     public name: string,
     public parameters: Array<Parameter>,
-    public body: Block
+    public body: Block,
   ) {}
 }
 

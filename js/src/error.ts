@@ -25,7 +25,7 @@ export class Either<T, E> {
   }
 
   bind<Q>(f: (val: T) => Either<Q, E>): Either<Q, E> {
-    if (this.value.kind == "left") {
+    if (this.value.kind === "left") {
       return new Either<Q, E>(this.value);
     } else {
       return f(this.value.value);
@@ -33,7 +33,7 @@ export class Either<T, E> {
   }
 
   bindError<Q>(f: (err: E) => Either<T, Q>): Either<T, Q> {
-    if (this.value.kind == "right") {
+    if (this.value.kind === "right") {
       return new Either<T, Q>(this.value);
     } else {
       return f(this.value.value);
@@ -41,7 +41,7 @@ export class Either<T, E> {
   }
 
   mapError<Q>(f: (err: E) => Q): Either<T, Q> {
-    if (this.value.kind == "right") {
+    if (this.value.kind === "right") {
       return new Either<T, Q>(this.value);
     } else {
       return Either.fail(f(this.value.value));
@@ -49,7 +49,7 @@ export class Either<T, E> {
   }
 
   onSuccess(f: (val: T) => void): this {
-    if (this.value.kind == "right") {
+    if (this.value.kind === "right") {
       f(this.value.value);
     }
 
@@ -57,7 +57,7 @@ export class Either<T, E> {
   }
 
   onError(f: (err: E) => void): this {
-    if (this.value.kind == "left") {
+    if (this.value.kind === "left") {
       f(this.value.value);
     }
 
@@ -65,7 +65,7 @@ export class Either<T, E> {
   }
 
   isError(): boolean {
-    return this.value.kind == "left";
+    return this.value.kind === "left";
   }
 
   getError(): E {
@@ -83,7 +83,7 @@ export class Either<T, E> {
   }
 
   toString(): string {
-    const dir = this.value.kind == "left" ? "Left" : "Right";
+    const dir = this.value.kind === "left" ? "Left" : "Right";
 
     return `${dir}(${this.unwrap()})`;
   }
