@@ -19,7 +19,7 @@ function handleCalc(exp1: number, exp2: number, op: string): number {
     case "mod":
       return exp1 % exp2;
     default:
-      throw new Error(`CALC: Payload was ${op}`);
+      throw new VMError(null, `CALC: Payload was ${op}`);
   }
 }
 
@@ -38,7 +38,7 @@ function handleComp(exp1: number | boolean, exp2: number | boolean, op: string):
     case ">":
       return exp1 > exp2;
     default:
-      throw new Error(`COMP: Payload was ${op}`);
+      throw new VMError(null, `COMP: Payload was ${op}`);
   }
 }
 
@@ -49,16 +49,16 @@ function handleLogic(exp1: boolean, exp2: boolean, op: string): boolean {
     case "vagy":
       return exp1 || exp2;
     default:
-      throw new Error(`LOGIC: Payload was ${op}`);
+      throw new VMError(null, `LOGIC: Payload was ${op}`);
   }
 }
 
-class VMError extends Error {
-  token: PseudoToken;
+export class VMError extends Error {
+  token: PseudoToken | null;
 
-  constructor(ast: Exclude<AST, Block | Parameter[]>, message: string) {
+  constructor(ast: Exclude<AST, Block | Parameter[]> | null, message: string) {
     super(message);
-    this.token = ast.token;
+    this.token = ast?.token ?? null;
   }
 }
 
@@ -73,12 +73,12 @@ export class VM implements IVM {
   static generateInitialState(): State {
     return {
       stack: Stack.init(),
-      store: new MemAllocator(), // ImmutableStore.init(),
+      store: new MemAllocator(),
       variables: VariableStore.init(),
       ipStack: [],
       ip: 0,
       stopped: false,
-      line: -1,
+      line: 0,
     };
   }
 
@@ -95,7 +95,7 @@ export class VM implements IVM {
     if (addr !== undefined) return addr;
 
     const newAddr = this.tape.findIndex((bc) => bc.opCode === OpCode.LABEL && bc.payload === label);
-    if (newAddr === -1) throw new Error(`No such label: ${label}`);
+    if (newAddr === -1) throw new VMError(null, `No such label: ${label}`);
 
     this.jumpTable.set(label, newAddr);
     return newAddr;
@@ -112,8 +112,10 @@ export class VM implements IVM {
         return { ...lastState, ip: ip + 1 };
       }
 
-      case OpCode.PUSH:
-        return { ...lastState, stack: stack.push(payload!), ip: ip + 1 };
+      case OpCode.PUSH: {
+        if (payload == null) throw new VMError(instruction.ast, "PUSH: Payload was null.");
+        return { ...lastState, stack: stack.push(payload), ip: ip + 1 };
+      }
 
       case OpCode.NOT: {
         const [value, newStack] = stack.pop("boolean");
@@ -172,7 +174,7 @@ export class VM implements IVM {
           !(typeof exp1 === "boolean" || typeof exp1 === "number") ||
           !(typeof exp2 === "boolean" || typeof exp2 === "number")
         ) {
-          throw new Error("COMP: Exp1 or Exp2 isn't num|bool.");
+          throw new VMError(instruction.ast, "COMP: Exp1 or Exp2 isn't num|bool.");
         }
 
         return {
@@ -208,7 +210,7 @@ export class VM implements IVM {
       case OpCode.RETURN: {
         const newAddress = ipStack.at(-1);
 
-        if (newAddress === undefined) throw new Error("IP Stack was empty!");
+        if (newAddress === undefined) throw new VMError(instruction.ast, "IP Stack was empty!");
 
         const newVars = variables.leaveScope();
 
@@ -252,9 +254,9 @@ export class VM implements IVM {
         const headIdx = variables.getBoxIndex(payload as string);
 
         const arr = store.get(headIdx);
-        if (!Array.isArray(arr)) throw new Error(`${headIdx} was not array.`);
+        if (!Array.isArray(arr)) throw new VMError(instruction.ast, `${headIdx} was not array.`);
 
-        if (offset - 1 >= arr.length) throw new Error("Out of bounds.");
+        if (offset - 1 >= arr.length) throw new VMError(instruction.ast, "Out of bounds.");
 
         return { ...lastState, stack: newStack.push(arr[offset - 1]), ip: ip + 1 };
       }
@@ -294,7 +296,7 @@ export class VM implements IVM {
       case OpCode.MKREF: {
         const [source, newStack] = stack.pop("any");
         if (!(typeof source === "number" || typeof source === "string")) {
-          throw new Error("MKREF: Source must be string or number.");
+          throw new VMError(instruction.ast, "MKREF: Source must be string or number.");
         }
 
         return {
@@ -326,17 +328,17 @@ export class VM implements IVM {
     while (!this.step());
   }
 
-  fetch(): ByteCode {
+  fetch(): ByteCode | null {
     const lastState = this.lastState();
     return this.tape[lastState.ip];
   }
 
   step(): boolean {
     const lastState = this.lastState();
-
-    if (lastState.ip >= this.tape.length) return true;
-
     const instruction = this.fetch();
+
+    if (instruction == null) return true;
+
     const nextState = this.execute(lastState, instruction);
     this.states.push({ ...nextState, stopped: false, line: instruction.ast.token.line });
 
@@ -345,13 +347,21 @@ export class VM implements IVM {
 
   lineStep(): boolean {
     const line = this.lastState().line;
-    let nextLine = -1;
+    let nextLine = this.lastState().line;
 
-    while (line !== nextLine && this.step()) {
-      nextLine = this.lastState().line
+    while (line === nextLine && !this.step()) {
+      nextLine = this.lastState().line;
     }
 
-    return this.lastState().stopped
+    return this.lastState().stopped;
+  }
+
+  stepBack(): void {
+    this.states.pop();
+
+    if (this.states.length === 0) {
+      this.states.push(VM.generateInitialState());
+    }
   }
 
   reset(): void {

@@ -80,11 +80,12 @@ export type State = Readonly<{
 
 export interface IVM {
   run(): void;
-  fetch(): ByteCode;
+  fetch(): ByteCode | null;
   execute(lastState: State, instruction: ByteCode): State;
   step(): boolean;
   reset(): void;
   lastState(): State;
   lineStep(): boolean;
+  stepBack(): void
 }
 //#endregion

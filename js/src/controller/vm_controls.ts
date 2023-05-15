@@ -4,7 +4,7 @@ import { parseProgram } from "../compiler/pseudo_parser.ts";
 import { astToDiv, divMaker } from "../debug/ast_printer.ts";
 import { PseudoToken, TokenizeError, Tokenizer, TokenType } from "../parser/tokenizer.ts";
 import { IVM, IBindings } from "../runtime/interfaces.ts";
-import { VM } from "../runtime/vm.ts";
+import { VM, VMError } from "../runtime/vm.ts";
 import { TypeCheckError, typeCheck } from "../typechecker/typecheck_v2.ts";
 import { ByteCodeDumper } from "./bytecode_dumper.ts";
 import { colorize } from "./syntax_highlight.ts";
@@ -92,6 +92,28 @@ export class MainDriver {
     this.onInput();
   };
 
+  handleError(error: unknown) {
+    const errorDiv = this.getElem(domElemName.error);
+    const errorText = this.getElem(domElemName.errorText);
+
+    if (error instanceof VMError) {
+      errorText.innerText = `VM Error: ${error.message}.`;
+    } else if (error instanceof TypeCheckError) {
+      errorText.innerText = `Typecheck Failure: ${error.message}.`;
+    } else if (error instanceof Error) {
+      errorText.innerText = `Other error: ${error.message}.`;
+    } else {
+      throw error;
+    }
+
+    errorDiv.style.display = "flex";
+  }
+
+  hideError() {
+    const errorDiv = this.getElem(domElemName.error);
+    errorDiv.style.display = "none";
+  }
+
   public onInput = () => {
     const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
     const syntax = this.getElem<HTMLDivElement>(domElemName.syntaxHighlightOverlay);
@@ -104,7 +126,7 @@ export class MainDriver {
     // Colorize
     colorize(syntax, linums, this.tokens, {
       hover: this.highlighted,
-      active: this.vm?.fetch().ast.token.line ?? -1,
+      active: this.vm?.fetch()?.ast.token.line ?? -1,
     });
   };
 
@@ -114,8 +136,7 @@ export class MainDriver {
     }
 
     const AST = parseProgram(this.tokens);
-    const error = this.getElem(domElemName.error);
-    const errorText = this.getElem(domElemName.errorText);
+    this.hideError();
 
     try {
       if (AST.kind === "capture") {
@@ -128,52 +149,48 @@ export class MainDriver {
         this.dumper.show(this.getElem(domElemName.vmInstructions));
 
         this.vm = VM.init(this.byteCode, this.bindings);
-        error.style.display = "none";
       } else {
         throw new Error(`(${AST.where.index}) AST Parsing error: ${AST.value}`);
       }
     } catch (e) {
-      if (e instanceof TypeCheckError) {
-        errorText.innerText = `(${(e?.token?.line ?? 0) + 1}:${
-          (e?.token?.column ?? 0) + 1
-        }) Typechecking error: ${e.message}`;
-      } else {
-        errorText.innerText = e.message;
-      }
-      error.style.display = "flex";
+      this.handleError(e);
     }
   };
 
   public onRun = () => {
-    const error = this.getElem(domElemName.error);
-    const errorText = this.getElem(domElemName.errorText);
+    this.hideError();
 
     if (this.vm) {
       try {
         this.vm.run();
         this.dumper.setHighlight(this.vm.lastState().ip);
-        errorText.innerText = "";
-        error.style.display = "none";
       } catch (e) {
-        errorText.innerText = e.message;
-        error.style.display = "flex";
+        this.handleError(e);
       }
     }
   };
 
   public onInstStep = () => {
     if (this.vm) {
-      this.vm.step();
-      this.dumper.setHighlight(this.vm.lastState().ip);
-      this.onInput();
+      try {
+        this.vm.step();
+        this.dumper.setHighlight(this.vm.lastState().ip);
+        this.onInput();
+      } catch (e) {
+        this.handleError(e);
+      }
     }
   };
 
   public onLineStep = () => {
     if (this.vm) {
-      this.vm.lineStep();
-      this.dumper.setHighlight(this.vm.lastState().ip);
-      this.onInput();
+      try {
+        this.vm.lineStep();
+        this.dumper.setHighlight(this.vm.lastState().ip);
+        this.onInput();
+      } catch (e) {
+        this.handleError(e);
+      }
     }
   };
 
