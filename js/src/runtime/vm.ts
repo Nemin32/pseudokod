@@ -70,11 +70,11 @@ export class VM implements IVM {
     private bindings: IBindings,
   ) {}
 
-  static generateInitialState(): State {
+  generateInitialState(): State {
     return {
-      stack: Stack.init(),
+      stack: Stack.init(this.bindings.stack),
       store: new MemAllocator(),
-      variables: VariableStore.init(),
+      variables: VariableStore.init(this.bindings.vars),
       ipStack: [],
       ip: 0,
       stopped: false,
@@ -83,7 +83,9 @@ export class VM implements IVM {
   }
 
   static init(tape: ByteCode[], bindings: IBindings): IVM {
-    return new VM(tape, [this.generateInitialState()], bindings);
+    const vm = new VM(tape, [], bindings);
+    vm.states = [vm.generateInitialState()];
+    return vm;
   }
 
   lastState(): State {
@@ -123,7 +125,7 @@ export class VM implements IVM {
       }
 
       case OpCode.VOID:
-        return { ...lastState, stack: stack.pop("any")[1], ip: ip + 1 };
+        return { ...lastState, stack: stack.length > 0 ? stack.pop("any")[1] : stack, ip: ip + 1 };
 
       case OpCode.PRINT: {
         const [value, newStack] = stack.pop("any");
@@ -196,9 +198,13 @@ export class VM implements IVM {
       }
 
       case OpCode.ESCOPE:
-        return { ...lastState, variables: variables.enterScope(payload === "func"), ip: ip + 1 };
+        return {
+          ...lastState,
+          variables: variables.enterScope(payload === "func", store),
+          ip: ip + 1,
+        };
       case OpCode.LSCOPE:
-        return { ...lastState, variables: variables.leaveScope(), ip: ip + 1 };
+        return { ...lastState, variables: variables.leaveScope(store), ip: ip + 1 };
 
       case OpCode.CALL:
         return {
@@ -212,9 +218,9 @@ export class VM implements IVM {
 
         if (newAddress === undefined) throw new VMError(instruction.ast, "IP Stack was empty!");
 
-        const newVars = variables.leaveScope();
+        const newVars = variables.leaveScope(store);
 
-        if (payload === null) {
+        if (payload !== null) {
           const [_value, newStack] = stack.pop("any");
           return {
             ...lastState,
@@ -330,6 +336,9 @@ export class VM implements IVM {
 
   fetch(): ByteCode | null {
     const lastState = this.lastState();
+
+    if (lastState.ip > this.tape.length - 1) return null;
+
     return this.tape[lastState.ip];
   }
 
@@ -360,12 +369,12 @@ export class VM implements IVM {
     this.states.pop();
 
     if (this.states.length === 0) {
-      this.states.push(VM.generateInitialState());
+      this.states.push(this.generateInitialState());
     }
   }
 
   reset(): void {
-    this.states = [VM.generateInitialState()];
+    this.states = [this.generateInitialState()];
     this.jumpTable = new Map();
   }
 }

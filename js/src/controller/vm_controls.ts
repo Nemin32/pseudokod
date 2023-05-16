@@ -74,6 +74,26 @@ export class MainDriver {
 
       stackInspector.innerText = output;
     },
+    vars: (vars, store) => {
+      const variableInspector = this.getElem(domElemName.variableInspector);
+
+      let output = "";
+      vars.forEach((variable) => {
+        if (variable.kind === "sentinel") {
+          output += "---\n";
+        } else {
+          output += `${variable.name} (${variable.points}) = ${store.get(variable.points)}`;
+        }
+      });
+
+      variableInspector.innerText = output;
+    },
+
+    ipStack: (stack: number[]) => {
+      const ipStackInspector = this.getElem(domElemName.ipStackInspector);
+
+      ipStackInspector.innerText = stack.reduce<string>((acc, val) => acc + String(val) + "\n", "");
+    },
   };
 
   private constructor() {}

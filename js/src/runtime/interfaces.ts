@@ -36,10 +36,10 @@ type EnvValue = { readonly kind: "value"; name: string; points: number };
 export type EnvVar = Sentinel | EnvValue;
 
 export interface IVariableStore {
-  enterScope(boundary: boolean): IVariableStore;
+  enterScope(boundary: boolean, alloc: MemAllocator): IVariableStore;
   getBoxIndex(name: string): number;
   getVariable(store: MemAllocator, name: string): NestedArray;
-  leaveScope(): IVariableStore;
+  leaveScope(alloc: MemAllocator): IVariableStore;
   makeReference(oldName: string | number, newName: string): IVariableStore;
   setVariable(store: MemAllocator, name: string, value: AtomValue): [MemAllocator, IVariableStore];
 }
@@ -65,7 +65,9 @@ export type IStore = {
 //#region VM
 export interface IBindings {
   out: (value: NestedArray) => void;
-  stack: (stack: NestedArray[]) => void;
+  stack: (stack: readonly NestedArray[]) => void;
+  vars: (vars: EnvVar[], store: MemAllocator) => void;
+  ipStack: (stack: number[]) => void;
 }
 
 export type State = Readonly<{
@@ -75,7 +77,7 @@ export type State = Readonly<{
   ipStack: Array<number>;
   ip: number;
   stopped: boolean;
-  line: number
+  line: number;
 }>;
 
 export interface IVM {
@@ -86,6 +88,6 @@ export interface IVM {
   reset(): void;
   lastState(): State;
   lineStep(): boolean;
-  stepBack(): void
+  stepBack(): void;
 }
 //#endregion

@@ -1,11 +1,12 @@
 import { AtomValue } from "../compiler/pseudo_types.ts";
-import { EnvVar, IVariableStore } from "./interfaces.ts";
+import { EnvVar, IBindings, IVariableStore } from "./interfaces.ts";
 import { MemAllocator } from "./store.ts";
 
 export class VariableStore implements IVariableStore {
-  private constructor(readonly variables: EnvVar[]) {}
-  public static init() {
-    return new VariableStore([]);
+  private constructor(readonly callback: IBindings["vars"], readonly variables: EnvVar[]) {}
+
+  public static init(callback: IBindings["vars"]) {
+    return new VariableStore(callback, []);
   }
 
   getVariable(store: MemAllocator, name: string) {
@@ -39,26 +40,47 @@ export class VariableStore implements IVariableStore {
 
     const index = store.alloc(value);
 
-    return [store, new VariableStore([...this.variables, { kind: "value", name, points: index }])];
+    const retval: [MemAllocator, VariableStore] = [
+      store,
+      new VariableStore(this.callback, [...this.variables, { kind: "value", name, points: index }]),
+    ];
+
+    this.callback(retval[1].variables, retval[0]);
+
+    return retval;
   }
 
   makeReference(oldName: string | number, newName: string): VariableStore {
     const index = typeof oldName === "string" ? this.getBoxIndex(oldName) : oldName;
-    return new VariableStore([...this.variables, { kind: "value", name: newName, points: index }]);
+    return new VariableStore(this.callback, [
+      ...this.variables,
+      { kind: "value", name: newName, points: index },
+    ]);
   }
 
-  enterScope(boundary: boolean): VariableStore {
-    return new VariableStore([...this.variables, { kind: "sentinel", boundary }]);
+  enterScope(boundary: boolean, alloc: MemAllocator): VariableStore {
+    const retval = new VariableStore(this.callback, [
+      ...this.variables,
+      { kind: "sentinel", boundary },
+    ]);
+
+    this.callback(retval.variables, alloc);
+
+    return retval;
   }
 
-  leaveScope(): VariableStore {
+  leaveScope(alloc: MemAllocator): VariableStore {
     const scopeIdx = this.variables.findLastIndex((e) => e.kind === "sentinel");
 
     if (scopeIdx === -1) {
       throw new Error("No active scope!");
     }
 
-    return new VariableStore(this.variables.slice(0, scopeIdx));
+    const retval = new VariableStore(this.callback, this.variables.slice(0, scopeIdx));
+
+    this.callback(retval.variables, alloc);
+
+    return retval;
   }
 
   private lookup(name: string): number | null {

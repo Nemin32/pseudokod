@@ -1,9 +1,15 @@
-import { IStack, NestedArray, StringToType } from "./interfaces.ts";
+import { IBindings, IStack, NestedArray, StringToType } from "./interfaces.ts";
 
 export class Stack implements IStack {
-  private constructor(private stack: Readonly<Array<NestedArray>> = []) {}
-  public static init() {
-    return new Stack([]);
+  private constructor(
+    readonly callback: IBindings["stack"],
+    readonly stack: Readonly<Array<NestedArray>> = [],
+  ) {
+    this.callback(this.stack);
+  }
+
+  public static init(callback: IBindings["stack"]) {
+    return new Stack(callback, []);
   }
 
   get length() {
@@ -11,11 +17,11 @@ export class Stack implements IStack {
   }
 
   reset(): IStack {
-    return new Stack();
+    return new Stack(this.callback);
   }
 
   push(val: NestedArray): IStack {
-    return new Stack([val, ...this.stack]);
+    return new Stack(this.callback, [val, ...this.stack]);
   }
 
   private checkType<K extends keyof StringToType>(
@@ -36,6 +42,11 @@ export class Stack implements IStack {
       throw new Error(`Expected type was ${type}, but received ${typeof val}.`);
     }
 
-    return [val as StringToType[K], new Stack(rest)];
+    const retval: [StringToType[K], Stack] = [
+      val as StringToType[K],
+      new Stack(this.callback, rest),
+    ];
+
+    return retval;
   }
 }
