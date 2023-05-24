@@ -45,12 +45,10 @@ class HeterogenousArrayType {
 
 class NoneType {
   readonly kind = TypeVariants.NONE;
-  constructor() {}
 }
 
 class UnknownType {
   readonly kind = TypeVariants.UNKNOWN;
-  constructor() {}
 }
 
 function compare(t1: Type, t2: Type): boolean {

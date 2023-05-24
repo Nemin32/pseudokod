@@ -173,7 +173,7 @@ export class MainDriver {
         typeCheck(AST.value, new Map(), new Map());
 
         this.byteCode = ASTCompiler.compile(AST.value);
-        this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST.value)));
+        //this.getElem(domElemName.variableInspector).replaceChildren(divMaker(astToDiv(AST.value)));
 
         this.dumper.generateSpans(this.byteCode, this);
         this.dumper.show(this.getElem(domElemName.vmInstructions));

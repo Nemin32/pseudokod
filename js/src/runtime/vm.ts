@@ -206,37 +206,35 @@ export class VM implements IVM {
       case OpCode.LSCOPE:
         return { ...lastState, variables: variables.leaveScope(store), ip: ip + 1 };
 
-      case OpCode.CALL:
+      case OpCode.CALL: {
+        const newIpStack = ipStack.concat(ip + 1);
+        this.bindings.ipStack(newIpStack);
         return {
           ...lastState,
-          ipStack: ipStack.concat(ip + 1),
+          ipStack: newIpStack,
           ip: this.findLabelAddress(payload as string),
         };
+      }
 
       case OpCode.RETURN: {
+        const isEmptyReturn = payload !== null;
         const newAddress = ipStack.at(-1);
 
         if (newAddress === undefined) throw new VMError(instruction.ast, "IP Stack was empty!");
 
-        const newVars = variables.leaveScope(store);
+        const newVars = !isEmptyReturn ? variables : variables.leaveScope(store);
+        const [_value, newStack] = isEmptyReturn ? stack.pop("any") : [null, stack];
+        const newIpStack = ipStack.slice(0, -1);
 
-        if (payload !== null) {
-          const [_value, newStack] = stack.pop("any");
-          return {
-            ...lastState,
-            variables: newVars,
-            stack: newStack,
-            ipStack: ipStack.slice(0, -1),
-            ip: newAddress,
-          };
-        } else {
-          return {
-            ...lastState,
-            variables: newVars,
-            ipStack: ipStack.slice(0, -1),
-            ip: newAddress,
-          };
-        }
+        this.bindings.ipStack(newIpStack);
+
+        return {
+          ...lastState,
+          variables: newVars,
+          stack: newStack,
+          ipStack: newIpStack,
+          ip: newAddress,
+        };
       }
 
       case OpCode.ADDRESS:
