@@ -12,7 +12,7 @@ const colors: [TokenType[], string][] = [
   [[TokenType.CIKLUS, TokenType.AMIG], "#bf9475"],
   [[TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS], "#a878cf"],
   [[TokenType.VISSZA, TokenType.KIIR], "#8ec07c"],
-  [[TokenType.SYMBOL], "#efefef"],
+  [[TokenType.SYMBOL], "#222"],
 
   [[TokenType.VEGE], "#ff0000"],
   [[TokenType.ERROR], "#ff0000"],
