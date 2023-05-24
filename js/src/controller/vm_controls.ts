@@ -20,6 +20,7 @@ enum domElemName {
   syntaxHighlightOverlay = "#syntax",
   compileButton = "#compile",
   instStepButton = "#step",
+  backButton = "#back",
   lineStepButton = "#stepLine",
   runButton = "#run",
 
@@ -104,6 +105,7 @@ export class MainDriver {
     this.getElem(domElemName.codeInput).addEventListener("input", this.onInput);
     this.getElem(domElemName.codeInput).addEventListener("scroll", this.onScroll);
     this.getElem(domElemName.compileButton).addEventListener("click", this.onCompile);
+    this.getElem(domElemName.backButton).addEventListener("click", this.onBack);
     this.getElem(domElemName.runButton).addEventListener("click", this.onRun);
     this.getElem(domElemName.instStepButton).addEventListener("click", this.onInstStep);
     this.getElem(domElemName.lineStepButton).addEventListener("click", this.onLineStep);
@@ -133,6 +135,14 @@ export class MainDriver {
     const errorDiv = this.getElem(domElemName.error);
     errorDiv.style.display = "none";
   }
+
+  public onBack = () => {
+    if (this.vm) {
+      this.vm.stepBack();
+      this.dumper.setHighlight(this.vm.lastState().ip);
+      this.onInput();
+    }
+  };
 
   public onInput = () => {
     const input = this.getElem<HTMLTextAreaElement>(domElemName.codeInput);
