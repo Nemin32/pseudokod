@@ -136,6 +136,16 @@ export class MainDriver {
     errorDiv.style.display = "none";
   }
 
+  highlightLine(line: number, active: boolean) {
+    const lines = Array.from(document.querySelectorAll(`#syntax span[linum="${line}"]`));
+
+    if (active) {
+      lines.map((l) => l.classList.add("highlight"));
+    } else {
+      lines.map((l) => l.classList.remove("highlight"));
+    }
+  }
+
   public onBack = () => {
     if (this.vm) {
       this.vm.stepBack();
@@ -152,12 +162,8 @@ export class MainDriver {
     // Tokenize
     this.tokens = this.tokenize(input);
 
-    console.log(this.highlighted);
     // Colorize
-    colorize(syntax, linums, this.tokens, {
-      hover: this.highlighted,
-      active: this.vm?.fetch()?.ast.token.line ?? -1,
-    });
+    colorize(syntax, linums, this.tokens);
   };
 
   public onCompile = () => {

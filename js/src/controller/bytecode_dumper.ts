@@ -27,8 +27,10 @@ export class ByteCodeDumper {
     }
 
     span.addEventListener("mouseover", () => {
-      driver.highlighted = bc.ast.token.line;
-      driver.onInput();
+      driver.highlightLine(bc.ast.token.line, true);
+    });
+    span.addEventListener("mouseleave", () => {
+      driver.highlightLine(bc.ast.token.line, false);
     });
 
     return span;
