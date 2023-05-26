@@ -1,3 +1,5 @@
+@import "./colorScheme.scss";
+
 html,
 body {
   height: 100%;
@@ -36,13 +38,6 @@ main {
 footer {
   flex-basis: 300px;
   max-height: 300px;
-}
-
-main,
-footer,
-header,
-div {
-  // border: 1px solid black;
 }
 
 header>p {
@@ -186,7 +181,7 @@ header>p {
   #syntax {
     pointer-events: none;
 
-    background-color: #efefef;
+    background-color: #fafafa;
     color: #222;
 
     &>span.highlight {
@@ -205,7 +200,7 @@ header>p {
   #input {
     background-color: transparent;
     color: transparent;
-    caret-color: white;
+    caret-color: black;
   }
 }
 

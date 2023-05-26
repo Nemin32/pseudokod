@@ -1,28 +1,24 @@
 import { PseudoToken, TokenType } from "../parser/tokenizer.ts";
 
-const colors: [TokenType[], string][] = [
-  [[TokenType.NUMBER], "#b16286"],
-  [[TokenType.STRING], "#aaefba"],
-  [[TokenType.ARITHMOP, TokenType.LOGICOP, TokenType.COMPOP], "#a0a0a0"],
-  [[TokenType.FUNCNAME], "#7899cf"],
-  [[TokenType.TYPE, TokenType.TOMB], "#a9cf78"],
-  [[TokenType.CIMSZERINT], "#888"],
-  [[TokenType.NYIL, TokenType.FORSTART, TokenType.FOREND], "#aaa"],
-  [[TokenType.FUGGVENY], "#8c9472"],
-  [[TokenType.CIKLUS, TokenType.AMIG], "#bf9475"],
-  [[TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS], "#a878cf"],
-  [[TokenType.VISSZA, TokenType.KIIR], "#8ec07c"],
-  [[TokenType.SYMBOL], "#222"],
-
-  [[TokenType.VEGE], "#ff0000"],
-  [[TokenType.ERROR], "#ff0000"],
+const colorClassMap: [TokenType[], string][] = [
+  [[TokenType.NUMBER], "num"],
+  [[TokenType.STRING], "string"],
+  [[TokenType.ARITHMOP, TokenType.LOGICOP, TokenType.COMPOP], "op"],
+  [[TokenType.FUNCNAME], "func"],
+  [[TokenType.TYPE, TokenType.TOMB], "type"],
+  [[TokenType.CIMSZERINT], "cim"],
+  [[TokenType.NYIL, TokenType.FORSTART, TokenType.FOREND], "nyil"],
+  [[TokenType.FUGGVENY], "fgv"],
+  [[TokenType.CIKLUS, TokenType.AMIG], "ciklus"],
+  [[TokenType.HA, TokenType.AKKOR, TokenType.KULONBEN, TokenType.ELAGAZAS], "ha"],
+  [[TokenType.VISSZA, TokenType.KIIR], "vissza"],
+  [[TokenType.SYMBOL], "symbol"],
+  [[TokenType.ERROR, TokenType.VEGE], "error"],
 ];
 
-const kwColor = "#fb4934";
-
-const tokenToColor = (token: PseudoToken, previous: PseudoToken): string => {
+const tokenToColorClass = (token: PseudoToken, previous: PseudoToken): string => {
   const type = token.type === TokenType.VEGE ? previous.type : token.type;
-  return colors.find(([types, _]) => types.includes(type))?.[1] ?? kwColor;
+  return colorClassMap.find(([types, _]) => types.includes(type))?.[1] ?? "kw";
 };
 
 const tokenToSpan = (
@@ -34,10 +30,11 @@ const tokenToSpan = (
 
   span.style.whiteSpace = "pre";
   span.innerText = token.lexeme;
-  span.style.color = tokenToColor(token, previous);
+  span.classList.add(tokenToColorClass(token, previous));
+  span.setAttribute("linum", String(token.line));
 
-  if (token.line === lineNumber.hover) span.classList.add("hover");
-  if (token.line === lineNumber.active) span.classList.add("active");
+  //if (token.line === lineNumber.hover) span.classList.add("hover");
+  //if (token.line === lineNumber.active) span.classList.add("active");
 
   return span;
 };
@@ -49,9 +46,10 @@ const generateLinum = (token: PseudoToken, lineNumber: { hover: number; active: 
   const span = document.createElement("span");
 
   span.innerText = String(token.line + 1);
+  span.setAttribute("linum", String(token.line));
 
-  if (token.line === lineNumber.hover) span.classList.add("hover");
-  if (token.line === lineNumber.active) span.classList.add("active");
+  //if (token.line === lineNumber.hover) span.classList.add("hover");
+  //if (token.line === lineNumber.active) span.classList.add("active");
 
   return span;
 };

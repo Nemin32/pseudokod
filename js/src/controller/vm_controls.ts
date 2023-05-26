@@ -165,6 +165,9 @@ export class MainDriver {
       return;
     }
 
+    const output = this.getElem(domElemName.standardOutput);
+    output.innerText = "";
+
     const AST = parseProgram(this.tokens);
     this.hideError();
 

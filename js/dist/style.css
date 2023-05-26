@@ -1,3 +1,46 @@
+#syntax .kw {
+  color: #fb4934;
+}
+#syntax .num {
+  color: #b16286;
+}
+#syntax .string {
+  color: #469f4a;
+}
+#syntax .op {
+  color: 333;
+}
+#syntax .func {
+  color: #7899cf;
+}
+#syntax .type {
+  color: #a9cf78;
+}
+#syntax .cim {
+  color: #888;
+}
+#syntax .nyil {
+  color: #333;
+}
+#syntax .fgv {
+  color: #8c9472;
+}
+#syntax .ciklus {
+  color: #bf9475;
+}
+#syntax .ha {
+  color: #a878cf;
+}
+#syntax .vissza {
+  color: #8ec07c;
+}
+#syntax .symbol {
+  color: #222;
+}
+#syntax .error {
+  color: #ff2222;
+}
+
 html,
 body {
   height: 100%;
@@ -155,7 +198,7 @@ header > p {
 }
 #editorContainer #syntax {
   pointer-events: none;
-  background-color: #efefef;
+  background-color: #fafafa;
   color: #222;
 }
 #editorContainer #syntax > span.highlight {
@@ -170,7 +213,7 @@ header > p {
 #editorContainer #input {
   background-color: transparent;
   color: transparent;
-  caret-color: white;
+  caret-color: black;
 }
 
 #error {
