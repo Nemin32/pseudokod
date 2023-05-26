@@ -217,13 +217,11 @@ export class VM implements IVM {
       }
 
       case OpCode.RETURN: {
-        const isEmptyReturn = payload !== null;
         const newAddress = ipStack.at(-1);
-
         if (newAddress === undefined) throw new VMError(instruction.ast, "IP Stack was empty!");
 
-        const newVars = !isEmptyReturn ? variables : variables.leaveScope(store);
-        const [_value, newStack] = isEmptyReturn ? stack.pop("any") : [null, stack];
+        const returningWithValue = payload === "exp";
+        const newVars = returningWithValue ? variables.leaveScope(store) : variables;
         const newIpStack = ipStack.slice(0, -1);
 
         this.bindings.ipStack(newIpStack);
@@ -231,7 +229,6 @@ export class VM implements IVM {
         return {
           ...lastState,
           variables: newVars,
-          stack: newStack,
           ipStack: newIpStack,
           ip: newAddress,
         };

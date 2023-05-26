@@ -44,6 +44,7 @@
 html,
 body {
   height: 100%;
+  min-height: 800px;
 }
 
 * {
@@ -221,7 +222,7 @@ header > p {
   left: 0;
   bottom: 0;
   background-color: #c44;
-  display: flex;
+  display: none;
   align-items: center;
   gap: 1rem;
   color: white;
