@@ -171,7 +171,8 @@ export class ASTCompiler {
 
     this.visitExpression(ast.pred);
 
-    this.createOp(OpCode.TJMP, `do_while_${label}`, ast);
+    this.createOp(OpCode.NOT, null, ast);
+    this.createOp(OpCode.FJMP, `do_while_${label}`, ast);
   }
 
   visitExpression(ast: Expression) {

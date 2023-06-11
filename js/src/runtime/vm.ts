@@ -139,15 +139,6 @@ export class VM implements IVM {
       case OpCode.JMP:
         return { ...lastState, ip: this.findLabelAddress(payload as string) };
 
-      case OpCode.TJMP: {
-        const [value, newStack] = stack.pop("boolean");
-        return {
-          ...lastState,
-          stack: newStack,
-          ip: value ? this.findLabelAddress(payload as string) : ip + 1,
-        };
-      }
-
       case OpCode.FJMP: {
         const [value, newStack] = stack.pop("boolean");
         return {

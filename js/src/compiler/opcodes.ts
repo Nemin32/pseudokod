@@ -23,9 +23,8 @@ export enum OpCode {
   RETURN = 19,
   SETARR = 20,
   SETVAR = 21,
-  TJMP = 22,
-  VALARR = 23,
-  VOID = 24,
+  VALARR = 22,
+  VOID = 23,
 }
 
 export type ByteCode = {
