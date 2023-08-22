@@ -19,18 +19,20 @@ export class ByteCodeDumper {
     const ip = String(idx).padStart(4, " ");
     const op = " ".repeat(this.indent) + OpCode[bc.opCode].padEnd(6, " ");
     const payload = bc.payload ?? "";
+    const line = bc.ast.token.line;
 
     pre.innerText = `${ip}: ${op} ${payload}`;
+    pre.setAttribute("linum", String(line));
 
     if (bc.opCode === OpCode.LSCOPE) {
       this.indent -= 2;
     }
 
     span.addEventListener("mouseover", () => {
-      driver.highlightLine(bc.ast.token.line, true);
+      driver.highlightLine(line, true);
     });
     span.addEventListener("mouseleave", () => {
-      driver.highlightLine(bc.ast.token.line, false);
+      driver.highlightLine(line, false);
     });
 
     return span;

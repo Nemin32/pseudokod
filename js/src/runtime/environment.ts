@@ -70,7 +70,11 @@ export class VariableStore implements IVariableStore {
   }
 
   leaveScope(alloc: MemAllocator): VariableStore {
-    const scopeIdx = this.variables.findLastIndex((e) => e.kind === "sentinel");
+    // const scopeIdx = this.variables.findLastIndex((e) => e.kind === "sentinel");
+    let scopeIdx = -1;
+    for (let i = this.variables.length-1; i >= 0; i--) {
+	if (this.variables[i].kind === "sentinel") {scopeIdx = i; break;}
+    }
 
     if (scopeIdx === -1) {
       throw new Error("No active scope!");
