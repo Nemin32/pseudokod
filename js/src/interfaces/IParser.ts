@@ -1,4 +1,4 @@
-import { IToken } from "./ITokenizer";
+import { IToken } from "./ITokenizer.ts";
 
 // IToken[] -> IAST
 type ASTKind = Expression | Statement;

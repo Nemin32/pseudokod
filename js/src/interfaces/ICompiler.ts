@@ -1,4 +1,4 @@
-import { AtomValue, IAST } from "./IParser";
+import { AtomValue, IAST } from "./IParser.ts";
 
 // IAST -> IByteCode
 enum OpCode {

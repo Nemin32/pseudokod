@@ -1,5 +1,5 @@
 // string -> IToken[]
-enum TokenType {
+export enum TokenType {
   /* Keywords */
   AKKOR = 0,
   AMIG = 1,
@@ -35,18 +35,22 @@ enum TokenType {
   STRING = 27,
   SYMBOL = 28,
   FUNCNAME = 29,
-  ARITHMOP = 30,
-  COMPOP = 31,
-  LOGICOP = 32,
-  WHITESPACE = 33,
-  TYPE = 34,
+  BINOP = 30,
+  WHITESPACE = 31,
+  TYPE = 32,
+  COMMENT = 33,
 
-  ERROR = 35,
+  ERROR = 34,
+}
+
+export interface Location {
+    readonly row: number,
+    readonly column: number
 }
 
 export interface IToken {
   readonly lexeme: string;
-  readonly start: number;
+  readonly position: Location
   readonly length: number;
   readonly type: TokenType;
 }
