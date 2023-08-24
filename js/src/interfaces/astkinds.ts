@@ -124,4 +124,4 @@ export type Expression =
 
 export type Statement = If | Assignment | While | For | Print | Return | FunctionDeclaration;
 
-export type ASTKind = Expression | Statement;
+export type ASTKind = Expression | Statement | Block;

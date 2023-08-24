@@ -4,7 +4,7 @@ import * as ASTKinds from "../interfaces/astkinds.ts";
 import { AtomValue } from "../interfaces/astkinds.ts";
 import { Tokenizer } from "./tokenizer.ts";
 
-type ParseResult<T extends ASTKinds.ASTKind> = { token: IToken; kind: T } | null;
+type ParseResult<T extends ASTKinds.ASTKind> = IAST<T> | null; //{ token: IToken | null; kind: T } | null;
 
 class Parser implements ITokenToASTParser {
   private input: IToken[] = [];
@@ -37,7 +37,7 @@ class Parser implements ITokenToASTParser {
     return null;
   }
 
-  mk<T extends ASTKinds.ASTKind>(token: IToken, kind: T): ParseResult<T> {
+  mk<T extends ASTKinds.ASTKind>(token: IToken | null, kind: T): ParseResult<T> {
     return {
       token,
       kind,
@@ -45,16 +45,90 @@ class Parser implements ITokenToASTParser {
   }
 
   // --- STATEMENTS ---
+  
+  statement(): ParseResult<ASTKinds.Statement> {
+    const parsers = [this.for, this.return, this.if];
+
+    for (const parser of parsers) {
+      const value = this.tryParse(parser as () => ParseResult<ASTKinds.Statement>);
+      if (value) return value;
+    }
+
+    return null;
+  }
 
   return(): ParseResult<ASTKinds.Return> {
     const tok = this.matchT(TT.VISSZA);
     const expr = this.expression();
-    if (!tok || !expr) return null;
+    if (!expr) return null;
 
     return this.mk(tok, {
       tag: "return",
       expr,
     });
+  }
+
+  if(): ParseResult<ASTKinds.If> {
+    const ha = this.matchT(TT.HA)
+    if (!ha) return null;
+    const pred = this.expression();
+    if (!this.matchT(TT.AKKOR)) return null;
+    const body = this.block();
+    if (!this.matchT(TT.ELAGAZAS)) return null;
+    if (!this.matchT(TT.VEGE)) return null;
+    
+    if (!pred || !body) return null;
+    
+    return this.mk(ha, {
+      tag: "if",
+      main_path: {pred, branch: body},
+      elif_path: []
+    })
+  }
+  
+  for(): ParseResult<ASTKinds.For> {
+    const ciklus = this.matchT(TT.CIKLUS)
+    if (!ciklus) return null;
+    const variable = this.variable();
+    if (!variable) return null;
+    
+    if (!this.matchT(TT.NYIL)) return null;
+    const num1 = this.expression();
+    if (!num1) return null;
+    if (!this.matchT(TT.FORSTART)) return null;
+
+    const num2 = this.expression();
+    if (!num2) return null;
+    if (!this.matchT(TT.FOREND)) return null;
+    
+    const body = this.block();
+    if (!body) return null;
+    
+    if (!this.matchT(TT.CIKLUS)) return null;
+    if (!this.matchT(TT.VEGE)) return null;
+
+    return this.mk(ciklus, {
+      tag: "for",
+      from: num1,
+      to: num2,
+      body
+    })
+  }
+
+  block(): ParseResult<ASTKinds.Block> {
+    const ret = [];
+
+    while (true) {
+      const stmt: ParseResult<ASTKinds.Statement> = this.tryParse(this.statement);
+      if (stmt) {
+        ret.push(stmt);
+      } else {
+        return this.mk(null, {
+          tag: "block",
+          statements: ret,
+        });
+      }
+    }
   }
 
   // --- EXPRESSIONS ---
@@ -89,6 +163,17 @@ class Parser implements ITokenToASTParser {
     }
 
     return null;
+  }
+
+  variable(): ParseResult<ASTKinds.Variable> {
+    const tok = this.matchT(TT.SYMBOL);
+    return (
+      tok &&
+      this.mk(tok, {
+        tag: "variable",
+        name: tok.lexeme,
+      })
+    );
   }
 
   parenExpr(): ParseResult<ASTKinds.Expression> {
@@ -143,15 +228,29 @@ class Parser implements ITokenToASTParser {
     this.input = input;
     this.index = 0;
 
-    return this.log_binop() as any as IAST<ASTKinds.Block>;
+    return this.block()
   }
 }
 
 const tok: ITokenizer = new Tokenizer();
 const parser = new Parser();
 
-const tokens = tok.tokenize("5+5<10");
-console.log(tokens);
+const tokens = tok.tokenize(`
+függvény LNKO(m : egész, n : egész)
+  r <- m mod n
+  
+  ciklus amíg r =/= 0
+    m <- n
+    n <- r
+    r <- m mod n  
+  ciklus vége
+
+  vissza n
+függvény vége
+
+kiír LNKO(15, 33)
+`).filter(t => t.type !== TT.WHITESPACE);
+console.log(tokens.map(t => ({name: t.lexeme, type: TT[t.type]})));
 
 parser.input = tokens;
-console.log(parser.log_binop());
+console.log(parser.block());

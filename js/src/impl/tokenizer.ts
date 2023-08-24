@@ -203,7 +203,6 @@ export class Tokenizer implements ITokenizer {
 
     return this.mkToken(TT.BINOP, () => {
       const str = (this.eat() ?? "") + (this.eat() ?? "") + (this.eat() ?? "") + (this.eat() ?? "");
-      console.log(str);
 
       for (let i = str.length; i > 0; i--) {
         const sub = str.substring(0, i);
@@ -212,7 +211,6 @@ export class Tokenizer implements ITokenizer {
           // amennyit végül mégse használtunk fel.
           this.index -= str.length - i;
           this.column -= str.length - i;
-          console.log(sub);
           return sub;
         }
       }
@@ -266,7 +264,6 @@ export class Tokenizer implements ITokenizer {
     for (const parser of parsers) {
       const value = this.tryParse(parser);
       if (value) {
-        console.log(parser);
         return value;
       }
     }

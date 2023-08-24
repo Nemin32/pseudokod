@@ -4,7 +4,7 @@ import { ASTKind, Block } from "./astkinds.ts";
 // IToken[] -> IAST
 
 export interface IAST<T> {
-  readonly token: IToken;
+  readonly token: IToken | null;
   readonly kind: T;
 }
 
