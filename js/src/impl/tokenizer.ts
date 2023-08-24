@@ -67,6 +67,7 @@ export class Tokenizer implements ITokenizer {
         retval += c;
       } else {
         this.index--;
+        this.column--;
         return retval.length === 0 ? null : retval;
       }
     }
@@ -210,6 +211,7 @@ export class Tokenizer implements ITokenizer {
           // Mivel négy karaktert "ettünk meg", így annyival vissza kell lökni az indexet,
           // amennyit végül mégse használtunk fel.
           this.index -= str.length - i;
+          this.column -= str.length - i;
           console.log(sub);
           return sub;
         }

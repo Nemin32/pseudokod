@@ -1,4 +1,4 @@
-import { IAST } from "./IParser";
+import { IAST } from "./IParser.ts";
 
 export type AtomValue = number | string | boolean;
 
