@@ -152,7 +152,7 @@ export class Tokenizer implements ITokenizer {
   keyword(): ParseResult {
     const token = this.mkToken(TT.ERROR, () => {
       const single = this.peek();
-      if (this.getKeywordTokenType(single)) {
+      if (this.getKeywordTokenType(single) !== null) {
         this.eat();
         return single;
       }
@@ -160,7 +160,7 @@ export class Tokenizer implements ITokenizer {
       const kw = this.eatWhile(c => !this.isWhitespace(c));
       const type = this.getKeywordTokenType(kw);
 
-      if (!kw || !type) return null;
+      if (!kw || type === null) return null;
       return kw;
     });
 

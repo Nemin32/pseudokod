@@ -21,7 +21,7 @@ export interface If {
   tag: "if";
   main_path: { pred: IAST<Expression>; branch: IAST<Block> };
   elif_path: Array<{ pred: IAST<Expression>; branch: IAST<Block> }>;
-  false_path?: IAST<Block>;
+  false_path: IAST<Block> | null;
 }
 
 export interface Block {

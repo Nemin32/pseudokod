@@ -26,6 +26,16 @@ class Parser implements ITokenToASTParser {
 
     return token;
   }
+  
+  maybe(type: TT): IToken | null {
+    const prevIdx = this.index;
+
+    const token = this.matchT(type);
+    if (token) return token;
+
+    this.index = prevIdx;
+    return null;
+  }
 
   tryParse<T extends ASTKinds.ASTKind>(fn: () => ParseResult<T> | null): ParseResult<T> | null {
     const prevIdx = this.index;
@@ -45,7 +55,7 @@ class Parser implements ITokenToASTParser {
   }
 
   // --- STATEMENTS ---
-  
+
   statement(): ParseResult<ASTKinds.Statement> {
     const parsers = [this.for, this.return, this.if];
 
@@ -68,30 +78,62 @@ class Parser implements ITokenToASTParser {
     });
   }
 
+  elseIf() {
+    if (!this.matchT(TT.KULONBEN) || !this.matchT(TT.HA)) return null;
+    const pred = this.expression();
+    if (!pred) return null;
+    if (!this.matchT(TT.AKKOR)) return null;
+    const branch = this.block();
+    if (!branch) return null;
+
+    return { pred, branch };
+  }
+
   if(): ParseResult<ASTKinds.If> {
-    const ha = this.matchT(TT.HA)
+    const ha = this.matchT(TT.HA);
     if (!ha) return null;
     const pred = this.expression();
     if (!this.matchT(TT.AKKOR)) return null;
     const body = this.block();
+    
+
+    const elif_path = [];
+    while (true) {
+      const prevIdx = this.index;
+      const elif = this.elseIf();
+
+      if (elif) {
+        elif_path.push(elif);
+      } else {
+        this.index = prevIdx;
+        break;
+      }
+    }
+
+    let false_path = null;
+    if (this.maybe(TT.KULONBEN)) {
+      false_path = this.block();
+    }
+
     if (!this.matchT(TT.ELAGAZAS)) return null;
     if (!this.matchT(TT.VEGE)) return null;
-    
+
     if (!pred || !body) return null;
-    
+
     return this.mk(ha, {
       tag: "if",
-      main_path: {pred, branch: body},
-      elif_path: []
-    })
+      main_path: { pred, branch: body },
+      elif_path,
+      false_path,
+    });
   }
-  
+
   for(): ParseResult<ASTKinds.For> {
-    const ciklus = this.matchT(TT.CIKLUS)
+    const ciklus = this.matchT(TT.CIKLUS);
     if (!ciklus) return null;
     const variable = this.variable();
     if (!variable) return null;
-    
+
     if (!this.matchT(TT.NYIL)) return null;
     const num1 = this.expression();
     if (!num1) return null;
@@ -100,10 +142,10 @@ class Parser implements ITokenToASTParser {
     const num2 = this.expression();
     if (!num2) return null;
     if (!this.matchT(TT.FOREND)) return null;
-    
+
     const body = this.block();
     if (!body) return null;
-    
+
     if (!this.matchT(TT.CIKLUS)) return null;
     if (!this.matchT(TT.VEGE)) return null;
 
@@ -111,8 +153,8 @@ class Parser implements ITokenToASTParser {
       tag: "for",
       from: num1,
       to: num2,
-      body
-    })
+      body,
+    });
   }
 
   block(): ParseResult<ASTKinds.Block> {
@@ -228,14 +270,15 @@ class Parser implements ITokenToASTParser {
     this.input = input;
     this.index = 0;
 
-    return this.block()
+    return this.block();
   }
 }
 
 const tok: ITokenizer = new Tokenizer();
 const parser = new Parser();
 
-const tokens = tok.tokenize(`
+const tokens = tok
+  .tokenize(`
 függvény LNKO(m : egész, n : egész)
   r <- m mod n
   
@@ -249,8 +292,16 @@ függvény LNKO(m : egész, n : egész)
 függvény vége
 
 kiír LNKO(15, 33)
-`).filter(t => t.type !== TT.WHITESPACE);
-console.log(tokens.map(t => ({name: t.lexeme, type: TT[t.type]})));
+`)
+
+//const tokens = tok.tokenize("ha 5+5 akkor vissza 1 különben ha 2+2 akkor vissza 2 különben vissza 3 elágazás vége")
+  .filter((t) => t.type !== TT.WHITESPACE);
+console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
 
 parser.input = tokens;
-console.log(parser.block());
+
+const start = performance.now();
+const parse = parser.if()
+const end = performance.now();
+
+console.log(end - start);
