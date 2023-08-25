@@ -80,9 +80,12 @@ class Parser implements ITokenToASTParser {
 
   elseIf() {
     if (!this.matchT(TT.KULONBEN) || !this.matchT(TT.HA)) return null;
+
     const pred = this.expression();
     if (!pred) return null;
+
     if (!this.matchT(TT.AKKOR)) return null;
+
     const branch = this.block();
     if (!branch) return null;
 
@@ -277,6 +280,7 @@ class Parser implements ITokenToASTParser {
 const tok: ITokenizer = new Tokenizer();
 const parser = new Parser();
 
+/*
 const tokens = tok
   .tokenize(`
 függvény LNKO(m : egész, n : egész)
@@ -293,15 +297,19 @@ függvény vége
 
 kiír LNKO(15, 33)
 `)
-
-//const tokens = tok.tokenize("ha 5+5 akkor vissza 1 különben ha 2+2 akkor vissza 2 különben vissza 3 elágazás vége")
+*/
+const tokens = tok.tokenize("ha 5+5 akkor vissza 1 különben ha 2+2 akkor vissza 2 különben vissza 3 elágazás vége")
   .filter((t) => t.type !== TT.WHITESPACE);
 console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
 
-parser.input = tokens;
 
 const start = performance.now();
-const parse = parser.if()
+
+for (let i = 0; i < 10_000; i++) {
+  parser.input = tokens;
+  const parse = parser.if()
+}
+
 const end = performance.now();
 
 console.log(end - start);
