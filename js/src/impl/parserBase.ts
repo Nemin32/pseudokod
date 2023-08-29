@@ -4,47 +4,61 @@ import * as ASTKinds from "../interfaces/astkinds.ts";
 import { AtomValue } from "../interfaces/astkinds.ts";
 import { Tokenizer } from "./tokenizer.ts";
 
-type ParseResult<T extends ASTKinds.ASTKind> = IAST<T> | null; //{ token: IToken | null; kind: T } | null;
+type ParseResult<T extends ASTKinds.ASTKind> = IAST<T>; //{ token: IToken | null; kind: T } | null;
+
+class EOFError extends Error {
+  constructor() {
+    super("Ran out of tokens while parsing.");
+  }
+}
+
+class MatchError extends Error {}
 
 class Parser implements ITokenToASTParser {
   private input: IToken[] = [];
   private index = 0;
 
-  peek(): IToken | null {
-    if (this.index >= this.input.length) return null;
+  peek(): IToken {
+    if (this.index >= this.input.length) throw new EOFError();
     return this.input[this.index];
   }
 
-  eat(): IToken | null {
-    if (this.index >= this.input.length) return null;
+  eat(): IToken {
+    if (this.index >= this.input.length) throw new EOFError();
     return this.input[this.index++];
   }
 
-  matchT(type: TT): IToken | null {
+  matchT(type: TT): IToken {
     const token = this.eat();
-    if (token?.type !== type) return null;
+    if (token.type !== type) throw new MatchError(`Expected ${TT[type]}, got ${TT[token.type]}.`);
 
     return token;
   }
-  
+
   maybe(type: TT): IToken | null {
     const prevIdx = this.index;
 
-    const token = this.matchT(type);
-    if (token) return token;
-
-    this.index = prevIdx;
-    return null;
+    try {
+      return this.matchT(type);
+    } catch (e) {
+      if (e instanceof MatchError) {
+        this.index = prevIdx;
+        return null;
+      } else {
+        throw e;
+      }
+    }
   }
 
-  tryParse<T extends ASTKinds.ASTKind>(fn: () => ParseResult<T> | null): ParseResult<T> | null {
+  tryParse<T extends ASTKinds.ASTKind>(fn: () => ParseResult<T>): ParseResult<T> | null {
     const prevIdx = this.index;
-    const value = fn.call(this);
 
-    if (value) return value;
-
-    this.index = prevIdx;
-    return null;
+    try {
+      return fn.call(this);
+    } catch (e) {
+      this.index = prevIdx;
+      return null;
+    }
   }
 
   mk<T extends ASTKinds.ASTKind>(token: IToken | null, kind: T): ParseResult<T> {
@@ -57,20 +71,19 @@ class Parser implements ITokenToASTParser {
   // --- STATEMENTS ---
 
   statement(): ParseResult<ASTKinds.Statement> {
-    const parsers = [this.for, this.return, this.if];
+    const parsers = [this.print, this.funcDecl, this.for, this.return, this.if];
 
     for (const parser of parsers) {
       const value = this.tryParse(parser as () => ParseResult<ASTKinds.Statement>);
       if (value) return value;
     }
 
-    return null;
+    throw new MatchError();
   }
 
   return(): ParseResult<ASTKinds.Return> {
     const tok = this.matchT(TT.VISSZA);
     const expr = this.expression();
-    if (!expr) return null;
 
     return this.mk(tok, {
       tag: "return",
@@ -79,35 +92,28 @@ class Parser implements ITokenToASTParser {
   }
 
   elseIf() {
-    if (!this.matchT(TT.KULONBEN) || !this.matchT(TT.HA)) return null;
-
+    this.matchT(TT.KULONBEN);
+    this.matchT(TT.HA);
     const pred = this.expression();
-    if (!pred) return null;
-
-    if (!this.matchT(TT.AKKOR)) return null;
-
+    this.matchT(TT.AKKOR);
     const branch = this.block();
-    if (!branch) return null;
 
     return { pred, branch };
   }
 
   if(): ParseResult<ASTKinds.If> {
     const ha = this.matchT(TT.HA);
-    if (!ha) return null;
     const pred = this.expression();
-    if (!this.matchT(TT.AKKOR)) return null;
+    this.matchT(TT.AKKOR);
     const body = this.block();
-    
 
     const elif_path = [];
     while (true) {
       const prevIdx = this.index;
-      const elif = this.elseIf();
 
-      if (elif) {
-        elif_path.push(elif);
-      } else {
+      try {
+        elif_path.push(this.elseIf());
+      } catch (e) {
         this.index = prevIdx;
         break;
       }
@@ -118,10 +124,8 @@ class Parser implements ITokenToASTParser {
       false_path = this.block();
     }
 
-    if (!this.matchT(TT.ELAGAZAS)) return null;
-    if (!this.matchT(TT.VEGE)) return null;
-
-    if (!pred || !body) return null;
+    this.matchT(TT.ELAGAZAS);
+    this.matchT(TT.VEGE);
 
     return this.mk(ha, {
       tag: "if",
@@ -133,38 +137,90 @@ class Parser implements ITokenToASTParser {
 
   for(): ParseResult<ASTKinds.For> {
     const ciklus = this.matchT(TT.CIKLUS);
-    if (!ciklus) return null;
     const variable = this.variable();
-    if (!variable) return null;
 
-    if (!this.matchT(TT.NYIL)) return null;
+    this.matchT(TT.NYIL);
     const num1 = this.expression();
-    if (!num1) return null;
-    if (!this.matchT(TT.FORSTART)) return null;
+    this.matchT(TT.FORSTART);
 
     const num2 = this.expression();
-    if (!num2) return null;
-    if (!this.matchT(TT.FOREND)) return null;
+    this.matchT(TT.FOREND);
 
     const body = this.block();
-    if (!body) return null;
 
-    if (!this.matchT(TT.CIKLUS)) return null;
-    if (!this.matchT(TT.VEGE)) return null;
+    this.matchT(TT.CIKLUS);
+    this.matchT(TT.VEGE);
 
     return this.mk(ciklus, {
       tag: "for",
       from: num1,
       to: num2,
+      variable,
       body,
     });
+  }
+  
+  param(): ParseResult<ASTKinds.Parameter> {
+    const variable = this.variable();
+    this.matchT(TT.COLON)
+    const byRef = this.maybe(TT.CIMSZERINT) != null;
+    const type = this.matchT(TT.TYPE)
+
+    return this.mk(variable.token, {
+      tag: "param",
+      byRef,
+      name: variable,
+      type: type.lexeme
+    })
+  }
+  
+  funcDecl(): ParseResult<ASTKinds.FunctionDeclaration> {
+    const fgv = this.matchT(TT.FUGGVENY)
+    const name = this.matchT(TT.FUNCNAME)
+    this.matchT(TT.OPAREN)
+    
+    const parameters = []
+    while (true) {
+      const param = this.tryParse(this.param)
+      if (param) {
+        parameters.push(param);
+      } else {
+        break;
+      }
+    }
+    
+    this.matchT(TT.CPAREN);
+
+    const body = this.block()
+    
+    this.matchT(TT.FUGGVENY)
+    this.matchT(TT.VEGE)
+    
+    console.log("eddig")
+    return this.mk(fgv, {
+      tag: "funcdecl",
+      body,
+      name: name.lexeme,
+      parameters
+    })
+  }
+  
+  print(): ParseResult<ASTKinds.Print> {
+    const print = this.matchT(TT.KIIR)
+    const expr = this.expression();
+
+    return this.mk(print, {
+      tag: "print",
+      expr
+    })
   }
 
   block(): ParseResult<ASTKinds.Block> {
     const ret = [];
 
     while (true) {
-      const stmt: ParseResult<ASTKinds.Statement> = this.tryParse(this.statement);
+      const stmt: ParseResult<ASTKinds.Statement> | null = this.tryParse(this.statement);
+
       if (stmt) {
         ret.push(stmt);
       } else {
@@ -179,14 +235,14 @@ class Parser implements ITokenToASTParser {
   // --- EXPRESSIONS ---
 
   expression(): ParseResult<ASTKinds.Expression> {
-    const parsers = [this.log_binop, this.atom];
+    const parsers = [this.log_binop, this.variable, this.atom];
 
     for (const parser of parsers) {
       const value = this.tryParse(parser as () => ParseResult<ASTKinds.Expression>);
       if (value) return value;
     }
 
-    return null;
+    throw new MatchError();
   }
 
   atom(): ParseResult<ASTKinds.Atom> {
@@ -198,7 +254,6 @@ class Parser implements ITokenToASTParser {
     };
 
     const token = this.eat();
-    if (!token) return null;
 
     if ([TT.NUMBER, TT.STRING, TT.BOOLEAN].includes(token.type)) {
       return this.mk(token, {
@@ -207,7 +262,7 @@ class Parser implements ITokenToASTParser {
       });
     }
 
-    return null;
+    throw new MatchError();
   }
 
   variable(): ParseResult<ASTKinds.Variable> {
@@ -222,9 +277,9 @@ class Parser implements ITokenToASTParser {
   }
 
   parenExpr(): ParseResult<ASTKinds.Expression> {
-    if (!this.matchT(TT.OPAREN)) return null;
+    this.matchT(TT.OPAREN);
     const expr = this.expression();
-    if (!this.matchT(TT.CPAREN)) return null;
+    this.matchT(TT.CPAREN);
 
     return expr;
   }
@@ -235,21 +290,18 @@ class Parser implements ITokenToASTParser {
     lexemes: string[],
     next: () => ParseResult<ASTKinds.Expression>,
   ): () => ParseResult<ASTKinds.Expression> {
-    return () => {
-      if (this.peek() === null) return null;
-
+    return (): ParseResult<ASTKinds.Expression> => {
       const fn = next.bind(this);
       const lhs = fn();
       const prevIdx = this.index;
-      const op = this.matchT(TT.BINOP);
-      const rhs = fn();
+      const op = this.maybe(TT.BINOP);
+      const rhs = this.tryParse(fn);
 
       if (!rhs || !op || !lexemes.includes(op.lexeme)) {
         this.index = prevIdx;
         return lhs;
       }
 
-      if (!lhs) return null;
       return this.mk(op, {
         tag: "binop",
         lhs,
@@ -259,7 +311,10 @@ class Parser implements ITokenToASTParser {
   }
 
   primary() {
-    return this.tryParse(this.parenExpr) ?? this.tryParse(this.atom);
+    const result = this.tryParse(this.parenExpr) ?? this.tryParse(this.atom);
+    if (result) return result;
+
+    throw new MatchError();
   }
 
   add_binop = this.mk_binop(["+", "-"], this.primary);
@@ -298,17 +353,16 @@ függvény vége
 kiír LNKO(15, 33)
 `)
 */
-const tokens = tok.tokenize("ha 5+5 akkor vissza 1 különben ha 2+2 akkor vissza 2 különben vissza 3 elágazás vége")
+const tokens = tok
+  .tokenize("függvény Teszt(x : címszerint egész) kiír x függvény vége")
   .filter((t) => t.type !== TT.WHITESPACE);
 console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
 
-
 const start = performance.now();
-
-for (let i = 0; i < 10_000; i++) {
-  parser.input = tokens;
-  const parse = parser.if()
-}
+parser.input = tokens;
+parser.index = 0;
+const parse = parser.funcDecl();
+console.log(parse);
 
 const end = performance.now();
 

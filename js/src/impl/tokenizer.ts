@@ -197,6 +197,15 @@ export class Tokenizer implements ITokenizer {
       return `"${inner}"`;
     });
   }
+  
+  bool(): ParseResult {
+    return this.mkToken(TT.BOOLEAN, () => {
+      const word = this.eatWhile(this.isLetter)
+      if (!word || !["igaz", "Igaz", "hamis", "Hamis"].includes(word)) return null;
+      
+      return word;
+    })
+  }
 
   binop(): ParseResult {
     const validBinops = ["<", ">", "=", "<=", ">=", "=/=", "és", "vagy", "+", "-", "/", "*", "mod"];
@@ -254,6 +263,7 @@ export class Tokenizer implements ITokenizer {
       this.type,
       this.keyword,
       this.binop,
+      this.bool,
       this.number,
       this.string,
       this.funcName,

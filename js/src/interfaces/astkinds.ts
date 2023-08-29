@@ -66,6 +66,7 @@ export interface For {
   tag: "for";
   from: IAST<Expression>;
   to: IAST<Expression>;
+  variable: IAST<Variable>;
   body: IAST<Block>;
 }
 
@@ -106,7 +107,7 @@ export interface FunctionDeclaration {
 
 export interface Parameter {
   tag: "param";
-  name: string;
+  name: IAST<Variable>;
   type: string;
   byRef: boolean;
 }
@@ -124,4 +125,4 @@ export type Expression =
 
 export type Statement = If | Assignment | While | For | Print | Return | FunctionDeclaration;
 
-export type ASTKind = Expression | Statement | Block;
+export type ASTKind = Expression | Statement | Block | Parameter;
