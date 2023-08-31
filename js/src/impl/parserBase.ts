@@ -63,7 +63,7 @@ class Parser implements ITokenToASTParser {
     }
   }
 
-  sepBy<T>(fn: () => T, sep: () => unknown): T[] {
+  sepBy<Q extends ASTKinds.ASTKind, T extends ParseResult<Q>>(fn: () => T, sep: () => unknown): T[] {
     const bindFn = fn.bind(this);
     const bindSep = sep.bind(this);
 
@@ -84,6 +84,22 @@ class Parser implements ITokenToASTParser {
     }
   }
 
+  parens<T>(fn: () => T): T {
+    this.matchT(TT.OPAREN);
+    const retval = fn.call(this);
+    this.matchT(TT.CPAREN);
+
+    return retval;
+  }
+  
+  brackets<T>(fn: () => T): T {
+    this.matchT(TT.OBRACKET);
+    const retval = fn.call(this);
+    this.matchT(TT.CBRACKET);
+
+    return retval;
+  }
+
   tryParse<T extends ASTKinds.ASTKind>(fn: () => ParseResult<T>): ParseResult<T> | null {
     const prevIdx = this.index;
 
@@ -101,6 +117,11 @@ class Parser implements ITokenToASTParser {
       kind,
     };
   }
+  
+  // --- UTILS ---
+
+  type() {return this.matchT(TT.TYPE)}
+  comma() {return this.matchT(TT.COMMA)}
 
   // --- STATEMENTS ---
 
@@ -234,7 +255,7 @@ class Parser implements ITokenToASTParser {
     const variable = this.variable();
     this.matchT(TT.COLON);
     const byRef = this.maybe(TT.CIMSZERINT) != null;
-    const type = this.matchT(TT.TYPE);
+    const type = this.type()
 
     return this.mk(variable.token, {
       tag: "param",
@@ -247,10 +268,7 @@ class Parser implements ITokenToASTParser {
   funcDecl(): ParseResult<ASTKinds.FunctionDeclaration> {
     const fgv = this.matchT(TT.FUGGVENY);
     const name = this.matchT(TT.FUNCNAME);
-    this.matchT(TT.OPAREN);
-    const parameters = this.sepBy(this.param, () => this.matchT(TT.COMMA));
-
-    this.matchT(TT.CPAREN);
+    const parameters = this.parens(() => this.sepBy(this.param, this.comma));
 
     const body = this.block();
 
@@ -298,7 +316,14 @@ class Parser implements ITokenToASTParser {
   // --- EXPRESSIONS ---
 
   expression(): ParseResult<ASTKinds.Expression> {
-    const parsers = [this.log_binop, this.arrayIndex, this.funcCall, this.parenExpr];
+    const parsers = [
+      this.log_binop,
+      this.arrayIndex,
+      this.funcCall,
+      this.newArray,
+      this.arrayComprehension,
+      this.parenExpr,
+    ];
 
     for (const parser of parsers) {
       const value = this.tryParse(parser as () => ParseResult<ASTKinds.Expression>);
@@ -321,11 +346,32 @@ class Parser implements ITokenToASTParser {
     });
   }
 
+  arrayComprehension(): ParseResult<ASTKinds.ArrayComprehension> {
+    const opener = this.matchT(TT.OPAREN);
+    const expressions = this.sepBy(this.expression, this.comma);
+    this.matchT(TT.CPAREN);
+
+    return this.mk(opener, {
+      tag: "arrcomp",
+      expressions,
+    });
+  }
+
+  newArray(): ParseResult<ASTKinds.NewArray> {
+    const token = this.matchT(TT.LETREHOZ);
+    const type = this.brackets(this.type);
+    const length = this.parens(this.expression);
+
+    return this.mk(token, {
+      tag: "arrnew",
+      length,
+      type: type.lexeme,
+    });
+  }
+
   funcCall(): ParseResult<ASTKinds.FunctionCall> {
     const funcName = this.matchT(TT.FUNCNAME);
-    this.matchT(TT.OPAREN);
-    const args = this.sepBy(this.expression, () => this.matchT(TT.COMMA));
-    this.matchT(TT.CPAREN);
+    const args = this.parens(() => this.sepBy(this.expression, this.comma));
 
     return this.mk(funcName, {
       tag: "funccall",
@@ -366,11 +412,7 @@ class Parser implements ITokenToASTParser {
   }
 
   parenExpr(): ParseResult<ASTKinds.Expression> {
-    this.matchT(TT.OPAREN);
-    const expr = this.expression();
-    this.matchT(TT.CPAREN);
-
-    return expr;
+    return this.parens(this.expression);
   }
 
   // --- BINOPS ---
@@ -445,8 +487,8 @@ függvény vége
 
 kiír LNKO(15, 33)
 `)
-//const tokens = tok.tokenize("r <- 5 + 5
-.filter((t) => t.type !== TT.WHITESPACE);
+  //const tokens = tok.tokenize("r <- 5 + 5
+  .filter((t) => t.type !== TT.WHITESPACE);
 console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
 
 const start = performance.now();

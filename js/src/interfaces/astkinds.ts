@@ -48,12 +48,12 @@ export interface Reference {
 export interface NewArray {
   tag: "arrnew";
   type: string;
-  length: number;
+  length: IAST<Expression>;
 }
 
 export interface ArrayComprehension {
   tag: "arrcomp";
-  expressions: Array<Expression>;
+  expressions: Array<IAST<Expression>>;
 }
 
 export interface Assignment {
