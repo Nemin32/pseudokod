@@ -79,7 +79,7 @@ export class Tokenizer implements ITokenizer {
   }
 
   isWhitespace(char: string): boolean {
-    return [" ", "\t"].includes(char);
+    return [" ", "\t", "\n"].includes(char);
   }
 
   isNum(char: string): boolean {

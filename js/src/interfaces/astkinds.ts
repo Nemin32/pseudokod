@@ -120,6 +120,7 @@ export type Expression =
   | Reference
   | Not
   | ArrayComprehension
+  | ArrayIndex
   | FunctionCall
   | NewArray;
 

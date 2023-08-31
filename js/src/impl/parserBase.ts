@@ -30,7 +30,8 @@ class Parser implements ITokenToASTParser {
 
   matchT(type: TT): IToken {
     const token = this.eat();
-    if (token.type !== type) throw new MatchError(`${token.lexeme}: Expected ${TT[type]}, got ${TT[token.type]}.`);
+    if (token.type !== type)
+      throw new MatchError(`${token.lexeme}: Expected ${TT[type]}, got ${TT[token.type]}.`);
 
     return token;
   }
@@ -41,12 +42,8 @@ class Parser implements ITokenToASTParser {
     try {
       return this.matchT(type);
     } catch (e) {
-      if (e instanceof MatchError) {
-        this.index = prevIdx;
-        return null;
-      } else {
-        throw e;
-      }
+      this.index = prevIdx;
+      return null;
     }
   }
 
@@ -108,7 +105,15 @@ class Parser implements ITokenToASTParser {
   // --- STATEMENTS ---
 
   statement(): ParseResult<ASTKinds.Statement> {
-    const parsers = [this.print, this.while, this.funcDecl, this.for, this.return, this.if];
+    const parsers = [
+      this.print,
+      this.assignment,
+      this.while,
+      this.funcDecl,
+      this.for,
+      this.return,
+      this.if,
+    ];
 
     for (const parser of parsers) {
       const value = this.tryParse(parser as () => ParseResult<ASTKinds.Statement>);
@@ -213,7 +218,7 @@ class Parser implements ITokenToASTParser {
       this.matchT(TT.CIKLUS);
       this.matchT(TT.VEGE);
     } else {
-      this.matchT(TT.AMIG)
+      this.matchT(TT.AMIG);
       predicate = this.expression();
     }
 
@@ -261,6 +266,18 @@ class Parser implements ITokenToASTParser {
     });
   }
 
+  assignment(): ParseResult<ASTKinds.Assignment> {
+    const variable = this.tryParse(this.variable) ?? this.arrayIndex();
+    this.matchT(TT.NYIL);
+    const expr = this.expression();
+
+    return this.mk(variable.token, {
+      tag: "assign",
+      value: expr,
+      variable,
+    });
+  }
+
   print(): ParseResult<ASTKinds.Print> {
     const print = this.matchT(TT.KIIR);
     const expr = this.expression();
@@ -278,11 +295,10 @@ class Parser implements ITokenToASTParser {
       statements: stmts,
     });
   }
-
   // --- EXPRESSIONS ---
 
   expression(): ParseResult<ASTKinds.Expression> {
-    const parsers = [this.log_binop, this.funcCall, this.variable, this.atom, this.parenExpr];
+    const parsers = [this.log_binop, this.arrayIndex, this.funcCall, this.parenExpr];
 
     for (const parser of parsers) {
       const value = this.tryParse(parser as () => ParseResult<ASTKinds.Expression>);
@@ -290,6 +306,19 @@ class Parser implements ITokenToASTParser {
     }
 
     throw new MatchError();
+  }
+
+  arrayIndex(): ParseResult<ASTKinds.ArrayIndex> {
+    const variable = this.variable();
+    this.matchT(TT.OBRACKET);
+    const index = this.expression();
+    this.matchT(TT.CBRACKET);
+
+    return this.mk(variable.token, {
+      tag: "arrindex",
+      index,
+      variable,
+    });
   }
 
   funcCall(): ParseResult<ASTKinds.FunctionCall> {
@@ -371,7 +400,12 @@ class Parser implements ITokenToASTParser {
   }
 
   primary() {
-    const result = this.tryParse(this.parenExpr) ?? this.tryParse(this.atom);
+    const result =
+      this.tryParse(this.parenExpr) ??
+      this.tryParse(this.variable) ??
+      this.tryParse(this.arrayIndex) ??
+      this.tryParse(this.atom);
+
     if (result) return result;
 
     throw new MatchError();
@@ -395,7 +429,6 @@ class Parser implements ITokenToASTParser {
 const tok: ITokenizer = new Tokenizer();
 const parser = new Parser();
 
-/*
 const tokens = tok
   .tokenize(`
 függvény LNKO(m : egész, n : egész)
@@ -412,16 +445,14 @@ függvény vége
 
 kiír LNKO(15, 33)
 `)
-*/
-const tokens = tok
-  .tokenize("ciklus kiír x amíg (5 = 5) ")
-  .filter((t) => t.type !== TT.WHITESPACE);
+//const tokens = tok.tokenize("r <- 5 + 5
+.filter((t) => t.type !== TT.WHITESPACE);
 console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
 
 const start = performance.now();
 parser.input = tokens;
 parser.index = 0;
-const parse = parser.while();
+const parse = parser.funcDecl();
 console.log(parse);
 
 const end = performance.now();
