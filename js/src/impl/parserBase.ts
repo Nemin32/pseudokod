@@ -63,7 +63,10 @@ class Parser implements ITokenToASTParser {
     }
   }
 
-  sepBy<Q extends ASTKinds.ASTKind, T extends ParseResult<Q>>(fn: () => T, sep: () => unknown): T[] {
+  sepBy<Q extends ASTKinds.ASTKind, T extends ParseResult<Q>>(
+    fn: () => T,
+    sep: () => unknown,
+  ): T[] {
     const bindFn = fn.bind(this);
     const bindSep = sep.bind(this);
 
@@ -91,7 +94,7 @@ class Parser implements ITokenToASTParser {
 
     return retval;
   }
-  
+
   brackets<T>(fn: () => T): T {
     this.matchT(TT.OBRACKET);
     const retval = fn.call(this);
@@ -117,16 +120,22 @@ class Parser implements ITokenToASTParser {
       kind,
     };
   }
-  
+
   // --- UTILS ---
 
-  type() {return this.matchT(TT.TYPE)}
-  comma() {return this.matchT(TT.COMMA)}
+  type() {
+    return this.matchT(TT.TYPE);
+  }
+  
+  comma() {
+    return this.matchT(TT.COMMA);
+  }
 
   // --- STATEMENTS ---
 
   statement(): ParseResult<ASTKinds.Statement> {
     const parsers = [
+      this.debug,
       this.print,
       this.assignment,
       this.while,
@@ -227,7 +236,7 @@ class Parser implements ITokenToASTParser {
     const start = this.matchT(TT.CIKLUS);
 
     const pre = this.maybe(TT.AMIG);
-    let predicate: ParseResult<ASTKinds.Expression> = null as any;
+    let predicate: ParseResult<ASTKinds.Expression> = undefined!;
 
     if (pre) {
       predicate = this.expression();
@@ -255,7 +264,7 @@ class Parser implements ITokenToASTParser {
     const variable = this.variable();
     this.matchT(TT.COLON);
     const byRef = this.maybe(TT.CIMSZERINT) != null;
-    const type = this.type()
+    const type = this.type();
 
     return this.mk(variable.token, {
       tag: "param",
@@ -306,6 +315,12 @@ class Parser implements ITokenToASTParser {
     });
   }
 
+  debug(): ParseResult<ASTKinds.Debug> {
+    const debug = this.matchT(TT.DEBUG);
+
+    return this.mk(debug, { tag: "debug" });
+  }
+
   block(): ParseResult<ASTKinds.Block> {
     const stmts = this.many(this.statement);
     return this.mk(null, {
@@ -322,6 +337,8 @@ class Parser implements ITokenToASTParser {
       this.funcCall,
       this.newArray,
       this.arrayComprehension,
+      this.reference,
+      this.not,
       this.parenExpr,
     ];
 
@@ -331,6 +348,25 @@ class Parser implements ITokenToASTParser {
     }
 
     throw new MatchError();
+  }
+
+  reference(): ParseResult<ASTKinds.Reference> {
+    const token = this.matchT(TT.REFERENCE);
+    const val = this.tryParse(this.variable) ?? this.arrayIndex();
+
+    return this.mk(token, {
+      tag: "reference",
+      inner: val,
+    });
+  }
+
+  not(): ParseResult<ASTKinds.Not> {
+    const token = this.matchT(TT.NEGAL);
+
+    return this.mk(token, {
+      tag: "not",
+      expr: this.expression(),
+    });
   }
 
   arrayIndex(): ParseResult<ASTKinds.ArrayIndex> {

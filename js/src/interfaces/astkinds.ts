@@ -116,7 +116,6 @@ export type Expression =
   | Atom
   | BinaryOperation
   | Variable
-  | Debug
   | Reference
   | Not
   | ArrayComprehension
@@ -124,6 +123,14 @@ export type Expression =
   | FunctionCall
   | NewArray;
 
-export type Statement = If | Assignment | While | For | Print | Return | FunctionDeclaration;
+export type Statement =
+  | If
+  | Assignment
+  | While
+  | For
+  | Print
+  | Return
+  | FunctionDeclaration
+  | Debug;
 
 export type ASTKind = Expression | Statement | Block | Parameter;
