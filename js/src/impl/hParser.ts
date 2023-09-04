@@ -1,3 +1,7 @@
+import { IToken, ITokenizer, TokenType } from "../interfaces/ITokenizer.ts";
+import { ASTKind } from "../interfaces/astkinds.ts";
+import { Tokenizer } from "./tokenizer.ts";
+
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 type Indexable = string | any[];
 
@@ -26,12 +30,11 @@ type ParsingError<T extends Indexable> = {
 // Egy keresés eredménye vagy találat vagy hiba.
 type Result<T extends Indexable, Output> = Match<T, Output> | ParsingError<T>;
 
-/** Parser capable of parsing from either arbitrary arrays or strings. 
+/** Parser capable of parsing from either arbitrary arrays or strings.
  * @template TS TokenStream: an Indexable type that contains either an array of arbitrary tokens or a string.
- * @template T Token: The type of an elem of @template TS .
  * @template O Output: The type of a successful match.
-*/
-class Parser<TS extends Indexable, T extends ArrayElem<TS>, O> {
+ */
+class Parser<TS extends Indexable, O> {
   constructor(private exec: (inp: Input<TS>) => Result<TS, O>) {}
 
   run(input: TS): Result<TS, O> {
@@ -40,7 +43,7 @@ class Parser<TS extends Indexable, T extends ArrayElem<TS>, O> {
 
   // Kiveszi egy tokenstream első elemét és visszatér vele.
   // Ha a lista üres / végére értünk, hibát dob.
-  static item<TS extends Indexable, T extends ArrayElem<TS>>(): Parser<TS, T, T> {
+  static item<TS extends Indexable>(): Parser<TS, ArrayElem<TS>> {
     return new Parser((inp) =>
       inp.index >= inp.input.length
         ? { type: "error", cause: "EOF", location: inp }
@@ -52,15 +55,15 @@ class Parser<TS extends Indexable, T extends ArrayElem<TS>, O> {
     );
   }
 
-  static result<T extends Indexable, TS extends ArrayElem<T>, O>(value: O): Parser<T, TS, O> {
+  static result<TS extends Indexable, O>(value: O): Parser<TS, O> {
     return new Parser((inp) => ({ type: "match", next: inp, value }));
   }
 
-  static fail<T extends Indexable, TS extends ArrayElem<T>>(msg: string): Parser<T, TS, never> {
+  static fail<TS extends Indexable>(msg: string): Parser<TS, never> {
     return new Parser((inp) => ({ type: "error", cause: msg, location: inp }));
   }
 
-  bind<NewOutput>(other: (val: O) => Parser<TS, T, NewOutput>): Parser<TS, T, NewOutput> {
+  bind<NewOutput>(other: (val: O) => Parser<TS, NewOutput>): Parser<TS, NewOutput> {
     return new Parser((inp) => {
       const current = this.exec(inp);
       if (current.type === "error") return current;
@@ -68,59 +71,53 @@ class Parser<TS extends Indexable, T extends ArrayElem<TS>, O> {
     });
   }
 
-  catch(error: (previous: string) => string): Parser<TS, T, O> {
+  catch(error: (previous: string) => string): Parser<TS, O> {
     return new Parser((inp) => {
       const current = this.exec(inp);
-      if (current.type === "error") return { type: "error", cause: error(current.cause), location: current.location };
+      if (current.type === "error")
+        return { type: "error", cause: error(current.cause), location: current.location };
       return current;
     });
   }
 
-  static or<T extends Indexable, TS extends ArrayElem<T>, O, OO>(
-    one: Parser<T, TS, O>,
-    other: Parser<T, TS, OO>,
-  ) {
-    return new Parser<T, TS, O | OO>((inp) => {
+  static or<TS extends Indexable, O, OO>(one: Parser<TS, O>, other: Parser<TS, OO>) {
+    return new Parser<TS, O | OO>((inp) => {
       const thisValue = one.exec(inp);
       if (thisValue.type === "error") return other.exec(inp);
       return thisValue;
     });
   }
 
-  static sat<TS extends Indexable, T extends ArrayElem<TS>>(
-    predicate: (val: T) => boolean,
-    failMsg = "Parsing error.",
-  ): Parser<TS, T, T> {
-    return Parser.item<TS, T>().bind((elem: T) =>
-      predicate(elem) ? Parser.result<TS, T, T>(elem) : Parser.fail<TS, T>(failMsg),
+  static sat<TS extends Indexable>(
+    predicate: (val: ArrayElem<TS>) => boolean,
+    failMsg = (val: ArrayElem<TS>) => "Parsing error.",
+  ): Parser<TS, ArrayElem<TS>> {
+    return Parser.item<TS>().bind((elem: ArrayElem<TS>) =>
+      predicate(elem) ? Parser.result<TS, ArrayElem<TS>>(elem) : Parser.fail<TS>(failMsg(elem)),
     );
   }
 
-  static many<T extends Indexable, TS extends ArrayElem<T>, O>(
-    p: Parser<T, TS, O>,
-  ): Parser<T, TS, O[]> {
-    return Parser.many1(p).or(Parser.result([]));
+  static many<TS extends Indexable, O>(p: Parser<TS, O>): Parser<TS, O[]> {
+    return Parser.many1(p).or(Parser.result<TS, O[]>([] as O[]));
   }
 
-  static many1<T extends Indexable, TS extends ArrayElem<T>, O>(
-    p: Parser<T, TS, O>,
-  ): Parser<T, TS, O[]> {
+  static many1<TS extends Indexable, O>(p: Parser<TS, O>): Parser<TS, O[]> {
     return p
       .bind((first) => Parser.many(p).bind((rest) => Parser.result([first, ...rest])))
       .catch((p) => `Multiple(${p})`);
   }
 
-  static sepBy<T extends Indexable, TS extends ArrayElem<T>, O>(
-    parser: Parser<T, TS, O>,
-    separator: Parser<T, TS, unknown>,
-  ): Parser<T, TS, O[]> {
+  static sepBy<TS extends Indexable, O>(
+    parser: Parser<TS, O>,
+    separator: Parser<TS, unknown>,
+  ): Parser<TS, O[]> {
     return Parser.sepBy1(parser, separator).or(Parser.result([]));
   }
 
-  static sepBy1<T extends Indexable, TS extends ArrayElem<T>, O>(
-    parser: Parser<T, TS, O>,
-    separator: Parser<T, TS, unknown>,
-  ): Parser<T, TS, O[]> {
+  static sepBy1<TS extends Indexable, O>(
+    parser: Parser<TS, O>,
+    separator: Parser<TS, unknown>,
+  ): Parser<TS, O[]> {
     return parser
       .bind((first) =>
         Parser.many(separator.bind((_) => parser.bind((val) => Parser.result(val)))).bind((rest) =>
@@ -130,17 +127,17 @@ class Parser<TS extends Indexable, T extends ArrayElem<TS>, O> {
       .catch((prev) => `${prev}, sep. by ${separator}`);
   }
 
-  static chainl<T extends Indexable, TS extends ArrayElem<T>, Term, Operator, BaseCase>(
-    term: Parser<T, TS, Term>,
-    op: Parser<T, TS, Operator>,
-    baseCase: Parser<T, TS, BaseCase>,
+  static chainl<TS extends Indexable, Term, Operator, BaseCase>(
+    term: Parser<TS, Term>,
+    op: Parser<TS, Operator>,
+    baseCase: Parser<TS, BaseCase>,
   ) {
     return Parser.chainl1(term, op).or(baseCase);
   }
 
-  static chainl1<T extends Indexable, TS extends ArrayElem<T>, Term, Operator>(
-    term: Parser<T, TS, Term>,
-    opParser: Parser<T, TS, Operator>,
+  static chainl1<TS extends Indexable, Term, Operator>(
+    term: Parser<TS, Term>,
+    opParser: Parser<TS, Operator>,
   ) {
     return term
       .bind((left) =>
@@ -153,38 +150,55 @@ class Parser<TS extends Indexable, T extends ArrayElem<TS>, O> {
   // Here the static methods are bound to class objects. This allows chaining them.
   // i.e. Parser.item().many() instead of Parser.many(Parser.item())
   // This helps readability, imagine 5 levels of nesting from left to right.
+  
+  bindResult<T>(value: T) {
+    return this.bind(_ => Parser.result(value));
+  }
 
-  or<OtherOutput>(other: Parser<TS, T, OtherOutput>) {
+  or<OtherOutput>(other: Parser<TS, OtherOutput>) {
     return Parser.or(this, other);
   }
 
-  many(): Parser<TS, T, O[]> {
-    return Parser.many(this);
+  many(): Parser<TS, O[]> {
+    return Parser.many<TS, O>(this);
   }
 
-  many1(): Parser<TS, T, O[]> {
-    return Parser.many1(this);
+  many1(): Parser<TS, O[]> {
+    return Parser.many1<TS, O>(this);
   }
 
-  sepBy(separator: Parser<TS, T, unknown>): Parser<TS, T, O[]> {
-    return Parser.sepBy(this, separator);
+  sepBy(separator: Parser<TS, unknown>): Parser<TS, O[]> {
+    return Parser.sepBy<TS, O>(this, separator);
   }
 
-  sepBy1(separator: Parser<TS, T, unknown>): Parser<TS, T, O[]> {
-    return Parser.sepBy1(this, separator);
+  sepBy1(separator: Parser<TS, unknown>): Parser<TS, O[]> {
+    return Parser.sepBy1<TS, O>(this, separator);
   }
 
-  chainl<Operator, BaseCase>(op: Parser<TS, T, Operator>, baseCase: Parser<TS, T, BaseCase>) {
-    return Parser.chainl(this, op, baseCase);
+  chainl<Operator, BaseCase>(op: Parser<TS, Operator>, baseCase: Parser<TS, BaseCase>) {
+    return Parser.chainl<TS, ArrayElem<TS>, Operator, BaseCase>(this, op, baseCase);
   }
 
-  chainl1<Operator, BaseCase>(op: Parser<TS, T, Operator>) {
-    return Parser.chainl1(this, op);
+  chainl1<Operator>(op: Parser<TS, Operator>) {
+    return Parser.chainl1<TS, ArrayElem<TS>, Operator>(this, op);
   }
 }
 
-const p = Parser.many(Parser.item())
-  .bind((i: string[]) => Parser.result(i.map((o) => o.toUpperCase())))
-  .run("hello");
+class TParser<O> extends Parser<IToken[], O> {
+  static matchT(type: TokenType): TParser<IToken> {
+    return TParser.sat<IToken[]>(elem => elem.type === type, elem => `Expected type "${TokenType[type]}", got "${TokenType[elem.type]}".`);
+  }
+  
+  end() {
+    return this.bind(match => TParser.matchT(TokenType.VEGE).bindResult(match));
+  }
 
-console.log(p);
+}
+
+
+const tok: ITokenizer = new Tokenizer();
+const tokens = tok.tokenize("függvény vége").filter(t => t.type !== TokenType.WHITESPACE);
+
+const val = TParser.matchT(TokenType.FUGGVENY).end().run(tokens)
+
+console.log(val);
