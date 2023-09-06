@@ -1,4 +1,6 @@
-import { IToken, TokenType as TT } from "../interfaces/ITokenizer.ts";
+import { IAST } from "../../interfaces/IParser.js";
+import { IToken, TokenType as TT, TokenType } from "../../interfaces/ITokenizer.js";
+import { ASTKind } from "../../interfaces/astkinds.js";
 
 // Megmutatja, hogy egy adott input hanyadik eleménél járunk.
 type Input = { input: IToken[]; index: number };
@@ -198,9 +200,9 @@ export class Parser<Output> {
       (elem) => `Expected type "${TT[type]}", got "${TT[elem.type]}".`,
     );
   }
-  
+
   static of<T>(fn: () => Parser<T>): Parser<T> {
-    return new Parser(inp => fn().exec(inp));
+    return new Parser((inp) => fn().exec(inp));
   }
 
   end() {
@@ -262,3 +264,14 @@ class Do<Bindings extends Record<string, unknown> = {}> {
     return this.finalize().map(fn);
   }
 }
+
+export type P<T> = Parser<IAST<T>>;
+export { TokenType as TT }; 
+
+export const mkToken = <T extends ASTKind>(
+  token: IToken | null,
+  rest: IAST<T>["kind"],
+): IAST<T> => ({
+  token,
+  kind: rest,
+});
