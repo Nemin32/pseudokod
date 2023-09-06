@@ -1,7 +1,4 @@
-import { IAST } from "../interfaces/IParser";
-import { IToken, ITokenizer, TokenType as TT } from "../interfaces/ITokenizer.ts";
-import { Assignment, Variable } from "../interfaces/astkinds";
-import { Tokenizer } from "./tokenizer.ts";
+import { IToken, TokenType as TT } from "../interfaces/ITokenizer.ts";
 
 // Megmutatja, hogy egy adott input hanyadik eleménél járunk.
 type Input = { input: IToken[]; index: number };
@@ -152,10 +149,6 @@ export class Parser<Output> {
   // i.e. Parser.item().many() instead of Parser.many(Parser.item())
   // This helps readability, imagine 5 levels of nesting from left to right.
 
-  map<T>(fn: (value: Output) => T) {
-    return this.bind((value) => Parser.result(fn(value)));
-  }
-
   or<OtherOutput>(other: Parser<OtherOutput>) {
     return Parser.or(this, other);
   }
@@ -187,6 +180,10 @@ export class Parser<Output> {
   // EXTRAS
   // Things not described by the original paper, but that make parsing easier.
 
+  map<T>(fn: (value: Output) => T) {
+    return this.bind((value) => Parser.result(fn(value)));
+  }
+
   left(other: Parser<unknown>): Parser<Output> {
     return this.bind((value) => other.map((_) => value));
   }
@@ -200,6 +197,10 @@ export class Parser<Output> {
       (elem) => elem.type === type,
       (elem) => `Expected type "${TT[type]}", got "${TT[elem.type]}".`,
     );
+  }
+  
+  static of<T>(fn: () => Parser<T>): Parser<T> {
+    return new Parser(inp => fn().exec(inp));
   }
 
   end() {
