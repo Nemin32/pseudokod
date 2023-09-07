@@ -5,6 +5,7 @@ import { Parser, mkToken, P } from "../hParser";
 import { parseArrayIndex } from "./array_index";
 import { parseAtom } from "./atom";
 import parseExpression from "./expression";
+import { parseFuncCall } from "./function_call";
 import { parseVariable } from "./variable";
 
 const addOp = Parser.sat((tok) => ["+", "-"].includes(tok.lexeme));
@@ -29,6 +30,7 @@ const toBinopOrExpr = (
 
 const primary: P<Expression> = parseExpression
   .parens()
+  .or(parseFuncCall)
   .or(parseArrayIndex)
   .or(parseVariable)
   .or(parseAtom);

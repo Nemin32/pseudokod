@@ -1,8 +1,8 @@
-import { IAST, ITokenToASTParser } from "../interfaces/IParser.js";
-import { IToken, ITokenizer, TokenType as TT } from "../interfaces/ITokenizer.js";
-import * as ASTKinds from "../interfaces/astkinds.js";
-import { AtomValue } from "../interfaces/astkinds.js";
-import { Tokenizer } from "./tokenizer.js";
+import { IAST, ITokenToASTParser } from "../../interfaces/IParser.js";
+import { IToken, ITokenizer, TokenType as TT } from "../../interfaces/ITokenizer.js";
+import * as ASTKinds from "../../interfaces/astkinds.js";
+import { AtomValue } from "../../interfaces/astkinds.js";
+import { Tokenizer } from "../tokenizer.js";
 
 type ParseResult<T extends ASTKinds.ASTKind> = IAST<T>; //{ token: IToken | null; kind: T } | null;
 
@@ -126,7 +126,7 @@ class Parser implements ITokenToASTParser {
   type() {
     return this.matchT(TT.TYPE);
   }
-  
+
   comma() {
     return this.matchT(TT.COMMA);
   }
@@ -236,7 +236,8 @@ class Parser implements ITokenToASTParser {
     const start = this.matchT(TT.CIKLUS);
 
     const pre = this.maybe(TT.AMIG);
-    let predicate: ParseResult<ASTKinds.Expression> = undefined!;
+    // rome-ignore lint/style/noNonNullAssertion: <explanation>
+    let  predicate: ParseResult<ASTKinds.Expression> = undefined!;
 
     if (pre) {
       predicate = this.expression();
@@ -528,8 +529,8 @@ kiír LNKO(15, 33)
 console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
 
 const start = performance.now();
-parser.input = tokens;
-parser.index = 0;
+// parser.input = tokens;
+// parser.index = 0;
 const parse = parser.funcDecl();
 console.log(parse);
 

@@ -245,9 +245,12 @@ class Do<Bindings extends Record<string, unknown> = {}> {
     return new Do([...this.bindList, { name: null, parser: Parser.matchT(type) }]);
   }
 
-  finalize(): Parser<Bindings> {
-    function recursion(parsers: Do["bindList"], obj: Record<string, unknown>): Parser<Bindings> {
-      if (parsers.length === 0) return Parser.result(obj) as Parser<Bindings>;
+  finalize<T extends Record<string, unknown>>(given: T): Parser<Bindings & T> {
+    function recursion(
+      parsers: Do["bindList"],
+      obj: Record<string, unknown>,
+    ): Parser<Bindings & T> {
+      if (parsers.length === 0) return Parser.result(obj) as Parser<Bindings & T>;
 
       const { name, parser } = parsers[0];
 
@@ -257,16 +260,16 @@ class Do<Bindings extends Record<string, unknown> = {}> {
       });
     }
 
-    return recursion(this.bindList, {});
+    return recursion(this.bindList, given);
   }
 
   result<T>(fn: (val: Bindings) => T) {
-    return this.finalize().map(fn);
+    return this.finalize({}).map(fn);
   }
 }
 
 export type P<T> = Parser<IAST<T>>;
-export { TokenType as TT }; 
+export { TokenType as TT };
 
 export const mkToken = <T extends ASTKind>(
   token: IToken | null,
