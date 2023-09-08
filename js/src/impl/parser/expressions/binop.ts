@@ -1,12 +1,12 @@
-import { IAST } from "../../../interfaces/IParser";
-import { IToken } from "../../../interfaces/ITokenizer";
-import { Expression } from "../../../interfaces/astkinds";
-import { Parser, mkToken, P } from "../hParser";
-import { parseArrayIndex } from "./array_index";
-import { parseAtom } from "./atom";
-import parseExpression from "./expression";
-import { parseFuncCall } from "./function_call";
-import { parseVariable } from "./variable";
+import { IAST } from "../../../interfaces/IParser.ts";
+import { IToken } from "../../../interfaces/ITokenizer.ts";
+import { Expression } from "../../../interfaces/astkinds.ts";
+import { Parser, mkToken, P } from "../hParser.ts";
+import { parseArrayIndex } from "./array_index.ts";
+import { parseAtom } from "./atom.ts";
+import parseExpression from "./expression.ts";
+import { parseFuncCall } from "./function_call.ts";
+import { parseVariable } from "./variable.ts";
 
 const addOp = Parser.sat((tok) => ["+", "-"].includes(tok.lexeme));
 const mulOp = Parser.sat((tok) => ["*", "/", "mod"].includes(tok.lexeme));
@@ -28,14 +28,14 @@ const toBinopOrExpr = (
   }
 };
 
-const primary: P<Expression> = parseExpression
+const primary: P<Expression> = Parser.of(() => parseExpression
   .parens()
   .or(parseFuncCall)
   .or(parseArrayIndex)
   .or(parseVariable)
-  .or(parseAtom);
+  .or(parseAtom));
 
 const parseArithmOp: P<Expression> = Parser.chainl1(primary, addOp).map(toBinopOrExpr);
 const parseMulOp: P<Expression> = Parser.chainl1(parseArithmOp, mulOp).map(toBinopOrExpr);
 const parseCompOp: P<Expression> = Parser.chainl1(parseMulOp, compOp).map(toBinopOrExpr);
-export const parseBinOp: P<Expression> = Parser.chainl1(parseCompOp, logicOp).map(toBinopOrExpr);
+export const parseBinOp: P<Expression> = Parser.chainl1(parseCompOp, logicOp).map(toBinopOrExpr)

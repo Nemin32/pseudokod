@@ -20,7 +20,9 @@ export const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
   .bindT("token", TT.FUGGVENY)
   .bindT("name", TT.FUNCNAME)
   .bind("parameters", parseParameter.sepBy(Parser.matchT(TT.COMMA)).parens())
-  .bind("body", parseBlock)
+  .bind("body", Parser.of(() => parseBlock))
+  .ignoreT(TT.FUGGVENY)
+  .ignoreT(TT.VEGE)
   .result(({ token, body, name, parameters }) =>
     mkToken(token, { tag: "funcdecl", body, name: name.lexeme, parameters }),
   );

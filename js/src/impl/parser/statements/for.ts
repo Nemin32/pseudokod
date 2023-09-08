@@ -1,8 +1,8 @@
-import { For } from "../../../interfaces/astkinds";
-import parseExpression from "../expressions/expression";
-import { parseVariable } from "../expressions/variable";
-import { P, Parser, TT, mkToken } from "../hParser";
-import { parseBlock } from "./block";
+import { For } from "../../../interfaces/astkinds.ts";
+import parseExpression from "../expressions/expression.ts";
+import { parseVariable } from "../expressions/variable.ts";
+import { P, Parser, TT, mkToken } from "../hParser.ts";
+import { parseBlock } from "./block.ts";
 
 export const parseFor: P<For> = Parser.do()
   .bindT("token", TT.CIKLUS)
@@ -12,7 +12,7 @@ export const parseFor: P<For> = Parser.do()
   .ignoreT(TT.FORSTART)
   .bind("to", parseExpression)
   .ignoreT(TT.FOREND)
-  .bind("body", parseBlock)
+  .bind("body", Parser.of(() => parseBlock))
   .ignoreT(TT.CIKLUS)
   .ignoreT(TT.VEGE)
   .result(({ token, variable, from, to, body }) =>

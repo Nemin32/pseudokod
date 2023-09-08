@@ -1,8 +1,7 @@
-import { IAST, ITokenToASTParser } from "../../interfaces/IParser.js";
-import { IToken, ITokenizer, TokenType as TT } from "../../interfaces/ITokenizer.js";
-import * as ASTKinds from "../../interfaces/astkinds.js";
-import { AtomValue } from "../../interfaces/astkinds.js";
-import { Tokenizer } from "../tokenizer.js";
+import * as ASTKinds from "../../interfaces/astkinds.ts";
+import { AtomValue } from "../../interfaces/astkinds.ts";
+import { IAST, ITokenToASTParser } from "../../interfaces/IParser.ts";
+import { IToken, TokenType as TT } from "../../interfaces/ITokenizer.ts";
 
 type ParseResult<T extends ASTKinds.ASTKind> = IAST<T>; //{ token: IToken | null; kind: T } | null;
 
@@ -14,7 +13,7 @@ class EOFError extends Error {
 
 class MatchError extends Error {}
 
-class Parser implements ITokenToASTParser {
+export class RDParser implements ITokenToASTParser {
   private input: IToken[] = [];
   private index = 0;
 
@@ -285,7 +284,6 @@ class Parser implements ITokenToASTParser {
     this.matchT(TT.FUGGVENY);
     this.matchT(TT.VEGE);
 
-    console.log("eddig");
     return this.mk(fgv, {
       tag: "funcdecl",
       body,
@@ -504,36 +502,3 @@ class Parser implements ITokenToASTParser {
     return this.block();
   }
 }
-
-const tok: ITokenizer = new Tokenizer();
-const parser = new Parser();
-
-const tokens = tok
-  .tokenize(`
-függvény LNKO(m : egész, n : egész)
-  r <- m mod n
-  
-  ciklus amíg r =/= 0
-    m <- n
-    n <- r
-    r <- m mod n  
-  ciklus vége
-
-  vissza n
-függvény vége
-
-kiír LNKO(15, 33)
-`)
-  //const tokens = tok.tokenize("r <- 5 + 5
-  .filter((t) => t.type !== TT.WHITESPACE);
-console.log(tokens.map((t) => ({ name: t.lexeme, type: TT[t.type] })));
-
-const start = performance.now();
-// parser.input = tokens;
-// parser.index = 0;
-const parse = parser.funcDecl();
-console.log(parse);
-
-const end = performance.now();
-
-console.log(end - start);

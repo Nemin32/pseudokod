@@ -5,5 +5,5 @@ import { parseVariable } from "./variable.ts";
 
 export const parseArrayIndex: P<ArrayIndex> = Parser.do()
   .bind("variable", parseVariable)
-  .bind("index", parseExpression.brackets())
+  .bind("index", Parser.of(() => parseExpression).brackets())
   .result(({ variable, index }) => mkToken(variable.token, { tag: "arrindex", variable, index }));

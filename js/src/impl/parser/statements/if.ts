@@ -1,16 +1,16 @@
-import { If } from "../../../interfaces/astkinds";
-import parseExpression from "../expressions/expression";
-import { P, Parser, TT, mkToken } from "../hParser";
-import { parseBlock } from "./block";
+import { If } from "../../../interfaces/astkinds.ts";
+import parseExpression from "../expressions/expression.ts";
+import { P, Parser, TT, mkToken } from "../hParser.ts";
+import { parseBlock } from "./block.ts";
 
 const parseIfHead = Parser.do()
   .bindT("token", TT.HA)
   .bind("pred", parseExpression)
   .ignoreT(TT.AKKOR)
-  .bind("branch", parseBlock)
+  .bind("branch", Parser.of(() => parseBlock))
   .finalize({});
 
-const parseElse = Parser.matchT(TT.KULONBEN).right(parseBlock);
+const parseElse = Parser.matchT(TT.KULONBEN).right(Parser.of(() => parseBlock));
 
 const parseElIf = Parser.matchT(TT.KULONBEN).right(parseIfHead);
 

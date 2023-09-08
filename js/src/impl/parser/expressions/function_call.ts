@@ -4,7 +4,7 @@ import parseExpression from "./expression.ts";
 
 export const parseFuncCall: P<FunctionCall> = Parser.do()
   .bindT("name", TT.FUNCNAME)
-  .bind("args", parseExpression.sepBy(Parser.matchT(TT.COMMA)).parens())
+  .bind("args", Parser.of(() => parseExpression).sepBy(Parser.matchT(TT.COMMA)).parens())
   .result(({ name, args }) =>
     mkToken(name, { tag: "funccall", name: name.lexeme, arguments: args }),
   );
