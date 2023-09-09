@@ -193,6 +193,10 @@ export class Parser<Output> {
   right<Other>(other: Parser<Other>): Parser<Other> {
     return this.bind((_) => other.map((oValue) => oValue));
   }
+  
+  maybe(): Parser<Output | null> {
+    return this.or(Parser.result(null));
+  }
 
   static matchT(type: TT): Parser<IToken> {
     return Parser.sat(

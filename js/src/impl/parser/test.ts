@@ -1,14 +1,10 @@
 import { ITokenizer } from "../../interfaces/ITokenizer.ts";
 import { Tokenizer } from "../tokenizer.ts";
-import { parseBinOp } from "./expressions/binop.ts";
-import parseExpression from "./expressions/expression.ts";
-import { parseFuncCall } from "./expressions/function_call.ts";
-import { Parser, TT } from "./hParser.ts";
+import { TT } from "./hParser.ts";
 import { RDParser } from "./rdParser.ts";
 import { parseBlock } from "./statements/block.ts";
-import { parseFuncDecl } from "./statements/function_declaration.ts";
-import { parsePrint } from "./statements/print.ts";
-import { parseWhile } from "./statements/while.ts";
+
+import { parseBlock as horfBlock } from "./horf.ts";
 
 
 const tok: ITokenizer = new Tokenizer();
@@ -62,5 +58,6 @@ console.log(run.type === "match" ? run.value : run.cause)
     
     testRound("RecDesc", rounds, () => parser.parse(tokens))
     testRound("Monadic", rounds, () => parseBlock.run(tokens))
+    testRound("OneFile", rounds, () => horfBlock.run(tokens))
     console.log("---")
 })
