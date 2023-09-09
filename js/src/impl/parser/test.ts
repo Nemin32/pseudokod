@@ -1,10 +1,8 @@
 import { ITokenizer } from "../../interfaces/ITokenizer.ts";
 import { Tokenizer } from "../tokenizer.ts";
-import { TT } from "./hParser.ts";
-import { RDParser } from "./rdParser.ts";
-import { parseBlock } from "./statements/block.ts";
-
-import { parseBlock as horfBlock } from "./horf.ts";
+import { TT } from "./monadic_parser_base.ts";
+import { RDParser } from "./rd_ast_parser.ts";
+import { parseBlock as horfBlock } from "./ast_parser.ts";
 
 
 const tok: ITokenizer = new Tokenizer();
@@ -39,25 +37,11 @@ const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     const end = performance.now();
     console.log(`${title}: ${rounds} rounds - ${end - start} ms. (~${(end - start) / rounds} ms / call)`);
 }
-  
 
-
-/*
-const parser = new RDParser();
-console.log("--- RecDesc ---")
-console.log(parser.parse(tokens))
-
-console.log("--- Monadic ---")
-const run = parseBlock.run(tokens)
-console.log(run.type === "match" ? run.value : run.cause)
-*/
-
-
-[1, 10, 100, 1000, 10000].forEach(rounds => {
+[1, 10, 100, 1000].forEach(rounds => {
     const parser = new RDParser();
     
     testRound("RecDesc", rounds, () => parser.parse(tokens))
-    testRound("Monadic", rounds, () => parseBlock.run(tokens))
     testRound("OneFile", rounds, () => horfBlock.run(tokens))
     console.log("---")
 })

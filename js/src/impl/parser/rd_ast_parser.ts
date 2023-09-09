@@ -1,7 +1,7 @@
-import * as ASTKinds from "../../interfaces/astkinds.ts";
-import { AtomValue } from "../../interfaces/astkinds.ts";
-import { IAST, ITokenToASTParser } from "../../interfaces/IParser.ts";
-import { IToken, TokenType as TT } from "../../interfaces/ITokenizer.ts";
+import * as ASTKinds from "../../interfaces/astkinds.js";
+import { AtomValue } from "../../interfaces/astkinds.js";
+import { IAST, ITokenToASTParser } from "../../interfaces/IParser.js";
+import { IToken, TokenType as TT } from "../../interfaces/ITokenizer.js";
 
 type ParseResult<T extends ASTKinds.ASTKind> = IAST<T>; //{ token: IToken | null; kind: T } | null;
 
