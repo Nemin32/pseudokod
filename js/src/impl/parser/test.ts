@@ -29,6 +29,9 @@ kiír LNKO(15, 33)
   
 const t = (inp: string) => new Tokenizer().tokenize(inp).filter(token => token.type !== TT.WHITESPACE);
 
+console.log(horfBlock.run(tokens).value.kind.statements)
+
+/*
 const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     const start = performance.now();
     for (let i = 0; i < rounds; i++) {
@@ -45,3 +48,4 @@ const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     testRound("OneFile", rounds, () => horfBlock.run(tokens))
     console.log("---")
 })
+*/

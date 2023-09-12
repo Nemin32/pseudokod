@@ -1,5 +1,5 @@
-import { IAST } from "../../interfaces/IParser.js";
-import { IToken } from "../../interfaces/ITokenizer.js";
+import { IAST } from "../../interfaces/IParser.ts";
+import { IToken } from "../../interfaces/ITokenizer.ts";
 import {
   ArrayComprehension,
   ArrayIndex,
@@ -21,8 +21,8 @@ import {
   Statement,
   Variable,
   While,
-} from "../../interfaces/astkinds.js";
-import { P, Parser, TT, mkToken } from "./monadic_parser_base.js";
+} from "../../interfaces/astkinds.ts";
+import { P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseStatement: P<Statement> = Parser.of<IAST<Statement>>(
   () =>

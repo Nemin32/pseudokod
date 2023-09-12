@@ -1,6 +1,6 @@
-import { IAST } from "../../interfaces/IParser.js";
-import { IToken, TokenType as TT, TokenType } from "../../interfaces/ITokenizer.js";
-import { ASTKind } from "../../interfaces/astkinds.js";
+import { IAST } from "../../interfaces/IParser.ts";
+import { IToken, TokenType as TT, TokenType } from "../../interfaces/ITokenizer.ts";
+import { ASTKind } from "../../interfaces/astkinds.ts";
 
 // Megmutatja, hogy egy adott input hanyadik eleménél járunk.
 type Input = { input: IToken[]; index: number };
