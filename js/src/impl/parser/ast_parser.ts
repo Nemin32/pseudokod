@@ -5,6 +5,7 @@ import {
   ArrayIndex,
   Assignment,
   Atom,
+  BinOpTypeMap,
   Block,
   Debug,
   Expression,
@@ -106,11 +107,14 @@ const toBinopOrExpr = (
   value: IAST<Expression> | { left: IAST<Expression>; op: IToken; right: IAST<Expression> },
 ) => {
   if ("op" in value) {
+    const binop = BinOpTypeMap.get(value.op.lexeme);
+    if (binop === undefined) throw new Error(`Unknown binop: "${value.op.lexeme}".`)
+
     return mkToken(value.op, {
       tag: "binop",
       lhs: value.left,
       rhs: value.right,
-      op: value.op,
+      op: binop
     });
   } else {
     return value;
@@ -230,6 +234,8 @@ const parseIf: P<If> = Parser.do()
   .bind("main_path", parseIfHead)
   .bind("elif_path", parseElIf.many())
   .bind("false_path", parseElse.maybe())
+  .ignoreT(TT.ELAGAZAS)
+  .ignoreT(TT.VEGE)
   .result(({ main_path, elif_path, false_path }) =>
     mkToken(main_path.token, { tag: "if", main_path, elif_path, false_path }),
   );

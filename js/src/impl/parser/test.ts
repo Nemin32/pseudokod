@@ -4,11 +4,8 @@ import { TT } from "./monadic_parser_base.ts";
 import { RDParser } from "./rd_ast_parser.ts";
 import { parseBlock as horfBlock } from "./ast_parser.ts";
 
-
-const tok: ITokenizer = new Tokenizer();
-
-const tokens = tok
-  .tokenize(`
+export const t = (inp: string) => new Tokenizer().tokenize(inp).filter(token => token.type !== TT.WHITESPACE);
+const tokens = t(`
 függvény LNKO(m : egész, n : egész)
   r <- m mod n
   
@@ -23,15 +20,7 @@ függvény vége
 
 kiír LNKO(15, 33)
 `)
-  //const tokens = tok.tokenize("r <- 5 + 5
-  .filter((t) => t.type !== TT.WHITESPACE);
-  
-  
-const t = (inp: string) => new Tokenizer().tokenize(inp).filter(token => token.type !== TT.WHITESPACE);
 
-console.log(horfBlock.run(tokens).value.kind.statements)
-
-/*
 const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     const start = performance.now();
     for (let i = 0; i < rounds; i++) {
@@ -41,6 +30,7 @@ const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     console.log(`${title}: ${rounds} rounds - ${end - start} ms. (~${(end - start) / rounds} ms / call)`);
 }
 
+/*
 [1, 10, 100, 1000].forEach(rounds => {
     const parser = new RDParser();
     

@@ -1,4 +1,5 @@
 import { IAST } from "./IParser.ts";
+import { IToken } from "./ITokenizer.ts";
 
 export type AtomValue = number | string | boolean;
 
@@ -11,10 +12,47 @@ export interface Debug {
   tag: "debug";
 }
 
+export enum BinOpType {
+  ADD = 0,
+  SUB = 1,
+  MUL = 2,
+  DIV = 3,
+  MOD = 4,
+
+  EQ = 5,
+  NEQ = 6,
+
+  LE = 7,
+  GE = 8,
+
+  LESS = 9,
+  GREATER = 10,
+
+  AND = 11,
+  OR = 12,
+}
+
+export const BinOpTypeMap = new Map([
+  ["+", BinOpType.ADD],
+  ["-", BinOpType.SUB],
+  ["*", BinOpType.MUL],
+  ["/", BinOpType.DIV],
+  ["mod", BinOpType.MOD],
+  ["=", BinOpType.EQ],
+  ["!=", BinOpType.NEQ],
+  ["<=", BinOpType.LE],
+  [">=", BinOpType.GE],
+  ["<", BinOpType.LESS],
+  [">", BinOpType.GREATER],
+  ["és", BinOpType.AND],
+  ["vagy", BinOpType.OR],
+]);
+
 export interface BinaryOperation {
   tag: "binop";
   lhs: IAST<Expression>;
   rhs: IAST<Expression>;
+  op: BinOpType;
 }
 
 export interface If {
@@ -124,6 +162,7 @@ export type Expression =
   | NewArray;
 
 export type Statement =
+  | Block
   | If
   | Assignment
   | While
@@ -133,4 +172,4 @@ export type Statement =
   | FunctionDeclaration
   | Debug;
 
-export type ASTKind = Expression | Statement | Block | Parameter;
+export type ASTKind = Expression | Statement | Parameter;

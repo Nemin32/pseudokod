@@ -1,45 +1,48 @@
-import { AtomValue, IAST } from "./IParser.ts";
+import { IAST } from "./IParser.ts";
+import { IToken } from "./ITokenizer.ts";
+import { Block } from "./astkinds.ts";
 
 // IAST -> IByteCode
-enum OpCode {
-  ADDRESS = 0,
-  ARRADDR = 1,
+export enum OpCode {
+  ADDRESS,
+  ARRADDR,
 
-  CALL = 2,
-  RETURN = 3,
+  CALL,
+  RETURN,
+  
+  PUSHS,
 
-  VALARR = 4,
-  PUSH = 5,
-  BINOP = 6,
-  NOT = 7,
-  PRINT = 8,
-  VOID = 9,
+  VALARR,
+  PUSH,
+  BINOP,
+  NOT,
+  PRINT,
+  VOID,
 
-  GETARR = 10,
-  GETVAR = 11,
+  GETARR,
+  GETVAR,
 
-  SETARR = 12,
-  SETVAR = 13,
+  SETARR,
+  SETVAR,
 
-  LABEL = 14,
-  FJMP = 15,
-  JMP = 16,
+  LABEL,
+  FJMP,
+  JMP,
 
-  ESCOPE = 17,
-  LSCOPE = 18,
+  ESCOPE,
+  LSCOPE,
 
-  MKARR = 19,
-  MKREF = 20,
+  MKARR,
+  MKREF,
 
-  DEBUG = 21,
+  DEBUG,
 }
 
 export interface IByteCode {
   opCode: OpCode;
-  payload?: AtomValue;
-  ast: IAST;
+  token: IToken
 }
 
 export interface ICompiler {
-  compile(input: IAST): IByteCode[];
+  compile(input: IAST<Block>): IByteCode[];
 }

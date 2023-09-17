@@ -259,8 +259,9 @@ class Do<Bindings extends Record<string, unknown> = {}> {
       const { name, parser } = parsers[0];
 
       return parser.bind((value) => {
-        if (name) obj[name] = value;
-        return recursion(parsers.slice(1), obj);
+        const newObj = {...obj};
+        if (name) newObj[name] = value;
+        return recursion(parsers.slice(1), newObj);
       });
     }
 
