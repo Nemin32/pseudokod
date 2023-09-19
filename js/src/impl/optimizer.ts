@@ -11,8 +11,6 @@ import {
   Print,
   Statement,
 } from "../interfaces/astkinds.ts";
-import { parseBlock } from "./parser/ast_parser.ts";
-import { t } from "./parser/test.ts";
 
 function optimizeBinOp(value: IAST<BinaryOperation>): IAST<BinaryOperation> | IAST<Atom> {
   const mkAtom = (aval: Atom["value"]): IAST<Atom> => ({
@@ -92,16 +90,6 @@ function optimizeStatements(stmts: IAST<Statement>[]): IAST<Statement>[] {
   >[];
 }
 
-function optimizeBlock(block: IAST<Block>): IAST<Block> {
-  return {
-    token: block.token,
-    kind: {
-      tag: "block",
-      statements: optimizeStatements(block.kind.statements),
-    },
-  };
-}
-
 function optimizeIf(ifIAST: IAST<If>): IAST<If> | IAST<Block> | null {
   function isAtomValue(expr: IAST<ASTKind>, value: AtomValue) {
     return expr.kind.tag === "atom" && expr.kind.value === value;
@@ -157,20 +145,12 @@ function optimizeIf(ifIAST: IAST<If>): IAST<If> | IAST<Block> | null {
   };
 }
 
-const tokens = t(`
-  ha igaz akkor 
-  kiír 5
-  ha igaz akkor
-    kiír 1
-  elágazás vége
-  kiír 6
-  különben 
-    kiír 6 
-  elágazás vége
-`);
-
-const ast = parseBlock.run(tokens);
-
-if (ast.type === "match") {
-  console.log(optimizeBlock(ast.value).kind.statements);
+export function optimizeBlock(block: IAST<Block>): IAST<Block> {
+  return {
+    token: block.token,
+    kind: {
+      tag: "block",
+      statements: optimizeStatements(block.kind.statements),
+    },
+  };
 }
