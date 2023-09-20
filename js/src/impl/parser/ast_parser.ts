@@ -1,4 +1,3 @@
-import { IAST } from "../../interfaces/IParser.ts";
 import { IToken } from "../../interfaces/ITokenizer.ts";
 import {
   ArrayComprehension,
@@ -6,6 +5,7 @@ import {
   Assignment,
   Atom,
   BinOpTypeMap,
+  BinaryOperation,
   Block,
   Debug,
   Expression,
@@ -25,7 +25,7 @@ import {
 } from "../../interfaces/astkinds.ts";
 import { P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
-const parseStatement: P<Statement> = Parser.of<IAST<Statement>>(
+const parseStatement: P<Statement> = Parser.of<Statement>(
   () =>
     parseIf
       .or(parseReturn)
@@ -42,54 +42,42 @@ const parseExpression: P<Expression> = Parser.of(() => parseNot.or(parseReferenc
 
 export const parseBlock: P<Block> = parseStatement
   .many1()
-  .map((stmts) => mkToken(null, { tag: "block", statements: stmts }));
+  .map((stmts) => mkToken(null, "block", { statements: stmts }));
 
 const parseVariable: P<Variable> = Parser.matchT(TT.SYMBOL).map((token) =>
-  mkToken(token, {
-    tag: "variable",
-    name: token.lexeme,
-  }),
+  mkToken(token, "variable", { name: token.lexeme }),
 );
 
 const parseComprehension: P<ArrayComprehension> = parseExpression
   .sepBy(Parser.matchT(TT.COMMA))
   .parens()
-  .map((exprs) => mkToken(null, { tag: "arrcomp", expressions: exprs }));
+  .map((exprs) => mkToken(null, "arrcomp", { expressions: exprs }));
 
 const parseArrayIndex: P<ArrayIndex> = Parser.do()
   .bind("variable", parseVariable)
   .bind("index", parseExpression.brackets())
-  .result(({ variable, index }) => mkToken(variable.token, { tag: "arrindex", variable, index }));
+  .result(({ variable, index }) => mkToken(variable.token, "arrindex", { variable, index }));
 
 const parseNewArray: P<NewArray> = Parser.do()
   .bindT("token", TT.LETREHOZ)
   .bind("type", Parser.matchT(TT.TYPE).brackets())
   .bind("length", parseExpression.parens())
   .result(({ token, type, length }) =>
-    mkToken(token, { tag: "arrnew", length, type: type.lexeme }),
+    mkToken(token, "arrnew", { length, type: type.lexeme }),
   );
 
 //#region Atom
 
 const number: P<Atom> = Parser.matchT(TT.NUMBER).map((token) =>
-  mkToken(token, {
-    tag: "atom",
-    value: Number(token.lexeme),
-  }),
+  mkToken(token, "atom", { value: Number(token.lexeme) }),
 );
 
 const boolean: P<Atom> = Parser.matchT(TT.BOOLEAN).map((token) =>
-  mkToken(token, {
-    tag: "atom",
-    value: ["Igaz", "igaz"].includes(token.lexeme),
-  }),
+  mkToken(token, "atom", { value: ["Igaz", "igaz"].includes(token.lexeme) }),
 );
 
 const string: P<Atom> = Parser.matchT(TT.STRING).map((token) =>
-  mkToken(token, {
-    tag: "atom",
-    value: token.lexeme,
-  }),
+  mkToken(token, "atom", { value: token.lexeme, }),
 );
 
 const parseAtom = number.or(boolean).or(string);
@@ -104,14 +92,13 @@ const compOp = Parser.sat((tok) => [">", "<", "=", "<=", ">=", "=/="].includes(t
 const logicOp = Parser.sat((tok) => ["és", "vagy"].includes(tok.lexeme));
 
 const toBinopOrExpr = (
-  value: IAST<Expression> | { left: IAST<Expression>; op: IToken; right: IAST<Expression> },
-) => {
-  if ("op" in value) {
+  value: Expression | { left: Expression; op: IToken; right: Expression },
+): Expression => {
+  if ("left" in value) {
     const binop = BinOpTypeMap.get(value.op.lexeme);
     if (binop === undefined) throw new Error(`Unknown binop: "${value.op.lexeme}".`)
 
-    return mkToken(value.op, {
-      tag: "binop",
+    return mkToken<BinaryOperation>(value.op, "binop", {
       lhs: value.left,
       rhs: value.right,
       op: binop
@@ -125,7 +112,7 @@ const parseFuncCall: P<FunctionCall> = Parser.do()
   .bindT("name", TT.FUNCNAME)
   .bind("args", parseExpression.sepBy(Parser.matchT(TT.COMMA)).parens())
   .result(({ name, args }) =>
-    mkToken(name, { tag: "funccall", name: name.lexeme, arguments: args }),
+    mkToken(name, "funccall", { name: name.lexeme, arguments: args }),
   );
 
 const primary: P<Expression> = parseExpression
@@ -143,13 +130,13 @@ const parseBinOp: P<Expression> = Parser.chainl1(parseCompOp, logicOp).map(toBin
 //#endregion
 
 const parseNot: P<Not> = Parser.matchT(TT.NEGAL).bind((token) =>
-  parseExpression.map((expr) => mkToken(token, { tag: "not", expr })),
+  parseExpression.map((expr) => mkToken(token, "not", { expr })),
 );
 
 const parseReference: P<Reference> = Parser.matchT(TT.REFERENCE).bind((token) =>
   parseArrayIndex
     .or(parseVariable)
-    .map((expr) => mkToken(token, { tag: "reference", inner: expr })),
+    .map((inner) => mkToken(token, "reference", { inner })),
 );
 
 const parseAssignment: P<Assignment> = Parser.do()
@@ -157,15 +144,14 @@ const parseAssignment: P<Assignment> = Parser.do()
   .bindT("nyil", TT.NYIL)
   .bind("value", parseExpression)
   .result(({ variable, nyil, value }) =>
-    mkToken(nyil, {
-      tag: "assign",
+    mkToken(nyil, "assign", {
       variable,
       value,
     }),
   );
 
 const parseDebug: P<Debug> = Parser.matchT(TT.DEBUG).map((token) =>
-  mkToken(token, { tag: "debug" }),
+  mkToken(token, "debug", {})
 );
 
 const parseFor: P<For> = Parser.do()
@@ -180,8 +166,7 @@ const parseFor: P<For> = Parser.do()
   .ignoreT(TT.CIKLUS)
   .ignoreT(TT.VEGE)
   .result(({ token, variable, from, to, body }) =>
-    mkToken(token, {
-      tag: "for",
+    mkToken(token, "for", {
       from,
       to,
       body,
@@ -201,7 +186,7 @@ const parseParameter: P<Parameter> = Parser.do()
   .ignoreT(TT.COLON)
   .bindT("type", TT.TYPE)
   .result(({ byRef, name, type }) =>
-    mkToken(name.token, { tag: "param", byRef, name, type: type.lexeme }),
+    mkToken(name.token, "param", { byRef, name, type: type.lexeme }),
   );
 
 const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
@@ -212,7 +197,7 @@ const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
   .ignoreT(TT.FUGGVENY)
   .ignoreT(TT.VEGE)
   .result(({ token, body, name, parameters }) =>
-    mkToken(token, { tag: "funcdecl", body, name: name.lexeme, parameters }),
+    mkToken(token, "funcdecl", { body, name: name.lexeme, parameters }),
   );
 
 //#endregion
@@ -237,17 +222,17 @@ const parseIf: P<If> = Parser.do()
   .ignoreT(TT.ELAGAZAS)
   .ignoreT(TT.VEGE)
   .result(({ main_path, elif_path, false_path }) =>
-    mkToken(main_path.token, { tag: "if", main_path, elif_path, false_path }),
+    mkToken(main_path.token, "if", { main_path, elif_path, false_path }),
   );
 
 //#endregion
 
 const parsePrint: P<Print> = Parser.matchT(TT.KIIR).bind((token) =>
-  parseExpression.map((value) => mkToken(token, { tag: "print", expr: value })),
+  parseExpression.map((expr) => mkToken(token, "print",{ expr })),
 );
 
 const parseReturn: P<Return> = Parser.matchT(TT.VISSZA).bind((token) =>
-  parseExpression.map((value) => mkToken(token, { tag: "return", expr: value })),
+  parseExpression.map((expr) => mkToken(token, "return", { expr })),
 );
 
 //#region While
@@ -269,8 +254,7 @@ const parseDoWhile = Parser.do()
   .finalize({ postPred: true });
 
 const parseWhile: P<While> = parseDoWhile.or(parseNormalWhile).map((value) =>
-  mkToken(value.token, {
-    tag: "while",
+  mkToken(value.token, "while", {
     body: value.body,
     postPred: value.postPred,
     predicate: value.pred,

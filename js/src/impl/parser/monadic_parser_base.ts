@@ -1,4 +1,3 @@
-import { IAST } from "../../interfaces/IParser.ts";
 import { IToken, TokenType as TT, TokenType } from "../../interfaces/ITokenizer.ts";
 import { ASTKind } from "../../interfaces/astkinds.ts";
 
@@ -138,7 +137,7 @@ export class Parser<Output> {
     return Parser.chainl1(term, op).or(baseCase);
   }
 
-  static chainl1<Term, Operator>(term: Parser<Term>, opParser: Parser<Operator>) {
+  static chainl1<Term, Operator>(term: Parser<Term>, opParser: Parser<Operator>): Parser<Term | {left : Term, op : Operator, right: Term}> {
     return term
       .bind((left) =>
         opParser.bind((op) => term.bind((right) => Parser.result({ left, op, right }))),
@@ -182,7 +181,7 @@ export class Parser<Output> {
   // EXTRAS
   // Things not described by the original paper, but that make parsing easier.
 
-  map<T>(fn: (value: Output) => T) {
+  map<T>(fn: (value: Output) => T): Parser<T> {
     return this.bind((value) => Parser.result(fn(value)));
   }
 
@@ -273,13 +272,15 @@ class Do<Bindings extends Record<string, unknown> = {}> {
   }
 }
 
-export type P<T> = Parser<IAST<T>>;
+export type P<T> = Parser<T>;
 export { TokenType as TT };
 
 export const mkToken = <T extends ASTKind>(
-  token: IToken | null,
-  rest: IAST<T>["kind"],
-): IAST<T> => ({
+  token: T["token"],
+  tag: T["tag"],
+  rest: Omit<T, "token" | "tag">
+): T => ({
   token,
-  kind: rest,
-});
+  tag,
+  rest
+} as unknown as T);

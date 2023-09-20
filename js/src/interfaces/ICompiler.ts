@@ -1,4 +1,3 @@
-import { IAST } from "./IParser.ts";
 import { IToken } from "./ITokenizer.ts";
 import { Block } from "./astkinds.ts";
 
@@ -44,5 +43,5 @@ export interface IByteCode {
 }
 
 export interface ICompiler {
-  compile(input: IAST<Block>): IByteCode[];
+  compile(input: Block): IByteCode[];
 }

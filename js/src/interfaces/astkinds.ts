@@ -1,16 +1,14 @@
-import { IAST } from "./IParser.ts";
 import { IToken } from "./ITokenizer.ts";
+
+type ASTBase<Tag extends string, Fields> = { tag: Tag, token: IToken | null } & Fields;
 
 export type AtomValue = number | string | boolean;
 
-export interface Atom {
-  tag: "atom";
+export type Atom = ASTBase<"atom", {
   value: AtomValue;
-}
+}>
 
-export interface Debug {
-  tag: "debug";
-}
+export type Debug = ASTBase<"debug", {}>
 
 export enum BinOpType {
   ADD = 0,
@@ -39,7 +37,7 @@ export const BinOpTypeMap = new Map([
   ["/", BinOpType.DIV],
   ["mod", BinOpType.MOD],
   ["=", BinOpType.EQ],
-  ["!=", BinOpType.NEQ],
+  ["=/=", BinOpType.NEQ],
   ["<=", BinOpType.LE],
   [">=", BinOpType.GE],
   ["<", BinOpType.LESS],
@@ -48,107 +46,90 @@ export const BinOpTypeMap = new Map([
   ["vagy", BinOpType.OR],
 ]);
 
-export interface BinaryOperation {
-  tag: "binop";
-  lhs: IAST<Expression>;
-  rhs: IAST<Expression>;
+export type BinaryOperation = ASTBase<"binop", {
+  lhs: Expression;
+  rhs: Expression;
   op: BinOpType;
-}
+}>
 
-export interface If {
-  tag: "if";
-  main_path: { pred: IAST<Expression>; branch: IAST<Block> };
-  elif_path: Array<{ pred: IAST<Expression>; branch: IAST<Block> }>;
-  false_path: IAST<Block> | null;
-}
+export type If = ASTBase<"if", {
+  main_path: { pred: Expression; branch: Block };
+  elif_path: Array<{ pred: Expression; branch: Block }>;
+  false_path: Block | null;
+}>
 
-export interface Block {
-  tag: "block";
-  statements: IAST<Statement>[];
-}
+export type Block = ASTBase<"block", {
+  statements: Statement[];
+}>
 
-export interface Variable {
-  tag: "variable";
+export type Variable = ASTBase<"variable", {
   name: string;
-}
+}>
 
-export interface ArrayIndex {
-  tag: "arrindex";
-  variable: IAST<Variable>;
-  index: IAST<Expression>;
-}
+export type ArrayIndex = ASTBase<"arrindex", {
+  variable: Variable;
+  index: Expression;
+}>
 
-export interface Reference {
-  tag: "reference";
-  inner: IAST<Variable> | IAST<ArrayIndex>;
-}
+export type Reference = ASTBase<"reference", {
+  inner: Variable | ArrayIndex;
+}>
 
-export interface NewArray {
-  tag: "arrnew";
+export type NewArray = ASTBase<"arrnew",{
   type: string;
-  length: IAST<Expression>;
-}
+  length: Expression;
+}>
 
-export interface ArrayComprehension {
-  tag: "arrcomp";
-  expressions: Array<IAST<Expression>>;
-}
+export type ArrayComprehension = ASTBase<"arrcomp", {
+  expressions: Array<Expression>;
+}>
 
-export interface Assignment {
-  tag: "assign";
-  variable: IAST<Variable> | IAST<ArrayIndex>;
-  value: IAST<Expression>;
-}
+export type Assignment = ASTBase<"assign", {
+  variable: Variable | ArrayIndex;
+  value: Expression;
+}>
 
-export interface For {
-  tag: "for";
-  from: IAST<Expression>;
-  to: IAST<Expression>;
-  variable: IAST<Variable>;
-  body: IAST<Block>;
-}
+export type For = ASTBase<"for", {
+  from: Expression;
+  to: Expression;
+  variable: Variable;
+  body: Block;
+}>
 
-export interface While {
-  tag: "while";
-  predicate: IAST<Expression>;
-  body: IAST<Block>;
+export type While = ASTBase<"while", {
+  predicate: Expression;
+  body: Block;
   postPred: boolean; // true -> do while
-}
+}>
 
-export interface Not {
-  tag: "not";
-  expr: IAST<Expression>;
-}
+export type Not = ASTBase<"not", {
+  expr: Expression;
+}>
 
-export interface Print {
-  tag: "print";
-  expr: IAST<Expression>;
-}
+export type Print = ASTBase<"print", {
+  expr: Expression;
+}>
 
-export interface Return {
-  tag: "return";
-  expr: IAST<Expression>;
-}
+export type Return = ASTBase<"return", {
+  expr: Expression;
+}>
 
-export interface FunctionCall {
-  tag: "funccall";
+export type FunctionCall = ASTBase<"funccall", {
   name: string;
-  arguments: IAST<Expression>[];
-}
+  arguments: Expression[];
+}>
 
-export interface FunctionDeclaration {
-  tag: "funcdecl";
+export type FunctionDeclaration = ASTBase<"funcdecl", {
   name: string;
-  parameters: IAST<Parameter>[];
-  body: IAST<Block>;
-}
+  parameters: Parameter[];
+  body: Block;
+}>
 
-export interface Parameter {
-  tag: "param";
-  name: IAST<Variable>;
+export type Parameter = ASTBase<"param", {
+  name: Variable;
   type: string;
   byRef: boolean;
-}
+}>
 
 export type Expression =
   | Atom

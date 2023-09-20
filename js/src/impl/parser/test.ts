@@ -30,7 +30,6 @@ const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     console.log(`${title}: ${rounds} rounds - ${end - start} ms. (~${(end - start) / rounds} ms / call)`);
 }
 
-/*
 [1, 10, 100, 1000].forEach(rounds => {
     const parser = new RDParser();
     
@@ -38,4 +37,3 @@ const testRound = (title: string, rounds: number, fn: () => unknown): void => {
     testRound("OneFile", rounds, () => horfBlock.run(tokens))
     console.log("---")
 })
-*/

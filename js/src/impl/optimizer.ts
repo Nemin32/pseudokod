@@ -1,4 +1,3 @@
-import { IAST } from "../interfaces/IParser.ts";
 import {
   ASTKind,
   Atom,
@@ -12,17 +11,17 @@ import {
   Statement,
 } from "../interfaces/astkinds.ts";
 
-function optimizeBinOp(value: IAST<BinaryOperation>): IAST<BinaryOperation> | IAST<Atom> {
-  const mkAtom = (aval: Atom["value"]): IAST<Atom> => ({
+function optimizeBinOp(value: BinaryOperation): BinaryOperation | Atom {
+  const mkAtom = (aval: Atom["value"]): Atom => ({
     token: value.token,
-    kind: { tag: "atom", value: aval },
+    tag: "atom", value: aval,
   });
 
-  const [lhsE, rhsE] = [optimizeExpr(value.kind.lhs), optimizeExpr(value.kind.rhs)];
-  if (lhsE.kind.tag === "atom" && rhsE.kind.tag === "atom") {
-    const [lhs, rhs] = [lhsE.kind.value, rhsE.kind.value];
+  const [lhsE, rhsE] = [optimizeExpr(value.lhs), optimizeExpr(value.rhs)];
+  if (lhsE.tag === "atom" && rhsE.tag === "atom") {
+    const [lhs, rhs] = [lhsE.value, rhsE.value];
 
-    switch (value.kind.op) {
+    switch (value.op) {
       case BinOpType.ADD:
         return mkAtom(Number(lhs) + Number(rhs));
       case BinOpType.SUB:
@@ -52,50 +51,48 @@ function optimizeBinOp(value: IAST<BinaryOperation>): IAST<BinaryOperation> | IA
     }
   }
 
-  return { ...value, kind: { ...value.kind, lhs: lhsE, rhs: rhsE } };
+  return { ...value, lhs: lhsE, rhs: rhsE };
 }
 
-function optimizePrint(print: IAST<Print>): IAST<Print> {
+function optimizePrint(print: Print): Print {
   return {
     token: print.token,
-    kind: {
-      tag: "print",
-      expr: optimizeExpr(print.kind.expr),
-    },
+    tag: "print",
+    expr: optimizeExpr(print.expr),
   };
 }
 
-function optimizeExpr(expr: IAST<Expression>): IAST<Expression> {
-  if (expr.kind.tag === "binop") return optimizeBinOp(expr as IAST<BinaryOperation>);
+function optimizeExpr(expr: Expression): Expression {
+  if (expr.tag === "binop") return optimizeBinOp(expr as BinaryOperation);
 
   return expr;
 }
 
-function optimizeStatement(statement: IAST<Statement>): IAST<Statement> | IAST<Block> | null {
-  if (statement.kind.tag === "if") {
-    return optimizeIf(statement as IAST<If>);
+function optimizeStatement(statement: Statement): Statement | Block | null {
+  if (statement.tag === "if") {
+    return optimizeIf(statement as If);
   }
 
-  if (statement.kind.tag === "print") {
-    return optimizePrint(statement as IAST<Print>);
+  if (statement.tag === "print") {
+    return optimizePrint(statement as Print);
   }
 
   return statement;
 }
 
-function optimizeStatements(stmts: IAST<Statement>[]): IAST<Statement>[] {
+function optimizeStatements(stmts: Statement[]): Statement[] {
   return stmts.map((s) => optimizeStatement(s)).filter((e) => e !== null) as Exclude<
     ReturnType<typeof optimizeStatement>,
     null
   >[];
 }
 
-function optimizeIf(ifIAST: IAST<If>): IAST<If> | IAST<Block> | null {
-  function isAtomValue(expr: IAST<ASTKind>, value: AtomValue) {
-    return expr.kind.tag === "atom" && expr.kind.value === value;
+function optimizeIf(ifIAST: If): If | Block | null {
+  function isAtomValue(expr: ASTKind, value: AtomValue) {
+    return expr.tag === "atom" && expr.value === value;
   }
 
-  const ifStatement = ifIAST.kind;
+  const ifStatement = ifIAST;
 
   const main_path = {
     pred: optimizeExpr(ifStatement.main_path.pred),
@@ -123,12 +120,9 @@ function optimizeIf(ifIAST: IAST<If>): IAST<If> | IAST<Block> | null {
       // Ha van elif, akkor pedig az első elifből lesz az első if és a maradékból pedig az elifek.
       return {
         ...ifIAST,
-        kind: {
-          ...ifStatement,
-          main_path: elif_path[0],
-          elif_path: elif_path.slice(1),
-          false_path,
-        },
+        main_path: elif_path[0],
+        elif_path: elif_path.slice(1),
+        false_path,
       };
     }
   }
@@ -136,21 +130,16 @@ function optimizeIf(ifIAST: IAST<If>): IAST<If> | IAST<Block> | null {
   // Végül, ha nem tudunk mit mondani a fő ág predikátumáról, akkor csak simán visszatérünk a kioptimalizált iffel.
   return {
     ...ifIAST,
-    kind: {
-      tag: "if",
-      main_path,
-      elif_path,
-      false_path,
-    },
+    main_path,
+    elif_path,
+    false_path,
   };
 }
 
-export function optimizeBlock(block: IAST<Block>): IAST<Block> {
+export function optimizeBlock(block: Block): Block {
   return {
+    tag: "block",
     token: block.token,
-    kind: {
-      tag: "block",
-      statements: optimizeStatements(block.kind.statements),
-    },
+    statements: optimizeStatements(block.statements),
   };
 }

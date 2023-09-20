@@ -1,5 +1,4 @@
 import { IByteCode, OpCode } from "../interfaces/ICompiler.ts";
-import { IAST } from "../interfaces/IParser.ts";
 import { ASTKind, Atom, Block, Not, Print } from "../interfaces/astkinds.ts";
 import { parseBlock } from "./parser/ast_parser.ts";
 import { t } from "./parser/test.ts";
@@ -63,16 +62,16 @@ class Compiler {
     this.addOp(OpCode.NOT);
   }
 
-  visit(val: IAST<ASTKind>) {
-    switch (val.kind.tag) {
+  visit(val: ASTKind) {
+    switch (val.tag) {
       case "atom":
-        return this.visitAtom(val.kind);
+        return this.visitAtom(val);
       case "binop":
       case "variable":
       case "reference":
         break;
       case "not":
-        return this.visitNot(val.kind);
+        return this.visitNot(val);
       case "arrcomp":
       case "arrindex":
       case "funccall":
@@ -83,18 +82,18 @@ class Compiler {
       case "for":
         break;
       case "print":
-        return this.visitPrint(val.kind);
+        return this.visitPrint(val);
       case "return":
       case "funcdecl":
       case "debug":
         break;
       case "block":
-        return this.visitBlock(val.kind);
+        return this.visitBlock(val);
       case "param":
     }
   }
 
-  compile(input: IAST<Block>) {
+  compile(input: Block) {
     this.visit(input);
     this.addRaw(99);
     const chars = this.strings.flatMap((s) => [...s.str].map((c) => c.charCodeAt(0)));

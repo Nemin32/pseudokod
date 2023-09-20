@@ -1,9 +1,9 @@
 import * as ASTKinds from "../../interfaces/astkinds.ts";
 import { AtomValue } from "../../interfaces/astkinds.ts";
-import { IAST, ITokenToASTParser } from "../../interfaces/IParser.ts";
+import { ITokenToASTParser } from "../../interfaces/IParser.ts";
 import { IToken, TokenType as TT } from "../../interfaces/ITokenizer.ts";
 
-type ParseResult<T extends ASTKinds.ASTKind> = IAST<T>; //{ token: IToken | null; kind: T } | null;
+type ParseResult<T extends ASTKinds.ASTKind> = T; //{ token: IToken | null; kind: T } | null;
 
 class EOFError extends Error {
   constructor() {
@@ -113,11 +113,11 @@ export class RDParser implements ITokenToASTParser {
     }
   }
 
-  mk<T extends ASTKinds.ASTKind>(token: IToken | null, kind: T): ParseResult<T> {
+  mk<T extends ASTKinds.ASTKind>(token: IToken | null, kind: Omit<T, "token">): ParseResult<T> {
     return {
       token,
       kind,
-    };
+    } as unknown as T;
   }
 
   // --- UTILS ---
@@ -460,17 +460,19 @@ export class RDParser implements ITokenToASTParser {
       const fn = next.bind(this);
       const lhs = fn();
       const prevIdx = this.index;
-      const op = this.maybe(TT.BINOP);
+      const opT = this.maybe(TT.BINOP);
+      const op = opT && ASTKinds.BinOpTypeMap.get(opT.lexeme);
       const rhs = this.tryParse(fn);
 
-      if (!rhs || !op || !lexemes.includes(op.lexeme)) {
+      if (!rhs || !op || !lexemes.includes(opT.lexeme)) {
         this.index = prevIdx;
         return lhs;
       }
 
-      return this.mk(op, {
+      return this.mk<ASTKinds.BinaryOperation>(opT, {
         tag: "binop",
         lhs,
+        op,
         rhs,
       });
     };
@@ -495,7 +497,7 @@ export class RDParser implements ITokenToASTParser {
 
   // ---
 
-  parse(input: IToken[]): IAST<ASTKinds.Block> {
+  parse(input: IToken[]): ASTKinds.Block {
     this.input = input;
     this.index = 0;
 
