@@ -27,18 +27,22 @@ import { P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseStatement: P<Statement> = Parser.of<Statement>(
   () =>
-    parseIf
-      .or(parseReturn)
-      .or(parseFor)
-      .or(parseAssignment)
-      .or(parseFuncDecl)
-      .or(parsePrint)
-      .or(parseWhile)
-      .or(parseDebug),
+    Parser.choice<Statement>([
+      parseIf,
+      parseReturn,
+      parseFor,
+      parseAssignment,
+      parseFuncDecl,
+      parsePrint,
+      parseWhile,
+      parseDebug,
+    ]),
   //.or(parseExpression), Ha támogatni akarjuk a lógó expressionöket.
 );
 
-const parseExpression: P<Expression> = Parser.of(() => parseNot.or(parseReference).or(parseComprehension).or(parseNewArray).or(parseBinOp));
+const parseExpression: P<Expression> = Parser.of(() =>
+  parseNot.or(parseReference).or(parseComprehension).or(parseNewArray).or(parseBinOp),
+);
 
 export const parseBlock: P<Block> = parseStatement
   .many1()
@@ -62,9 +66,7 @@ const parseNewArray: P<NewArray> = Parser.do()
   .bindT("token", TT.LETREHOZ)
   .bind("type", Parser.matchT(TT.TYPE).brackets())
   .bind("length", parseExpression.parens())
-  .result(({ token, type, length }) =>
-    mkToken(token, "arrnew", { length, type: type.lexeme }),
-  );
+  .result(({ token, type, length }) => mkToken(token, "arrnew", { length, type: type.lexeme }));
 
 //#region Atom
 
@@ -77,10 +79,10 @@ const boolean: P<Atom> = Parser.matchT(TT.BOOLEAN).map((token) =>
 );
 
 const string: P<Atom> = Parser.matchT(TT.STRING).map((token) =>
-  mkToken(token, "atom", { value: token.lexeme, }),
+  mkToken(token, "atom", { value: token.lexeme }),
 );
 
-const parseAtom = number.or(boolean).or(string);
+const parseAtom = Parser.choice([number, boolean, string]);
 
 //#endregion
 
@@ -96,12 +98,12 @@ const toBinopOrExpr = (
 ): Expression => {
   if ("left" in value) {
     const binop = BinOpTypeMap.get(value.op.lexeme);
-    if (binop === undefined) throw new Error(`Unknown binop: "${value.op.lexeme}".`)
+    if (binop === undefined) throw new Error(`Unknown binop: "${value.op.lexeme}".`);
 
     return mkToken<BinaryOperation>(value.op, "binop", {
       lhs: value.left,
       rhs: value.right,
-      op: binop
+      op: binop,
     });
   } else {
     return value;
@@ -111,16 +113,15 @@ const toBinopOrExpr = (
 const parseFuncCall: P<FunctionCall> = Parser.do()
   .bindT("name", TT.FUNCNAME)
   .bind("args", parseExpression.sepBy(Parser.matchT(TT.COMMA)).parens())
-  .result(({ name, args }) =>
-    mkToken(name, "funccall", { name: name.lexeme, arguments: args }),
-  );
+  .result(({ name, args }) => mkToken(name, "funccall", { name: name.lexeme, arguments: args }));
 
-const primary: P<Expression> = parseExpression
-  .parens()
-  .or(parseFuncCall)
-  .or(parseArrayIndex)
-  .or(parseVariable)
-  .or(parseAtom);
+const primary: P<Expression> = Parser.choice([
+  parseExpression.parens(),
+  parseFuncCall,
+  parseArrayIndex,
+  parseVariable,
+  parseAtom,
+]);
 
 const parseArithmOp: P<Expression> = Parser.chainl1(primary, addOp).map(toBinopOrExpr);
 const parseMulOp: P<Expression> = Parser.chainl1(parseArithmOp, mulOp).map(toBinopOrExpr);
@@ -134,9 +135,7 @@ const parseNot: P<Not> = Parser.matchT(TT.NEGAL).bind((token) =>
 );
 
 const parseReference: P<Reference> = Parser.matchT(TT.REFERENCE).bind((token) =>
-  parseArrayIndex
-    .or(parseVariable)
-    .map((inner) => mkToken(token, "reference", { inner })),
+  parseArrayIndex.or(parseVariable).map((inner) => mkToken(token, "reference", { inner })),
 );
 
 const parseAssignment: P<Assignment> = Parser.do()
@@ -150,9 +149,7 @@ const parseAssignment: P<Assignment> = Parser.do()
     }),
   );
 
-const parseDebug: P<Debug> = Parser.matchT(TT.DEBUG).map((token) =>
-  mkToken(token, "debug", {})
-);
+const parseDebug: P<Debug> = Parser.matchT(TT.DEBUG).map((token) => mkToken(token, "debug", {}));
 
 const parseFor: P<For> = Parser.do()
   .bindT("token", TT.CIKLUS)
@@ -228,7 +225,7 @@ const parseIf: P<If> = Parser.do()
 //#endregion
 
 const parsePrint: P<Print> = Parser.matchT(TT.KIIR).bind((token) =>
-  parseExpression.map((expr) => mkToken(token, "print",{ expr })),
+  parseExpression.map((expr) => mkToken(token, "print", { expr })),
 );
 
 const parseReturn: P<Return> = Parser.matchT(TT.VISSZA).bind((token) =>
@@ -240,7 +237,7 @@ const parseReturn: P<Return> = Parser.matchT(TT.VISSZA).bind((token) =>
 const parseNormalWhile = Parser.do()
   .bindT("token", TT.CIKLUS)
   .ignoreT(TT.AMIG)
-  .bind("pred", parseExpression)
+  .bind("predicate", parseExpression)
   .bind("body", parseBlock)
   .ignoreT(TT.CIKLUS)
   .ignoreT(TT.VEGE)
@@ -250,15 +247,11 @@ const parseDoWhile = Parser.do()
   .bindT("token", TT.CIKLUS)
   .bind("body", parseBlock)
   .ignoreT(TT.AMIG)
-  .bind("pred", parseExpression)
+  .bind("predicate", parseExpression)
   .finalize({ postPred: true });
 
 const parseWhile: P<While> = parseDoWhile.or(parseNormalWhile).map((value) =>
-  mkToken(value.token, "while", {
-    body: value.body,
-    postPred: value.postPred,
-    predicate: value.pred,
-  }),
+  mkToken(value.token, "while", value),
 );
 
 //#endregion
