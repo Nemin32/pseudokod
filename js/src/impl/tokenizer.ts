@@ -30,6 +30,7 @@ const kwToType: ReadonlyMap<string, TT> = new Map([
   ["&", TT.REFERENCE],
 
   ["<-", TT.NYIL],
+  ["<->", TT.SWAP],
   ["-tól", TT.FORSTART],
   ["-től", TT.FORSTART],
   ["-ig", TT.FOREND],
@@ -88,6 +89,10 @@ export class Tokenizer implements ITokenizer {
 
   isLetter(char: string): boolean {
     return char.toLowerCase() !== char.toUpperCase();
+  }
+
+  isLetterOrUnderline(char: string): boolean {
+    return char.toLowerCase() !== char.toUpperCase() || char === "_";
   }
 
   tryParse(fn: () => IToken | null): IToken | null {
@@ -239,7 +244,7 @@ export class Tokenizer implements ITokenizer {
       const c = this.eat()
       if (!c || !this.isLetter(c) || c.toUpperCase() !== c) return null;
 
-      const rest = this.eatWhile(this.isLetter)
+      const rest = this.eatWhile(this.isLetterOrUnderline)
 
       return c + (rest ?? "");
     })

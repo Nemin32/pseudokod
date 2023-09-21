@@ -27,20 +27,21 @@ export enum TokenType {
   FORSTART = 21,
   FOREND = 22,
   NYIL = 23,
-  REFERENCE = 24,
+  SWAP = 24,
+  REFERENCE = 25,
 
   /* Special */
-  NUMBER = 25,
-  BOOLEAN = 26,
-  STRING = 27,
-  SYMBOL = 28,
-  FUNCNAME = 29,
-  BINOP = 30,
-  WHITESPACE = 31,
-  TYPE = 32,
-  COMMENT = 33,
+  NUMBER = 26,
+  BOOLEAN = 27,
+  STRING = 28,
+  SYMBOL = 29,
+  FUNCNAME = 30,
+  BINOP = 31,
+  WHITESPACE = 32,
+  TYPE = 33,
+  COMMENT = 34,
 
-  ERROR = 34,
+  ERROR = 35,
 }
 
 export interface Location {
