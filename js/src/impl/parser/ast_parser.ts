@@ -20,6 +20,7 @@ import {
   Reference,
   Return,
   Statement,
+  Swap,
   Variable,
   While,
 } from "../../interfaces/astkinds.ts";
@@ -31,6 +32,7 @@ const parseStatement: P<Statement> = Parser.of<Statement>(
       parseIf,
       parseReturn,
       parseFor,
+      parseSwap,
       parseAssignment,
       parseFuncDecl,
       parsePrint,
@@ -40,8 +42,8 @@ const parseStatement: P<Statement> = Parser.of<Statement>(
   //.or(parseExpression), Ha támogatni akarjuk a lógó expressionöket.
 );
 
-const parseExpression: P<Expression> = Parser.of(() =>
-  parseNot.or(parseReference).or(parseComprehension).or(parseNewArray).or(parseBinOp),
+export const parseExpression: P<Expression> = Parser.of(() =>
+  Parser.choice([/*parseNot, parseReference,*/ parseBinOp, parseComprehension, parseNewArray]),
 );
 
 export const parseBlock: P<Block> = parseStatement
@@ -64,9 +66,15 @@ const parseArrayIndex: P<ArrayIndex> = Parser.do()
 
 const parseNewArray: P<NewArray> = Parser.do()
   .bindT("token", TT.LETREHOZ)
-  .bind("type", Parser.matchT(TT.TYPE).brackets())
-  .bind("length", parseExpression.parens())
+  .bind("type", Parser.matchT(TT.TYPE).parens())
+  .bind("length", parseExpression.brackets())
   .result(({ token, type, length }) => mkToken(token, "arrnew", { length, type: type.lexeme }));
+
+const parseSwap: P<Swap> = Parser.do()
+  .bind("var1", parseArrayIndex.or(parseVariable))
+  .bindT("token", TT.SWAP)
+  .bind("var2", parseArrayIndex.or(parseVariable))
+  .result(({ var1, token, var2 }) => mkToken(token, "swap", { var1, var2 }));
 
 //#region Atom
 
@@ -85,6 +93,14 @@ const string: P<Atom> = Parser.matchT(TT.STRING).map((token) =>
 const parseAtom = Parser.choice([number, boolean, string]);
 
 //#endregion
+
+const parseNot: P<Not> = Parser.matchT(TT.NEGAL).bind((token) =>
+  parseExpression.map((expr) => mkToken(token, "not", { expr })),
+);
+
+const parseReference: P<Reference> = Parser.matchT(TT.REFERENCE).bind((token) =>
+  parseArrayIndex.or(parseVariable).map((inner) => mkToken(token, "reference", { inner })),
+);
 
 //#region BinOp
 
@@ -117,6 +133,8 @@ const parseFuncCall: P<FunctionCall> = Parser.do()
 
 const primary: P<Expression> = Parser.choice([
   parseExpression.parens(),
+  parseNot,
+  parseReference,
   parseFuncCall,
   parseArrayIndex,
   parseVariable,
@@ -126,17 +144,9 @@ const primary: P<Expression> = Parser.choice([
 const parseArithmOp: P<Expression> = Parser.chainl1(primary, addOp).map(toBinopOrExpr);
 const parseMulOp: P<Expression> = Parser.chainl1(parseArithmOp, mulOp).map(toBinopOrExpr);
 const parseCompOp: P<Expression> = Parser.chainl1(parseMulOp, compOp).map(toBinopOrExpr);
-const parseBinOp: P<Expression> = Parser.chainl1(parseCompOp, logicOp).map(toBinopOrExpr);
+export const parseBinOp: P<Expression> = Parser.chainl1(parseCompOp, logicOp).map(toBinopOrExpr);
 
 //#endregion
-
-const parseNot: P<Not> = Parser.matchT(TT.NEGAL).bind((token) =>
-  parseExpression.map((expr) => mkToken(token, "not", { expr })),
-);
-
-const parseReference: P<Reference> = Parser.matchT(TT.REFERENCE).bind((token) =>
-  parseArrayIndex.or(parseVariable).map((inner) => mkToken(token, "reference", { inner })),
-);
 
 const parseAssignment: P<Assignment> = Parser.do()
   .bind("variable", parseArrayIndex.or(parseVariable))
@@ -179,11 +189,16 @@ const parseByRef = Parser.matchT(TT.CIMSZERINT)
 
 const parseParameter: P<Parameter> = Parser.do()
   .bind("byRef", parseByRef)
-  .bind("name", parseVariable)
+  .bind("name", parseVariable.or(Parser.matchT(TT.FUNCNAME)))
   .ignoreT(TT.COLON)
   .bindT("type", TT.TYPE)
+  .bind("isArr", Parser.matchT(TT.TOMB).maybe()) // TODO
   .result(({ byRef, name, type }) =>
-    mkToken(name.token, "param", { byRef, name, type: type.lexeme }),
+    mkToken("token" in name ? name.token : name, "param", {
+      byRef,
+      name: "token" in name ? name : name.lexeme,
+      type: type.lexeme,
+    }),
   );
 
 const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
@@ -250,8 +265,8 @@ const parseDoWhile = Parser.do()
   .bind("predicate", parseExpression)
   .finalize({ postPred: true });
 
-const parseWhile: P<While> = parseDoWhile.or(parseNormalWhile).map((value) =>
-  mkToken(value.token, "while", value),
-);
+const parseWhile: P<While> = parseDoWhile
+  .or(parseNormalWhile)
+  .map((value) => mkToken(value.token, "while", value));
 
 //#endregion

@@ -8,7 +8,7 @@ export type Atom = ASTBase<"atom", {
   value: AtomValue;
 }>
 
-export type Debug = ASTBase<"debug", {}>
+export type Debug = ASTBase<"debug", {msg?: string}>
 
 export enum BinOpType {
   ADD = 0,
@@ -126,9 +126,14 @@ export type FunctionDeclaration = ASTBase<"funcdecl", {
 }>
 
 export type Parameter = ASTBase<"param", {
-  name: Variable;
+  name: Variable | string; // string = funcname
   type: string;
   byRef: boolean;
+}>
+
+export type Swap = ASTBase<"swap", {
+  var1: Variable | ArrayIndex,
+  var2: Variable | ArrayIndex
 }>
 
 export type Expression =
@@ -151,6 +156,7 @@ export type Statement =
   | Print
   | Return
   | FunctionDeclaration
-  | Debug;
+  | Debug
+  | Swap
 
 export type ASTKind = Expression | Statement | Parameter;

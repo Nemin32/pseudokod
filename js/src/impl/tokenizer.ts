@@ -11,6 +11,7 @@ const kwToType: ReadonlyMap<string, TT> = new Map([
   ["debug", TT.DEBUG],
   ["elágazás", TT.ELAGAZAS],
   ["függvény", TT.FUGGVENY],
+  ["eljárás", TT.FUGGVENY],
   ["ha", TT.HA],
   ["kiír", TT.KIIR],
   ["különben", TT.KULONBEN],
@@ -153,29 +154,28 @@ export class Tokenizer implements ITokenizer {
       return this.eatWhile(this.isWhitespace);
     });
   }
+  
+  singleLetterKeyword(): ParseResult {
+    const char = this.eat();
+    const type = this.getKeywordTokenType(char) ?? null;
+    
+    return (type == null) ? type : this.mkToken(type, () => char);
+  }
 
   keyword(): ParseResult {
-    const token = this.mkToken(TT.ERROR, () => {
-      const single = this.peek();
-      if (this.getKeywordTokenType(single) !== null) {
-        this.eat();
-        return single;
-      }
+    const slkw = this.tryParse(this.singleLetterKeyword);
+    if (slkw) return slkw;
 
-      const kw = this.eatWhile(c => !this.isWhitespace(c));
-      const type = this.getKeywordTokenType(kw);
+    const kw = this.eatWhile(c => !["[", "(", ",", ")", "]"].includes(c) && !this.isWhitespace(c));
+    const type = this.getKeywordTokenType(kw);
+    
+    if (type === null) return null;
 
-      if (!kw || type === null) return null;
-      return kw;
-    });
+    const token = this.mkToken(type, () => kw);
 
     if (!token) return null;
 
-    return {
-      ...token,
-      // rome-ignore lint/style/noNonNullAssertion: <explanation>
-      type: this.getKeywordTokenType(token?.lexeme)!,
-    };
+    return token
   }
 
   comment(): ParseResult {
@@ -235,7 +235,7 @@ export class Tokenizer implements ITokenizer {
   
   symbol(): ParseResult {
     return this.mkToken(TT.SYMBOL, () => {
-      return this.eatWhile(this.isLetter)
+      return this.eatWhile(c => this.isLetter(c) || this.isNum(c))
     })
   }
   
@@ -254,7 +254,7 @@ export class Tokenizer implements ITokenizer {
     return this.mkToken(TT.TYPE, () => {
       const val = this.eatWhile(this.isLetter);
       if (!val) return null;
-      return ["egész", "szöveg", "logikai"].includes(val) ? val : null
+      return ["egész", "szöveg", "logikai", "T"].includes(val) ? val : null
     })
   }
   

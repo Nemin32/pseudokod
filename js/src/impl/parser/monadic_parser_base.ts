@@ -68,11 +68,11 @@ export class Parser<Output> {
   // Ekkor először végrehajtuk az első item()-et, majd a másodikat, végül pedig a result (lásd feljebb) segítségével visszatérünk a kettő összegével.
   // Fontos megjegyezni, hogy enélkül a függvény nélkül a parserből nem tudunk értéket kinyerni.
   // Hiba esetén a futtatás korán megszakad és a hiba kipropagál egészen a végső hívásig ahol visszatérünk vele.
-  bind<NewOutput>(other: (val: Output) => Parser<NewOutput>): Parser<NewOutput> {
+  bind<NewOutput>(other: (val: Output, input: Input) => Parser<NewOutput>): Parser<NewOutput> {
     return new Parser((inp) => {
       const current = this.exec(inp);
       if (current.type === "error") return current;
-      return other(current.value).exec(current.next);
+      return other(current.value, inp).exec(current.next);
     });
   }
 
@@ -91,17 +91,22 @@ export class Parser<Output> {
   static or<O, OO>(one: Parser<O>, other: Parser<OO>) {
     return new Parser<O | OO>((inp) => {
       const thisValue = one.exec(inp);
-      if (thisValue.type === "error") return other.exec(inp);
+      if (thisValue.type === "error") {
+        const thatValue = other.exec(inp);
+        if (thatValue.type === "match") return thatValue;
+
+        return (thisValue.location.index > thatValue.location.index) ? thisValue : thatValue;
+      }
       return thisValue;
     });
   }
 
   static sat(
     predicate: (val: IToken) => boolean,
-    failMsg = (val: IToken) => "Parsing error.",
+    failMsg = (val: IToken, input: Input) => "Parsing error.",
   ): Parser<IToken> {
-    return Parser.item().bind((elem: IToken) =>
-      predicate(elem) ? Parser.result<IToken>(elem) : Parser.fail(failMsg(elem)),
+    return Parser.item().bind((elem: IToken, inp) =>
+      predicate(elem) ? Parser.result<IToken>(elem) : Parser.fail(failMsg(elem, inp)),
     );
   }
 
@@ -206,7 +211,7 @@ export class Parser<Output> {
   static matchT(type: TT): Parser<IToken> {
     return Parser.sat(
       (elem) => elem.type === type,
-      (elem) => `Expected type "${TT[type]}", got "${TT[elem.type]}".`,
+      (elem, input) => `${input.index} - ${input.input[input.index].lexeme}: Expected type "${TT[type]}", got "${TT[elem.type]}".`,
     );
   }
 
@@ -288,5 +293,5 @@ export const mkToken = <T extends ASTKind>(
 ): T => ({
   token,
   tag,
-  rest
+  ...rest
 } as unknown as T);
