@@ -181,6 +181,12 @@ export class Parser<Output> {
   // EXTRAS
   // Things not described by the original paper, but that make parsing easier.
 
+  choice<T>(parsers: Parser<T>[]): Parser<T> {
+    const [first, ...rest] = parsers;
+
+    return rest.reduce((acc, curr) => acc.or(curr), first)
+  }
+
   map<T>(fn: (value: Output) => T): Parser<T> {
     return this.bind((value) => Parser.result(fn(value)));
   }
