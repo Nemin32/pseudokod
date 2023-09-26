@@ -68,7 +68,7 @@ export type Variable = ASTBase<"variable", {
 
 export type ArrayIndex = ASTBase<"arrindex", {
   variable: Variable;
-  index: Expression;
+  index: Expression[];
 }>
 
 export type Reference = ASTBase<"reference", {

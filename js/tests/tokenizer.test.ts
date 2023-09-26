@@ -23,7 +23,7 @@ const parseCode = (code: string) => {
     const parse = parseBlock.run(tokens);
 
     if (parse.type === "error") {
-        console.log(tokens.map(t => ({name: t.lexeme, type: TT[t.type]})))
+        console.log(tokens.map((t, i) => ({i, name: t.lexeme, type: TT[t.type]})))
         console.log(parse.cause)
     }     
     

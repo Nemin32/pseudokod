@@ -95,7 +95,7 @@ export class Parser<Output> {
         const thatValue = other.exec(inp);
         if (thatValue.type === "match") return thatValue;
 
-        return (thisValue.location.index > thatValue.location.index) ? thisValue : thatValue;
+        return thisValue.location.index > thatValue.location.index ? thisValue : thatValue;
       }
       return thisValue;
     });
@@ -142,7 +142,10 @@ export class Parser<Output> {
     return Parser.chainl1(term, op).or(baseCase);
   }
 
-  static chainl1<Term, Operator>(term: Parser<Term>, opParser: Parser<Operator>): Parser<Term | {left : Term, op : Operator, right: Term}> {
+  static chainl1<Term, Operator>(
+    term: Parser<Term>,
+    opParser: Parser<Operator>,
+  ): Parser<Term | { left: Term; op: Operator; right: Term }> {
     return term
       .bind((left) =>
         opParser.bind((op) => term.bind((right) => Parser.result({ left, op, right }))),
@@ -186,10 +189,37 @@ export class Parser<Output> {
   // EXTRAS
   // Things not described by the original paper, but that make parsing easier.
 
+  // Basically the same as item(), but doesn't move the index forwards.
+  static peek(): Parser<IToken> {
+    return new Parser((inp) => {
+      return inp.index >= inp.input.length
+        ? { type: "error", cause: "EOF", location: inp }
+        : {
+            type: "match",
+            value: inp.input[inp.index],
+            next: inp
+          };
+    });
+  }
+  
+  static mapChoice<Input, Output>(input: Parser<Input>, map: ReadonlyMap<Input, Parser<Output>>): Parser<Output> {
+    return input.bind((elem, _) => {
+      const parser = map.get(elem);
+
+      if (!parser) return Parser.fail(`No parser for ${elem}!`);
+      return parser;
+    })
+  }
+  
+  // Output here is the current parser's output, which is the map's Input!
+  mapChoice<T>(map: ReadonlyMap<Output, Parser<T>>): Parser<T> {
+    return Parser.mapChoice(this, map);
+  }
+  
   static choice<T>(parsers: Parser<T>[]): Parser<T> {
     const [first, ...rest] = parsers;
 
-    return rest.reduce((acc, curr) => acc.or(curr), first)
+    return rest.reduce((acc, curr) => acc.or(curr), first);
   }
 
   map<T>(fn: (value: Output) => T): Parser<T> {
@@ -203,7 +233,7 @@ export class Parser<Output> {
   right<Other>(other: Parser<Other>): Parser<Other> {
     return this.bind((_) => other.map((oValue) => oValue));
   }
-  
+
   maybe(): Parser<Output | null> {
     return this.or(Parser.result(null));
   }
@@ -211,7 +241,10 @@ export class Parser<Output> {
   static matchT(type: TT): Parser<IToken> {
     return Parser.sat(
       (elem) => elem.type === type,
-      (elem, input) => `${input.index} - ${input.input[input.index].lexeme}: Expected type "${TT[type]}", got "${TT[elem.type]}".`,
+      (elem, input) =>
+        `${input.index} - ${input.input[input.index].lexeme}: Expected type "${TT[type]}", got "${
+          TT[elem.type]
+        }".`,
     );
   }
 
@@ -220,7 +253,7 @@ export class Parser<Output> {
   }
 
   end() {
-    return this.left(Parser.matchT(TT.VEGE));
+    return this.left(Parser.matchT(TT.VEGE)).catch(prev => `${prev} VÉGE`);
   }
 
   parens() {
@@ -259,6 +292,10 @@ class Do<Bindings extends Record<string, unknown> = {}> {
     return new Do([...this.bindList, { name: null, parser: Parser.matchT(type) }]);
   }
 
+  maybeT<N extends string>(name: N, type: TT): Do<Bindings & Record<N, IToken | null>> {
+    return new Do([...this.bindList, { name, parser: Parser.matchT(type).maybe() }]);
+  }
+
   finalize<T extends Record<string, unknown>>(given: T): Parser<Bindings & T> {
     function recursion(
       parsers: Do["bindList"],
@@ -269,7 +306,7 @@ class Do<Bindings extends Record<string, unknown> = {}> {
       const { name, parser } = parsers[0];
 
       return parser.bind((value) => {
-        const newObj = {...obj};
+        const newObj = { ...obj };
         if (name) newObj[name] = value;
         return recursion(parsers.slice(1), newObj);
       });
@@ -289,9 +326,10 @@ export { TokenType as TT };
 export const mkToken = <T extends ASTKind>(
   token: T["token"],
   tag: T["tag"],
-  rest: Omit<T, "token" | "tag">
-): T => ({
-  token,
-  tag,
-  ...rest
-} as unknown as T);
+  rest: Omit<T, "token" | "tag">,
+): T =>
+  ({
+    token,
+    tag,
+    ...rest,
+  }) as unknown as T;

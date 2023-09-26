@@ -15,10 +15,15 @@ const kwToType: ReadonlyMap<string, TT> = new Map([
   ["ha", TT.HA],
   ["kiír", TT.KIIR],
   ["különben", TT.KULONBEN],
+
   ["tömb", TT.TOMB],
+  ["halmaz", TT.TOMB],
+  ["tábla", TT.TOMB],
+
   ["vissza", TT.VISSZA],
   ["vége", TT.VEGE],
   ["Létrehoz", TT.LETREHOZ],
+  ["rendezett", TT.RENDEZETT],
 
   /* Misc. */
   ["~", TT.NEGAL],

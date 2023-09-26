@@ -27,23 +27,26 @@ import {
 import { P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseStatement: P<Statement> = Parser.of<Statement>(
-  () =>
-    Parser.choice<Statement>([
-      parseIf,
-      parseReturn,
-      parseFor,
-      parseSwap,
-      parseAssignment,
-      parseFuncDecl,
-      parsePrint,
-      parseWhile,
-      parseDebug,
-    ]),
+  () => {
+    const statementMap: ReadonlyMap<TT, Parser<Statement>> = new Map([
+      [TT.HA, parseIf as Parser<Statement>],
+      [TT.VISSZA, parseReturn],
+      [TT.CIKLUS, parseFor.or(parseWhile)],
+      [TT.SYMBOL, parseAssignment.or(parseSwap)],
+      [TT.FUGGVENY, parseFuncDecl],
+      [TT.KIIR, parsePrint],
+      [TT.DEBUG, parseDebug],
+    ]);
+
+    return Parser.peek()
+      .map((t) => t.type)
+      .mapChoice(statementMap);
+  },
   //.or(parseExpression), Ha támogatni akarjuk a lógó expressionöket.
 );
 
 export const parseExpression: P<Expression> = Parser.of(() =>
-  Parser.choice([/*parseNot, parseReference,*/ parseBinOp, parseComprehension, parseNewArray]),
+  Parser.choice([parseBinOp, parseComprehension, parseNewArray]),
 );
 
 export const parseBlock: P<Block> = parseStatement
@@ -61,7 +64,7 @@ const parseComprehension: P<ArrayComprehension> = parseExpression
 
 const parseArrayIndex: P<ArrayIndex> = Parser.do()
   .bind("variable", parseVariable)
-  .bind("index", parseExpression.brackets())
+  .bind("index", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
   .result(({ variable, index }) => mkToken(variable.token, "arrindex", { variable, index }));
 
 const parseNewArray: P<NewArray> = Parser.do()
@@ -187,17 +190,22 @@ const parseByRef = Parser.matchT(TT.CIMSZERINT)
   .map((_) => true)
   .or(Parser.result(false));
 
+const parseParamType = Parser.do()
+  .bindT("type", TT.TYPE)
+  .maybeT("isSorted", TT.RENDEZETT)
+  .maybeT("isArray", TT.TOMB)
+  .finalize({});
+
 const parseParameter: P<Parameter> = Parser.do()
   .bind("byRef", parseByRef)
   .bind("name", parseVariable.or(Parser.matchT(TT.FUNCNAME)))
   .ignoreT(TT.COLON)
-  .bindT("type", TT.TYPE)
-  .bind("isArr", Parser.matchT(TT.TOMB).maybe()) // TODO
+  .bind("type", parseParamType)
   .result(({ byRef, name, type }) =>
     mkToken("token" in name ? name.token : name, "param", {
       byRef,
       name: "token" in name ? name : name.lexeme,
-      type: type.lexeme,
+      type: type.type.lexeme,
     }),
   );
 

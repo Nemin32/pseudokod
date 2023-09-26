@@ -371,7 +371,7 @@ export class RDParser implements ITokenToASTParser {
   arrayIndex(): ParseResult<ASTKinds.ArrayIndex> {
     const variable = this.variable();
     this.matchT(TT.OBRACKET);
-    const index = this.expression();
+    const index = this.sepBy(this.expression, this.comma);
     this.matchT(TT.CBRACKET);
 
     return this.mk(variable.token, {

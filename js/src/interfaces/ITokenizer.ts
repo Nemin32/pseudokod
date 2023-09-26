@@ -40,8 +40,9 @@ export enum TokenType {
   WHITESPACE = 32,
   TYPE = 33,
   COMMENT = 34,
+  RENDEZETT = 35,
 
-  ERROR = 35,
+  ERROR = 36,
 }
 
 export interface Location {
