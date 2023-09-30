@@ -23,6 +23,7 @@ const kwToType: ReadonlyMap<string, TT> = new Map([
   ["vissza", TT.VISSZA],
   ["vége", TT.VEGE],
   ["Létrehoz", TT.LETREHOZ],
+  ["TáblaLétrehoz", TT.TABLALETREHOZ],
   ["rendezett", TT.RENDEZETT],
 
   /* Misc. */

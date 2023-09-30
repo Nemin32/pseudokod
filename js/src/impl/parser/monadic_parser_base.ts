@@ -23,6 +23,17 @@ type ParsingError = {
 // Egy keresés eredménye vagy találat vagy hiba.
 type Result<Output> = Match<Output> | ParsingError;
 
+// Bináris műveleteknél használt "lánc". Egy bináris művelet a kövektező alakokat veheti fel:
+// - SZÁM (L)
+// - SZÁM MŰVELET SZÁM ({left: L, op: O, right: R})
+// - (SZÁM MŰVELET SZÁM) MŰVELET SZÁM {{left: Chain<L,O,R>, op: O, right: R}}
+// A legutóbbi sor tetszőleges mélységig beágyazható; a Lánc típus pont ezt a tulajdonságot fejezi ki. 
+export type Chain<L, O, R> = L | {
+  left: L | Chain<L, O, R>;
+  op: O;
+  right: R;
+};
+
 /** Parser capable of parsing arbitrary values from a stream of IToken-s.
  * @template Output Output: The type of a successful match.
  */
@@ -139,18 +150,15 @@ export class Parser<Output> {
     op: Parser<Operator>,
     baseCase: Parser<BaseCase>,
   ) {
-    return Parser.chainl1(term, op).or(baseCase);
+    return Parser.chain(term, op).or(baseCase);
   }
 
-  static chainl1<Term, Operator>(
-    term: Parser<Term>,
-    opParser: Parser<Operator>,
-  ): Parser<Term | { left: Term; op: Operator; right: Term }> {
-    return term
-      .bind((left) =>
-        opParser.bind((op) => term.bind((right) => Parser.result({ left, op, right }))),
-      )
-      .or(term);
+  static chain<Term, Operator>(term: Parser<Term>, opParser: Parser<Operator>) {
+    const rest = <T>(a: T): Parser<T | Chain<T, Operator, Term>> =>
+      opParser
+        .bind((op) => term.bind((right) => rest({ left: a, op, right })))
+        .or(Parser.result(a));
+    return term.bind((left) => rest(left));
   }
 
   // BINDINGS
@@ -182,10 +190,6 @@ export class Parser<Output> {
     return Parser.chainl<IToken, Operator, BaseCase>(this, op, baseCase);
   }
 
-  chainl1<Operator>(op: Parser<Operator>) {
-    return Parser.chainl1<IToken, Operator>(this, op);
-  }
-
   // EXTRAS
   // Things not described by the original paper, but that make parsing easier.
 
@@ -197,25 +201,28 @@ export class Parser<Output> {
         : {
             type: "match",
             value: inp.input[inp.index],
-            next: inp
+            next: inp,
           };
     });
   }
-  
-  static mapChoice<Input, Output>(input: Parser<Input>, map: ReadonlyMap<Input, Parser<Output>>): Parser<Output> {
+
+  static mapChoice<Input, Output>(
+    input: Parser<Input>,
+    map: ReadonlyMap<Input, Parser<Output>>,
+  ): Parser<Output> {
     return input.bind((elem, _) => {
       const parser = map.get(elem);
 
       if (!parser) return Parser.fail(`No parser for ${elem}!`);
       return parser;
-    })
+    });
   }
-  
+
   // Output here is the current parser's output, which is the map's Input!
   mapChoice<T>(map: ReadonlyMap<Output, Parser<T>>): Parser<T> {
     return Parser.mapChoice(this, map);
   }
-  
+
   static choice<T>(parsers: Parser<T>[]): Parser<T> {
     const [first, ...rest] = parsers;
 
@@ -253,7 +260,7 @@ export class Parser<Output> {
   }
 
   end() {
-    return this.left(Parser.matchT(TT.VEGE)).catch(prev => `${prev} VÉGE`);
+    return this.left(Parser.matchT(TT.VEGE)).catch((prev) => `${prev} VÉGE`);
   }
 
   parens() {

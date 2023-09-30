@@ -1,3 +1,4 @@
+import { ArithmeticBinOp } from "../../compiler/pseudo_types.ts";
 import { IToken } from "../../interfaces/ITokenizer.ts";
 import {
   ArrayComprehension,
@@ -24,7 +25,7 @@ import {
   Variable,
   While,
 } from "../../interfaces/astkinds.ts";
-import { P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
+import { Chain, P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseStatement: P<Statement> = Parser.of<Statement>(
   () => {
@@ -36,6 +37,7 @@ const parseStatement: P<Statement> = Parser.of<Statement>(
       [TT.FUGGVENY, parseFuncDecl],
       [TT.KIIR, parsePrint],
       [TT.DEBUG, parseDebug],
+      [TT.FUNCNAME, parseFuncCall],
     ]);
 
     return Parser.peek()
@@ -67,11 +69,25 @@ const parseArrayIndex: P<ArrayIndex> = Parser.do()
   .bind("index", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
   .result(({ variable, index }) => mkToken(variable.token, "arrindex", { variable, index }));
 
-const parseNewArray: P<NewArray> = Parser.do()
+// New Array
+
+const parseNewMultiDimArray: P<NewArray> = Parser.do()
+  .bindT("token", TT.TABLALETREHOZ)
+  .bind("type", Parser.matchT(TT.TYPE).parens())
+  .bind("dimensions", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
+  .result(({ token, type, dimensions }) =>
+    mkToken(token, "arrnew", { dimensions, type: type.lexeme }),
+  );
+
+const parseNewSingleDimArray: P<NewArray> = Parser.do()
   .bindT("token", TT.LETREHOZ)
   .bind("type", Parser.matchT(TT.TYPE).parens())
   .bind("length", parseExpression.brackets())
-  .result(({ token, type, length }) => mkToken(token, "arrnew", { length, type: type.lexeme }));
+  .result(({ token, type, length }) =>
+    mkToken(token, "arrnew", { dimensions: [length], type: type.lexeme }),
+  );
+
+const parseNewArray = parseNewSingleDimArray.or(parseNewMultiDimArray);
 
 const parseSwap: P<Swap> = Parser.do()
   .bind("var1", parseArrayIndex.or(parseVariable))
@@ -131,7 +147,7 @@ const toBinopOrExpr = (
 
 const parseFuncCall: P<FunctionCall> = Parser.do()
   .bindT("name", TT.FUNCNAME)
-  .bind("args", parseExpression.sepBy(Parser.matchT(TT.COMMA)).parens())
+  .bind("args", parseExpression.or(Parser.matchT(TT.FUNCNAME)).sepBy(Parser.matchT(TT.COMMA)).parens())
   .result(({ name, args }) => mkToken(name, "funccall", { name: name.lexeme, arguments: args }));
 
 const primary: P<Expression> = Parser.choice([
@@ -144,10 +160,26 @@ const primary: P<Expression> = Parser.choice([
   parseAtom,
 ]);
 
-const parseArithmOp: P<Expression> = Parser.chainl1(primary, addOp).map(toBinopOrExpr);
-const parseMulOp: P<Expression> = Parser.chainl1(parseArithmOp, mulOp).map(toBinopOrExpr);
-const parseCompOp: P<Expression> = Parser.chainl1(parseMulOp, compOp).map(toBinopOrExpr);
-export const parseBinOp: P<Expression> = Parser.chainl1(parseCompOp, logicOp).map(toBinopOrExpr);
+const chainToExpr = (chain: Expression | Chain<Expression, IToken, Expression>): Expression => {
+  // Ez egy expression, térjünk vissza vele ahogy van.
+  if (!("left" in chain)) {
+    return chain;
+  }
+
+  const binop = BinOpTypeMap.get(chain.op.lexeme);
+  if (binop === undefined) throw new Error(`Unknown binop: "${chain.op.lexeme}".`);
+
+  return mkToken<BinaryOperation>(chain.op, "binop", {
+    lhs: "left" in chain.left ? chainToExpr(chain.left) : chain.left,
+    op: binop,
+    rhs: chain.right,
+  });
+};
+
+const parseArithmOp: P<Expression> = Parser.chain(primary, addOp).map(chainToExpr);
+const parseMulOp: P<Expression> = Parser.chain(parseArithmOp, mulOp).map(chainToExpr);
+const parseCompOp: P<Expression> = Parser.chain(parseMulOp, compOp).map(chainToExpr);
+export const parseBinOp: P<Expression> = Parser.chain(parseCompOp, logicOp).map(chainToExpr);
 
 //#endregion
 

@@ -1,9 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.202.0/assert/mod.ts";
 import { Tokenizer } from "../src/impl/tokenizer.ts";
-import { parseBinOp, parseBlock, parseExpression } from "../src/impl/parser/ast_parser.ts";
+import { parseBlock } from "../src/impl/parser/ast_parser.ts";
 import { TokenType } from "../src/interfaces/ITokenizer.ts";
 import { TT } from "../src/impl/parser/monadic_parser_base.ts";
-import { t } from "../src/impl/parser/test.ts";
 
 type Entry = {
     name: string,
@@ -30,7 +29,7 @@ const parseCode = (code: string) => {
     assertEquals(parse.type, "match");
 }
 
-const test = (/*t: Deno.TestContext,*/ input: Entry) => Deno.test(input.name, () => {
+const test = (t: Deno.TestContext, input: Entry) => t.step(input.name, () => {
     const code = input.code.join("\n")
     parseCode(code);
 })
@@ -38,27 +37,11 @@ const test = (/*t: Deno.TestContext,*/ input: Entry) => Deno.test(input.name, ()
 await Deno.readTextFile('../../programs/jegyzet.json').then(data => {
     const json: Programs = JSON.parse(data)
     
-    Deno.test("Sanity", () => {
-        parseCode("x[i] <-> y")
-
-        parseCode(`
-
-        ciklus i <- 1-től n-ig
-        ha P(x[i]) akkor
-        db <- db + 1
-        x[db] <-> x[i]
-        elágazás vége
-        ciklus vége
-        `)
-    })
-    
     for (const [chapter, entries] of Object.entries(json)) {
-        console.log(chapter)
-        
-        //Deno.test(chapter, async (t) => {
+        Deno.test(`${chapter}. Fejezet`, async (t) => {
         for (const entry of entries) {
-            test(entry);
+            await test(t, entry);
         }
-        //})
+        })
     }
 })

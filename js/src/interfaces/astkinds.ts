@@ -77,7 +77,7 @@ export type Reference = ASTBase<"reference", {
 
 export type NewArray = ASTBase<"arrnew",{
   type: string;
-  length: Expression;
+  dimensions: Expression[];
 }>
 
 export type ArrayComprehension = ASTBase<"arrcomp", {
@@ -116,7 +116,7 @@ export type Return = ASTBase<"return", {
 
 export type FunctionCall = ASTBase<"funccall", {
   name: string;
-  arguments: Expression[];
+  arguments: (Expression | IToken)[];
 }>
 
 export type FunctionDeclaration = ASTBase<"funcdecl", {
@@ -158,5 +158,6 @@ export type Statement =
   | FunctionDeclaration
   | Debug
   | Swap
+  | FunctionCall
 
 export type ASTKind = Expression | Statement | Parameter;

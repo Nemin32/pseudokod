@@ -391,17 +391,33 @@ export class RDParser implements ITokenToASTParser {
       expressions,
     });
   }
-
-  newArray(): ParseResult<ASTKinds.NewArray> {
+  
+  newSingleDimArray(): ParseResult<ASTKinds.NewArray> {
     const token = this.matchT(TT.LETREHOZ);
     const type = this.brackets(this.type);
     const length = this.parens(this.expression);
 
     return this.mk(token, {
       tag: "arrnew",
-      length,
+      dimensions: [length],
       type: type.lexeme,
     });
+  }
+  
+  newMultiDimArray(): ParseResult<ASTKinds.NewArray> {
+    const token = this.matchT(TT.TABLALETREHOZ);
+    const type = this.parens(this.type);
+    const dimensions  = this.brackets<ASTKinds.Expression[]>(() => this.many(this.expression));
+
+    return this.mk(token, {
+      tag: "arrnew",
+      dimensions,
+      type: type.lexeme,
+    });
+  }
+
+  newArray(): ParseResult<ASTKinds.NewArray> {
+    return this.tryParse(this.newSingleDimArray) || this.newMultiDimArray();
   }
 
   funcCall(): ParseResult<ASTKinds.FunctionCall> {
