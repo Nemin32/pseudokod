@@ -3,45 +3,45 @@ import { Block } from "./astkinds.ts";
 
 // IAST -> IByteCode
 export enum OpCode {
-  ADDRESS,
-  ARRADDR,
+	ADDRESS,
+	ARRADDR,
 
-  CALL,
-  RETURN,
-  
-  PUSHS,
+	CALL,
+	RETURN,
 
-  VALARR,
-  PUSH,
-  BINOP,
-  NOT,
-  PRINT,
-  VOID,
+	PUSHS,
 
-  GETARR,
-  GETVAR,
+	ARRCMP,
+	PUSH,
+	BINOP,
+	NOT,
+	PRINT,
+	VOID,
 
-  SETARR,
-  SETVAR,
+	GETARR,
+	GETVAR,
 
-  LABEL,
-  FJMP,
-  JMP,
+	SETARR,
+	SETVAR,
 
-  ESCOPE,
-  LSCOPE,
+	LABEL,
+	FJMP,
+	JMP,
 
-  MKARR,
-  MKREF,
+	ESCOPE,
+	LSCOPE,
 
-  DEBUG,
+	MKARR,
+	MKREF,
+
+	DEBUG,
 }
 
 export interface IByteCode {
-  opCode: OpCode;
-  token: IToken
+	opCode: OpCode;
+	token: IToken
 }
 
 export interface ICompiler {
-  compile(input: Block): IByteCode[];
+	compile(input: Block): IByteCode[];
 }
