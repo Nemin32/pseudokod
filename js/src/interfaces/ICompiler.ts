@@ -9,8 +9,6 @@ export enum OpCode {
 	CALL,
 	RETURN,
 
-	PUSHS,
-
 	ARRCMP,
 	PUSH,
 	BINOP,
