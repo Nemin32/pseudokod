@@ -20,7 +20,7 @@ type Inst =
 	| { code: OC.JMP, label: string }
 	| { code: OC.LABEL, name: string }
 	| { code: OC.LSCOPE }
-	| { code: OC.MKARR, length: number }
+	| { code: OC.MKARR, name: string, numDimensions: number }
 	| { code: OC.MKREF, name: string } // Varname (of end result!)
 	| { code: OC.NOT }
 	| { code: OC.PRINT }
@@ -103,7 +103,7 @@ class Compiler {
 
 	visitArrnew(ast: NewArray) {
 		ast.dimensions.forEach(e => this.visitExpression(e))
-		this.addOp(OC.MKARR, [ast.dimensions.length])
+		this.addOp(OC.MKARR, { name: ast.variable.name, numDimensions: ast.dimensions.length })
 	}
 
 	visitExpression(ast: Expression) {
@@ -116,7 +116,6 @@ class Compiler {
 			case "arrcomp": return this.visitArrcomp(ast)
 			case "arrindex": return this.visitArrindex(ast)
 			case "funccall": return this.visitFunccall(ast)
-			case "arrnew": return this.visitArrnew(ast)
 		}
 	}
 
@@ -239,6 +238,11 @@ class Compiler {
 		this.visitBlock(ast.body)
 
 		// És feltakarjtjuk a változókat
+		// Itt az LSCOPE technikailag szükségtelen, hisz a return
+		// ellátja a feladatát, azonban az átláthatóság és pedánsság 
+		// kedvéért megtartjuk.
+		this.addOp(OC.PUSH, { value: 0 })
+		this.addOp(OC.RETURN, {})
 		this.addOp(OC.LSCOPE, {})
 		this.addOp(OC.LABEL, { name: endLabel })
 	}
@@ -274,6 +278,7 @@ class Compiler {
 			case "debug": return this.visitDebug(ast)
 			case "swap": return this.visitSwap(ast)
 			case "funccall": { this.visitFunccall(ast); this.addOp(OC.VOID, {}); return; }
+			case "arrnew": return this.visitArrnew(ast)
 		}
 	}
 
@@ -310,9 +315,29 @@ class Compiler {
 	}
 }
 
+const enum VariableType {
+	NORMAL,
+	REGULAR_ARRAY,
+	IRREGULAR_ARRAY
+}
+
+// TODO: Rework this into ValueADT
+type VariableADT = { name: string, pointer: number } & (
+	// Normal variable, (number, bool, string), no indirection.
+	| { type: VariableType.NORMAL }
+	// Regular array (rows and cols are pre-set length)
+	// array[m][n] = array[m * rowLength + n]
+	| { type: VariableType.REGULAR_ARRAY, dimensions: number[] }
+	// Irregular array (every element has a different length)
+	// Not sure yet if necessary, nor how to implement.
+	// | { type: VariableType.IRREGULAR_ARRAY, lengths: number[] }
+)
+
+type DeepArray<T> = (T | DeepArray<T>)[]
+
 class Variables {
 	bounds: { fun: boolean, length: number }[] = [];
-	variables: { name: string, pointer: number }[] = [];
+	variables: VariableADT[] = [];//{ name: string, pointer: number }[] = [];
 	values: { rc: number, value: Atom["value"] }[] = [];
 
 	escope(isFun: boolean) {
@@ -326,7 +351,7 @@ class Variables {
 		// Deletes old variables and also decrements the boxes' RCs that they were pointing at.
 		const removeOldVariables = (length: number) => {
 			const toDelete = this.variables.slice(length)
-			toDelete.forEach(v => this.values[v.pointer].rc--);
+			toDelete.forEach(v => this.free(v))
 			this.variables = this.variables.slice(0, length)
 		}
 
@@ -346,6 +371,20 @@ class Variables {
 		this.gc()
 	}
 
+	// This ONLY frees values.
+	// You still need to throw away the variable (which now points at invalid data).
+	free(variable: VariableADT) {
+		if (variable.type === VariableType.NORMAL) {
+			this.values[variable.pointer].rc--;
+		} else {
+			const length = variable.dimensions.reduce((a, b) => a * b)
+
+			for (let i = 0; i < length; i++) {
+				this.values[variable.pointer + i].rc--;
+			}
+		}
+	}
+
 	gc() {
 		this.values = this.values.filter(v => v.rc > 0)
 	}
@@ -363,6 +402,7 @@ class Variables {
 			this.variables[vIndex].pointer = ref;
 		} else {
 			this.variables.push({
+				type: VariableType.NORMAL,
 				name,
 				pointer: ref
 			})
@@ -383,6 +423,7 @@ class Variables {
 			this.values.push({ rc: 1, value });
 
 			this.variables.push({
+				type: VariableType.NORMAL,
 				name,
 				pointer: boxIndex
 			})
@@ -407,6 +448,86 @@ class Variables {
 		}
 
 		return null;
+	}
+
+	getArrayDimensions(arr: DeepArray<Atom["value"]>): number[] {
+		let curr: Atom["value"] | DeepArray<Atom["value"]> = arr;
+		let dims = [];
+
+		while (Array.isArray(curr)) {
+			dims.push(curr.length)
+			curr = curr[0]
+		}
+
+		return dims
+	}
+
+	addArray(name: string, arr: DeepArray<Atom["value"]>, dimensions: number[] | null) {
+		const base = this.values.length
+		// TS has a type error with flat(Infinity): https://github.com/microsoft/TypeScript/issues/49280
+		const boxes: { rc: number, value: Atom["value"] }[] =
+			(arr.flat(Infinity as 1) as Atom["value"][]).map(value => ({ rc: 1, value }))
+
+		this.values = this.values.concat(boxes)
+
+		this.variables.push({
+			type: VariableType.REGULAR_ARRAY,
+			name,
+			pointer: base,
+			dimensions: dimensions ?? this.getArrayDimensions(arr)
+		})
+	}
+
+	calculateIndex(variable: VariableADT, indexes: number[]): number {
+		if (variable.type === VariableType.NORMAL) throw new Error(`${variable.name}: Isn't an array variable!`)
+
+		// Drops the first element and adds 1 at the end.
+		// Suppose we have a 4x5x6 array and we want to get [3,2,4]
+		//   [3,2,4]
+		//     \ \ \
+		//  (4) 5 6 1
+		// To step in dimension n, you have to add (n-1)'s length to the array.
+		const lengths = variable.dimensions.slice(1).concat(1)
+		// To stay with the previous example, here we'd calculate
+		// (3 * 5) + (2 * 6) + (4 * 1) = 31 as our index.
+		const index = indexes.reduce((prev, curr, idx) => prev + (curr * lengths[idx]), 0)
+
+		return index;
+	}
+
+	getArray(name: string, indexes: number[]): Atom["value"] {
+		const vIndex = this.findIndex(name)
+		if (vIndex === null) throw new Error(`${name}: No such variable!`)
+
+		const variable = this.variables[vIndex]
+		const index = this.calculateIndex(variable, indexes);
+
+		return this.values[variable.pointer + index].value
+	}
+
+	setArray(name: string, indexes: number[], value: Atom["value"]) {
+		const vIndex = this.findIndex(name)
+		if (vIndex === null) throw new Error(`${name}: No such variable!`)
+
+		const variable = this.variables[vIndex]
+		if (variable.type !== VariableType.REGULAR_ARRAY) throw new Error(`${name}: Isn't an array variable!`)
+
+		const boundsValid = indexes.map((idx, n) => idx >= 0 && idx < variable.dimensions[n]).every(v => v)
+		if (!boundsValid) throw new Error(`${name}[${indexes.join(", ")}]: Out of bounds!`)
+
+		const index = this.calculateIndex(variable, indexes)
+		const box = this.values.at(variable.pointer + index)
+
+		if (!box) throw new Error(`Box with ID ${variable.pointer + index} doesn't exist!`)
+
+		box.value = value;
+	}
+
+	makeArray(name: string, dimensions: number[]) {
+		const length = dimensions.reduce((a, b) => a * b, 1)
+		const arr: number[] = Array(length).fill(0)
+
+		this.addArray(name, arr, dimensions)
 	}
 }
 
@@ -443,6 +564,16 @@ class VM {
 		const val = this.stack.pop()
 		if (val === undefined) throw new Error("Stack was empty!");
 		return val;
+	}
+
+	popMany(n: number): Atom["value"][] {
+		const values = [];
+
+		for (let i = 0; i < n; i++) {
+			values.push(this.pop())
+		}
+
+		return values.reverse()
 	}
 
 	push(val: Atom["value"]) {
@@ -518,7 +649,14 @@ class VM {
 				}
 			} break;
 
-			case OC.GETARR: { } break;
+			case OC.GETARR: {
+				const indexes = this.popMany(inst.dimensions)
+
+				if (!indexes.map(i => typeof i === "number").every(v => v))
+					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
+
+				this.push(this.vars.getArray(inst.name, indexes as number[]))
+			} break;
 
 			case OC.GETVAR: {
 				const { name } = inst
@@ -536,7 +674,14 @@ class VM {
 
 			case OC.LSCOPE: { this.vars.lscope(false) } break;
 
-			case OC.MKARR: { } break;
+			case OC.MKARR: {
+				const indexes = this.popMany(inst.numDimensions)
+
+				if (!indexes.map(i => typeof i === "number").every(v => v))
+					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
+
+				this.vars.makeArray(inst.name, indexes as number[])
+			} break;
 
 			case OC.MKREF: {
 				const { name } = inst
@@ -565,7 +710,13 @@ class VM {
 				this.idx = newIp
 			} break;
 
-			case OC.SETARR: { } break;
+			case OC.SETARR: {
+				const indexes = this.popMany(inst.dimensions)
+				if (!indexes.map(i => typeof i === "number").every(v => v)) throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
+
+				const value = this.pop()
+				this.vars.setArray(inst.name, indexes as number[], value)
+			} break;
 
 			case OC.SETVAR: {
 				const { name } = inst
@@ -612,26 +763,19 @@ kiír LNKO(15, 33)
  */
 
 const block = parseBlock.run(t(`
-függvény KMÖ(címszerint z : egész)
-  Kétszer(&z)
-  MegÖt(&z)
-  vissza 0
+
+teszt[1, 3] <- 99
+
+függvény Setter(címszerint teszt : egész tömb)
+teszt[3,3] <- 2
 függvény vége
 
+kecske <- TáblaLétrehoz(egész)[5, 5]
 
-függvény Kétszer(címszerint x : egész)
-  x <- x * 2
-  vissza 0
-függvény vége
+Setter(&kecske)
 
-függvény MegÖt(címszerint y : egész)
-  y <- y + 5
-  vissza 0
-függvény vége
+kiír kecske[3,4]
 
-a <- 2
-kiír KMÖ(&a)
-kiír a
 `))
 
 function printCode(code: Inst[]) {
@@ -661,8 +805,34 @@ if (block.type === "match") {
 
 	console.log(printCode(comp.code).join("\n"))
 
+
 	const vm = new VM(comp.code)
+
+	vm.vars.addArray("teszt", [
+		[1, 2, 3, 0],
+		[4, 5, 6, 0],
+		[7, 8, 9, 0]
+	], null)
+
 	vm.run()
 
-	console.log(vm.vars)
+	//console.log(vm.vars)
 }
+
+/*
+const vars = new Variables()
+
+vars.addArray("test", [
+	[1, 2, 3, 0],
+	[4, 5, 6, 0],
+	[7, 8, 9, 0]
+])
+
+console.log(vars)
+vars.setArray("test", [0, 1], 99)
+console.log(vars)
+vars.free(vars.variables[0])
+vars.gc()
+console.log(vars)
+
+ */
