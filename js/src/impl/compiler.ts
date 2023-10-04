@@ -6,39 +6,36 @@ import { t } from "./parser/test.ts";
 
 // Makes addOp type safe, also helps with VM's destructuring.
 type ArraySignature = { name: string, dimensions: number }; // Varname, index dimension
-type CompilerInference = {
-	[OC.ADDRESS]: { name: string },
-	[OC.ARRADDR]: ArraySignature,
-	[OC.ARRCMP]: { length: number },
-	[OC.BINOP]: { type: BinOpType },
-	[OC.CALL]: { name: string },
-	[OC.DEBUG]: { msg: string },
-	[OC.ESCOPE]: null,
-	[OC.FJMP]: { label: string },
-	[OC.GETARR]: ArraySignature,
-	[OC.GETVAR]: { name: string },
-	[OC.JMP]: { label: string },
-	[OC.LABEL]: { name: string },
-	[OC.LSCOPE]: null,
-	[OC.MKARR]: { length: number },
-	[OC.MKREF]: { name: string }, // Varname (of end result!)
-	[OC.NOT]: null,
-	[OC.PRINT]: null,
-	[OC.PUSH]: { value: Atom["value"] }
-	[OC.RETURN]: null,
-	[OC.SETARR]: ArraySignature,
-	[OC.SETVAR]: { name: string },
-	[OC.VOID]: null,
-};
-
-type Inst<T extends OC> = { code: T, args: CompilerInference[T] }
+type Inst =
+	| { code: OC.ADDRESS, name: string }
+	| { code: OC.ARRADDR } & ArraySignature
+	| { code: OC.ARRCMP, length: number }
+	| { code: OC.BINOP, type: BinOpType }
+	| { code: OC.CALL, name: string }
+	| { code: OC.DEBUG, msg: string }
+	| { code: OC.ESCOPE, isFun: boolean }
+	| { code: OC.FJMP, label: string }
+	| { code: OC.GETARR } & ArraySignature
+	| { code: OC.GETVAR, name: string }
+	| { code: OC.JMP, label: string }
+	| { code: OC.LABEL, name: string }
+	| { code: OC.LSCOPE }
+	| { code: OC.MKARR, length: number }
+	| { code: OC.MKREF, name: string } // Varname (of end result!)
+	| { code: OC.NOT }
+	| { code: OC.PRINT }
+	| { code: OC.PUSH, value: Atom["value"] }
+	| { code: OC.RETURN }
+	| { code: OC.SETARR } & ArraySignature
+	| { code: OC.SETVAR, name: string }
+	| { code: OC.VOID }
 
 class Compiler {
-	code: Inst<OC>[] = [];
+	code: Inst[] = [];
 	counter = 0;
 
-	addOp<T extends OC>(op: T, args: CompilerInference[T]) {
-		this.code.push({ code: op, args });
+	addOp<T extends Inst>(op: T["code"], args: Omit<T, "code">) {
+		this.code.push({ code: op, ...args } as Inst);
 	}
 
 	setVariable(variable: Variable | ArrayIndex) {
@@ -75,7 +72,7 @@ class Compiler {
 
 	visitNot(ast: Not) {
 		this.visitExpression(ast.expr);
-		this.addOp(OC.NOT, null);
+		this.addOp(OC.NOT, {});
 	}
 
 	visitArrcomp(ast: ArrayComprehension) {
@@ -124,19 +121,19 @@ class Compiler {
 	}
 
 	visitBlock(ast: Block) {
-		this.addOp(OC.ESCOPE, null)
+		this.addOp(OC.ESCOPE, { isFun: false })
 		ast.statements.forEach(s => this.visitStatement(s));
-		this.addOp(OC.LSCOPE, null)
+		this.addOp(OC.LSCOPE, {})
 	}
 
 	visitPrint(ast: Print) {
 		this.visitExpression(ast.expr)
-		this.addOp(OC.PRINT, null);
+		this.addOp(OC.PRINT, {});
 	}
 
 	visitReturn(ast: Return) {
 		this.visitExpression(ast.expr)
-		this.addOp(OC.RETURN, null);
+		this.addOp(OC.RETURN, {});
 	}
 
 	visitDebug(ast: Debug) {
@@ -198,7 +195,7 @@ class Compiler {
 		const predLabel = `for_${counter}_pred`
 		const endLabel = `for_${counter}_end`
 
-		this.addOp(OC.ESCOPE, null)
+		this.addOp(OC.ESCOPE, { isFun: false })
 		// i = from
 		this.visitExpression(ast.from)
 		this.addOp(OC.SETVAR, { name: ast.variable.name })
@@ -218,7 +215,7 @@ class Compiler {
 		// Vissza az elejére.
 		this.addOp(OC.JMP, { label: predLabel })
 		this.addOp(OC.LABEL, { name: endLabel })
-		this.addOp(OC.LSCOPE, null)
+		this.addOp(OC.LSCOPE, {})
 	}
 
 	visitAssign(ast: Assignment) {
@@ -227,10 +224,12 @@ class Compiler {
 	}
 
 	visitFuncdecl(ast: FunctionDeclaration) {
+		const endLabel = `${ast.name}_end`
+		this.addOp(OC.JMP, { label: endLabel })
 		// A label ahová ugrunk.
 		this.addOp(OC.LABEL, { name: ast.name })
 		// Új scope, hisz a változókat fel akarjuk majd takarítani.
-		this.addOp(OC.ESCOPE, null)
+		this.addOp(OC.ESCOPE, { isFun: true })
 
 		// A függvényhívás dolga, hogy a paramétereket sorra a stackre tolja
 		// Itt pedig ezeket poppoljuk le az MKREF és a SETVAR segítségével.
@@ -240,11 +239,12 @@ class Compiler {
 		this.visitBlock(ast.body)
 
 		// És feltakarjtjuk a változókat
-		this.addOp(OC.LSCOPE, null)
+		this.addOp(OC.LSCOPE, {})
+		this.addOp(OC.LABEL, { name: endLabel })
 	}
 
 	visitSwap(ast: Swap) {
-		this.addOp(OC.ESCOPE, null)
+		this.addOp(OC.ESCOPE, { isFun: false })
 
 		// temp <- from
 		this.visitExpression(ast.var1)
@@ -258,7 +258,7 @@ class Compiler {
 		this.addOp(OC.GETVAR, { name: "temp" });
 		this.setVariable(ast.var2);
 
-		this.addOp(OC.LSCOPE, null)
+		this.addOp(OC.LSCOPE, {})
 	}
 
 	visitStatement(ast: Statement) {
@@ -273,6 +273,7 @@ class Compiler {
 			case "funcdecl": return this.visitFuncdecl(ast)
 			case "debug": return this.visitDebug(ast)
 			case "swap": return this.visitSwap(ast)
+			case "funccall": { this.visitFunccall(ast); this.addOp(OC.VOID, {}); return; }
 		}
 	}
 
@@ -309,24 +310,129 @@ class Compiler {
 	}
 }
 
+class Variables {
+	bounds: { fun: boolean, length: number }[] = [];
+	variables: { name: string, pointer: number }[] = [];
+	values: { rc: number, value: Atom["value"] }[] = [];
+
+	escope(isFun: boolean) {
+		this.bounds.push({
+			fun: isFun,
+			length: this.variables.length
+		})
+	}
+
+	lscope(toFun: boolean) {
+		// Deletes old variables and also decrements the boxes' RCs that they were pointing at.
+		const removeOldVariables = (length: number) => {
+			const toDelete = this.variables.slice(length)
+			toDelete.forEach(v => this.values[v.pointer].rc--);
+			this.variables = this.variables.slice(0, length)
+		}
+
+		if (!toFun) {
+			const length = this.bounds.pop()?.length;
+			if (length === undefined) throw new Error("Trying to leave scope without being in one.")
+			removeOldVariables(length)
+		} else {
+			const prevFunBound = this.bounds.findLastIndex(b => b.fun)
+			if (prevFunBound === -1) throw new Error("Attempting to return outside a function.")
+
+			const length = this.bounds[prevFunBound].length
+			removeOldVariables(length)
+			this.bounds = this.bounds.slice(0, prevFunBound)
+		}
+
+		this.gc()
+	}
+
+	gc() {
+		this.values = this.values.filter(v => v.rc > 0)
+	}
+
+	findIndex(name: string): number | null {
+		const idx = this.variables.findLastIndex(v => v.name === name);
+		return (idx === -1) ? null : idx;
+	}
+
+	mkRef(name: string, ref: number) {
+		const vIndex = this.findIndex(name);
+
+		if (vIndex !== null) {
+			this.values[this.variables[vIndex].pointer].rc--;
+			this.variables[vIndex].pointer = ref;
+		} else {
+			this.variables.push({
+				name,
+				pointer: ref
+			})
+		}
+
+		this.values[ref].rc++;
+	}
+
+	setVar(name: string, value: Atom["value"]) {
+		const vIndex = this.findIndex(name);
+
+		if (vIndex !== null) {
+			const boxIndex = this.variables[vIndex].pointer;
+			this.values[boxIndex].value = value;
+
+		} else {
+			const boxIndex = this.values.length;
+			this.values.push({ rc: 1, value });
+
+			this.variables.push({
+				name,
+				pointer: boxIndex
+			})
+		}
+	}
+
+	getVar(name: string): Atom["value"] | null {
+		const vIndex = this.findIndex(name);
+
+		if (vIndex !== null) {
+			return this.values[this.variables[vIndex].pointer].value
+		}
+
+		return null;
+	}
+
+	getAddr(name: string): number | null {
+		const vIndex = this.findIndex(name);
+
+		if (vIndex !== null) {
+			return this.variables[vIndex].pointer;
+		}
+
+		return null;
+	}
+}
+
 class VM {
+	ipStack: number[] = [];
 	stack: Atom["value"][] = [];
 	idx = 0;
 	jmpTable: Map<string, number> = new Map()
-	constructor(private tape: Inst<OC>[]) {
+
+	vars = new Variables();
+
+	constructor(private tape: Inst[]) {
 		// build jmpTable
 		for (let i = 0; i < this.tape.length; i++) {
 			const inst = this.tape[i]
 			if (inst.code === OC.LABEL) {
-				const name = (inst.args as CompilerInference[typeof inst.code]).name
+				const name = inst.name
 				if (this.jmpTable.get(name) !== undefined) throw new Error(`Label "${name}" appears twice in code!`)
 				this.jmpTable.set(name, i)
 			}
 		}
 
+		console.log(this.jmpTable)
 	}
 
-	fetch(): Inst<OC> | null {
+	fetch(): Inst | null {
 		if (this.idx < this.tape.length)
 			return this.tape[this.idx];
 
@@ -343,22 +449,32 @@ class VM {
 		this.stack.push(val)
 	}
 
-	jmp(label: string): number {
+	jmp(label: string): void {
 		const addr = this.jmpTable.get(label)
-		if (addr) return addr;
+		if (addr === undefined)
+			throw new Error(`Can't find label "${label}"!`)
 
-		throw new Error(`Can't find label "${label}"!`)
+		this.idx = addr - 1;
 	}
 
-	step(inst: Inst<OC>) {
+	step(inst: Inst) {
 		switch (inst.code) {
-			case OC.ADDRESS: { } break;
+			case OC.ADDRESS: {
+				const { name } = inst
+				const value = this.vars.getAddr(name)
+
+				if (value === null) throw new Error(`${name} doesn't exist!`)
+				this.push(value)
+			} break;
+
 			case OC.ARRADDR: { } break;
+
 			case OC.ARRCMP: { } break;
+
 			case OC.BINOP: {
-				const { type } = (inst.args as CompilerInference[typeof inst.code])
-				const first = this.pop()
+				const { type } = inst
 				const second = this.pop()
+				const first = this.pop()
 
 				switch (type) {
 					case BinOpType.ADD: this.push((first as number) + (second as number)); break;
@@ -377,65 +493,176 @@ class VM {
 					case BinOpType.AND: this.push(first && second); break;
 					case BinOpType.OR: this.push(first || second); break;
 				}
-
 			} break;
+
 			case OC.CALL: {
-				const { name } = (inst.args as CompilerInference[typeof inst.code])
+				const { name } = inst
+				this.ipStack.push(this.idx);
 				this.jmp(name)
-				// add func stack
+			} break;
 
-			} break;
 			case OC.DEBUG: {
+				this.idx++;
 				return false;
+			} // break;
+
+			case OC.ESCOPE: {
+				const { isFun } = inst
+				this.vars.escope(isFun)
 			} break;
-			case OC.ESCOPE: { } break;
-			case OC.FJMP: { } break;
+
+			case OC.FJMP: {
+				const { label } = inst
+				if (this.pop() === false) {
+					this.jmp(label)
+				}
+			} break;
+
 			case OC.GETARR: { } break;
-			case OC.GETVAR: { } break;
-			case OC.JMP: { } break;
+
+			case OC.GETVAR: {
+				const { name } = inst
+				const value = this.vars.getVar(name)
+				if (value === null) throw new Error(`${name} has no value!`);
+				this.push(value)
+			} break;
+
+			case OC.JMP: {
+				const { label } = inst
+				this.jmp(label)
+			} break;
+
 			case OC.LABEL: { } break;
-			case OC.LSCOPE: { } break;
+
+			case OC.LSCOPE: { this.vars.lscope(false) } break;
+
 			case OC.MKARR: { } break;
-			case OC.MKREF: { } break;
+
+			case OC.MKREF: {
+				const { name } = inst
+				const pointer = this.pop()
+				if (typeof pointer !== "number") throw new Error(`${name}: Expected address, got ${typeof pointer}`)
+				this.vars.mkRef(name, pointer);
+			} break;
+
 			case OC.NOT: {
 				this.push(!this.pop())
 			} break;
+
 			case OC.PRINT: {
 				console.log(this.pop())
 			} break;
+
 			case OC.PUSH: {
-				const { value } = (inst.args as CompilerInference[typeof inst.code])
+				const { value } = inst
 				this.push(value);
 			} break;
-			case OC.RETURN: { } break;
+
+			case OC.RETURN: {
+				this.vars.lscope(true)
+				const newIp = this.ipStack.pop()
+				if (!newIp) throw new Error("IP Stack is empty.")
+				this.idx = newIp
+			} break;
+
 			case OC.SETARR: { } break;
-			case OC.SETVAR: { } break;
+
+			case OC.SETVAR: {
+				const { name } = inst
+				this.vars.setVar(name, this.pop())
+			} break;
+
 			case OC.VOID: { this.pop() } break;
+
 		}
 
+		this.idx++;
 		return true;
+	}
+
+	run() {
+		while (true) {
+			const inst = this.fetch()
+			if (!inst) return;
+
+			//console.log(this.idx, OC[inst.code], inst.args)
+			if (!this.step(inst)) return;
+
+			//console.log(this.stack)
+			//console.log(this.vars.variables.map(v => ({ n: v.name, v: this.vars.values[v.pointer] })))
+			//console.log(this.vars.values)
+		}
 	}
 }
 
-const block = parseBlock.run(t(`
-függvény LNKO(m : egész, n : egész)
-  r <- m mod n
-  
-  ciklus amíg r =/= 0
-    m <- n
-    n <- r
-    r <- m mod n  
-  ciklus vége
+/*
 
-  vissza n
+függvény LNKO(m : egész, n : egész)
+	r <- m mod n
+  
+	ciklus amíg r =/= 0
+		m <- n
+		n <- r
+		r <- m mod n  
+	ciklus vége
+
+	vissza n
+függvény vége
+kiír LNKO(15, 33)
+ */
+
+const block = parseBlock.run(t(`
+függvény KMÖ(címszerint z : egész)
+  Kétszer(&z)
+  MegÖt(&z)
+  vissza 0
 függvény vége
 
-kiír LNKO(15, 33)
+
+függvény Kétszer(címszerint x : egész)
+  x <- x * 2
+  vissza 0
+függvény vége
+
+függvény MegÖt(címszerint y : egész)
+  y <- y + 5
+  vissza 0
+függvény vége
+
+a <- 2
+kiír KMÖ(&a)
+kiír a
 `))
+
+function printCode(code: Inst[]) {
+	const index = (i: number) => i.toString().padStart(3, " ")
+	const lines: string[] = [];
+	let indent = 0;
+
+	for (let i = 0; i < code.length; i++) {
+		const l = code[i]
+		if (l.code === OC.LSCOPE) indent -= 2;
+
+		const idx = index(i)
+		const op = " ".repeat(indent) + OC[l.code]
+		const args = Object.values(l).slice(1).join(" ")
+
+		if (l.code === OC.ESCOPE) indent += 2;
+
+		lines.push(`${idx}: ${op} ${args}`)
+	}
+
+	return lines
+}
 
 if (block.type === "match") {
 	const comp = new Compiler();
 	comp.visit(block.value)
 
-	console.log(comp.code.map(l => `${OC[l.code]} ${l.args ? Object.values(l.args).join(",") : ""}`).join("\n"))
+	console.log(printCode(comp.code).join("\n"))
+
+	const vm = new VM(comp.code)
+	vm.run()
+
+	console.log(vm.vars)
 }
