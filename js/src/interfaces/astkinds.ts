@@ -82,6 +82,7 @@ export type NewArray = ASTBase<"arrnew", {
 }>
 
 export type ArrayComprehension = ASTBase<"arrcomp", {
+	variable: Variable;
 	expressions: Array<Expression>;
 }>
 
@@ -138,27 +139,27 @@ export type Swap = ASTBase<"swap", {
 }>
 
 export type Expression =
+	| ArrayIndex
 	| Atom
 	| BinaryOperation
-	| Variable
-	| Reference
-	| Not
-	| ArrayComprehension
-	| ArrayIndex
 	| FunctionCall
+	| Not
+	| Reference
+	| Variable
 
 export type Statement =
-	| Block
-	| If
+	| ArrayComprehension
 	| Assignment
-	| While
+	| Block
+	| Debug
 	| For
+	| FunctionCall
+	| FunctionDeclaration
+	| If
+	| NewArray
 	| Print
 	| Return
-	| FunctionDeclaration
-	| Debug
 	| Swap
-	| FunctionCall
-	| NewArray;
+	| While;
 
 export type ASTKind = Expression | Statement | Parameter;

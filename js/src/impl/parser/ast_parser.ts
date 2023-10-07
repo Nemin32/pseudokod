@@ -1,4 +1,3 @@
-import { ArithmeticBinOp } from "../../compiler/pseudo_types.ts";
 import { IToken } from "../../interfaces/ITokenizer.ts";
 import {
 	ArrayComprehension,
@@ -33,7 +32,7 @@ const parseStatement: P<Statement> = Parser.of<Statement>(
 			[TT.HA, parseIf as Parser<Statement>],
 			[TT.VISSZA, parseReturn],
 			[TT.CIKLUS, parseFor.or(parseWhile)],
-			[TT.SYMBOL, parseNewArray.or(parseAssignment).or(parseSwap)],
+			[TT.SYMBOL, parseComprehension.or(parseNewArray).or(parseAssignment).or(parseSwap)],
 			[TT.FUGGVENY, parseFuncDecl],
 			[TT.KIIR, parsePrint],
 			[TT.DEBUG, parseDebug],
@@ -48,7 +47,7 @@ const parseStatement: P<Statement> = Parser.of<Statement>(
 );
 
 export const parseExpression: P<Expression> = Parser.of(() =>
-	Parser.choice([parseBinOp, parseComprehension]),
+	Parser.choice([parseBinOp,]),
 );
 
 export const parseBlock: P<Block> = parseStatement
@@ -59,10 +58,14 @@ const parseVariable: P<Variable> = Parser.matchT(TT.SYMBOL).map((token) =>
 	mkToken(token, "variable", { name: token.lexeme }),
 );
 
-const parseComprehension: P<ArrayComprehension> = parseExpression
-	.sepBy(Parser.matchT(TT.COMMA))
-	.parens()
-	.map((exprs) => mkToken(null, "arrcomp", { expressions: exprs }));
+const parseComprehension: P<ArrayComprehension> = Parser.do()
+	.bind("variable", parseVariable)
+	.ignoreT(TT.NYIL)
+	.bind("expressions",
+		parseExpression
+			.sepBy(Parser.matchT(TT.COMMA))
+			.parens())
+	.result(({ variable, expressions }) => mkToken(null, "arrcomp", { variable, expressions }));
 
 const parseArrayIndex: P<ArrayIndex> = Parser.do()
 	.bind("variable", parseVariable)
@@ -131,23 +134,6 @@ const addOp = Parser.sat((tok) => ["+", "-"].includes(tok.lexeme));
 const mulOp = Parser.sat((tok) => ["*", "/", "mod"].includes(tok.lexeme));
 const compOp = Parser.sat((tok) => [">", "<", "=", "<=", ">=", "=/="].includes(tok.lexeme));
 const logicOp = Parser.sat((tok) => ["és", "vagy"].includes(tok.lexeme));
-
-const toBinopOrExpr = (
-	value: Expression | { left: Expression; op: IToken; right: Expression },
-): Expression => {
-	if ("left" in value) {
-		const binop = BinOpTypeMap.get(value.op.lexeme);
-		if (binop === undefined) throw new Error(`Unknown binop: "${value.op.lexeme}".`);
-
-		return mkToken<BinaryOperation>(value.op, "binop", {
-			lhs: value.left,
-			rhs: value.right,
-			op: binop,
-		});
-	} else {
-		return value;
-	}
-};
 
 const parseFuncCall: P<FunctionCall> = Parser.do()
 	.bindT("name", TT.FUNCNAME)

@@ -1,34 +1,9 @@
 import { OpCode as OC } from "../interfaces/ICompiler.ts";
 import { ASTKind, ArrayComprehension, ArrayIndex, Assignment, Atom, BinOpType, BinaryOperation, Block, Debug, Expression, For, FunctionCall, FunctionDeclaration, If, NewArray, Not, Parameter, Print, Reference, Return, Statement, Swap, Variable, While } from "../interfaces/astkinds.ts";
+import { Inst } from "../interfaces/instructions.ts";
 import { parseBlock } from "./parser/ast_parser.ts";
 import { t } from "./parser/test.ts";
-
-
-// Makes addOp type safe, also helps with VM's destructuring.
-type ArraySignature = { name: string, dimensions: number }; // Varname, index dimension
-type Inst =
-	| { code: OC.ADDRESS, name: string }
-	| { code: OC.ARRADDR } & ArraySignature
-	| { code: OC.ARRCMP, length: number }
-	| { code: OC.BINOP, type: BinOpType }
-	| { code: OC.CALL, name: string }
-	| { code: OC.DEBUG, msg: string }
-	| { code: OC.ESCOPE, isFun: boolean }
-	| { code: OC.FJMP, label: string }
-	| { code: OC.GETARR } & ArraySignature
-	| { code: OC.GETVAR, name: string }
-	| { code: OC.JMP, label: string }
-	| { code: OC.LABEL, name: string }
-	| { code: OC.LSCOPE }
-	| { code: OC.MKARR, name: string, numDimensions: number }
-	| { code: OC.MKREF, name: string } // Varname (of end result!)
-	| { code: OC.NOT }
-	| { code: OC.PRINT }
-	| { code: OC.PUSH, value: Atom["value"] }
-	| { code: OC.RETURN }
-	| { code: OC.SETARR } & ArraySignature
-	| { code: OC.SETVAR, name: string }
-	| { code: OC.VOID }
+import { Variables } from "./variables.ts";
 
 class Compiler {
 	code: Inst[] = [];
@@ -77,7 +52,7 @@ class Compiler {
 
 	visitArrcomp(ast: ArrayComprehension) {
 		ast.expressions.forEach(e => this.visitExpression(e))
-		this.addOp(OC.ARRCMP, [ast.expressions.length])
+		this.addOp(OC.ARRCMP, { name: ast.variable.name, length: ast.expressions.length })
 	}
 
 	visitArrindex(ast: ArrayIndex) {
@@ -113,7 +88,6 @@ class Compiler {
 			case "variable": return this.visitVariable(ast)
 			case "reference": return this.visitReference(ast)
 			case "not": return this.visitNot(ast)
-			case "arrcomp": return this.visitArrcomp(ast)
 			case "arrindex": return this.visitArrindex(ast)
 			case "funccall": return this.visitFunccall(ast)
 		}
@@ -279,6 +253,7 @@ class Compiler {
 			case "swap": return this.visitSwap(ast)
 			case "funccall": { this.visitFunccall(ast); this.addOp(OC.VOID, {}); return; }
 			case "arrnew": return this.visitArrnew(ast)
+			case "arrcomp": return this.visitArrcomp(ast)
 		}
 	}
 
@@ -315,474 +290,6 @@ class Compiler {
 	}
 }
 
-const enum VariableType {
-	NORMAL,
-	REGULAR_ARRAY,
-	IRREGULAR_ARRAY
-}
-
-// TODO: Rework this into ValueADT
-type VariableADT = { name: string, pointer: number } & (
-	// Normal variable, (number, bool, string), no indirection.
-	| { type: VariableType.NORMAL }
-	// Regular array (rows and cols are pre-set length)
-	// array[m][n] = array[m * rowLength + n]
-	| { type: VariableType.REGULAR_ARRAY, dimensions: number[] }
-	// Irregular array (every element has a different length)
-	// Not sure yet if necessary, nor how to implement.
-	// | { type: VariableType.IRREGULAR_ARRAY, lengths: number[] }
-)
-
-type DeepArray<T> = (T | DeepArray<T>)[]
-
-const enum ValueType {
-	NORMAL,
-	ARRAY,
-}
-
-type Boundary = { isFun: boolean, lastIndex: number }
-type VariableBinding = { name: string, pointer: number }
-type ValueADT = { rc: number, value: Atom["value"] } & (
-	| { type: ValueType.NORMAL }
-	| { type: ValueType.ARRAY, dimensions: number[] }
-)
-
-class VariablesV2 {
-	bounds: Boundary[] = [];
-	bindings: VariableBinding[] = [];
-	values: ValueADT[] = [];
-
-	escope(isFun: boolean) {
-		this.bounds.push({ isFun, lastIndex: this.bindings.length })
-	}
-
-
-	lscope(untilFun: boolean) {
-		if (untilFun) {
-			const lastFun = this.bounds.findLastIndex(b => b.isFun)
-			if (lastFun === -1) throw new Error("Attempting to leave function while not being in one.")
-
-			// slice is non-end-inclusive so + 1
-			this.bounds = this.bounds.slice(0, lastFun + 1)
-		}
-
-		const length = this.bounds.pop()?.lastIndex
-		if (length === undefined || length === -1) throw new Error("Trying to leave scope without being in one.")
-
-		const varsLeavingScope = this.bindings.slice(length);
-		varsLeavingScope.forEach(v => this.free(v))
-
-		this.bindings = this.bindings.slice(0, length)
-
-		this.gc()
-	}
-
-	free(variable: VariableBinding) {
-		const box = this.values.at(variable.pointer)
-		if (box === undefined) throw new Error(`${variable.name}: Points at invalid address! (${variable.pointer})`)
-
-		if (box.type === ValueType.NORMAL) {
-			box.rc--;
-		} else {
-			const length = box.dimensions.reduce((a, b) => a * b, 1)
-
-			for (let i = 0; i < length; i++) {
-				this.values[variable.pointer + i].rc--;
-			}
-		}
-	}
-
-	gc() {
-		this.values = this.values.filter(v => v.rc > 0)
-	}
-
-	getAddress(name: string): number {
-		return this.findBinding(name).pointer
-	}
-
-	// NORMAL OPS
-
-	makeReference(name: string, pointer: number) {
-		const variable = this.findBindingOrNull(name);
-
-		if (variable) {
-			const box = this.getBox(variable.pointer)
-			box.rc--;
-			variable.pointer = pointer;
-		} else {
-			this.bindings.push({
-				name,
-				pointer
-			})
-		}
-	}
-
-	setVariable(name: string, value: Atom["value"]) {
-		const variable = this.findBindingOrNull(name);
-
-		if (variable) {
-			const box = this.getBox(variable.pointer)
-			box.value = value;
-		} else {
-			this.bindings.push({
-				name,
-				pointer: this.addBox(value)
-			})
-		}
-	}
-
-	getVariable(name: string): Atom["value"] {
-		return this.getBox(this.getAddress(name)).value
-	}
-
-
-	// ARRAY OPS
-
-	addArray(name: string, array: DeepArray<Atom["value"]>) {
-		const dimensions: number[] = this.getDimensions(array)
-		const values = (array.flat(Infinity as 1) as Atom["value"][]);
-
-		const base = this.values.length
-		this.values.push({
-			dimensions,
-			rc: 1,
-			type: ValueType.ARRAY,
-			value: values[0]
-		})
-
-		const rest: ValueADT[] = values.slice(1).map(value => ({ rc: 1, value, type: ValueType.NORMAL }))
-		this.values = this.values.concat(rest)
-
-		this.makeReference(name, base)
-	}
-
-	addEmptyArray(name: string, dimensions: number[]) {
-		const length = dimensions.reduce((a, b) => a * b, 1)
-
-		const base = this.values.length
-		this.values.push({
-			dimensions,
-			rc: 1,
-			type: ValueType.ARRAY,
-			value: 0
-		})
-
-		// We start with 1, because base is the 0th elem.
-		for (let i = 1; i < length; i++) {
-			this.addBox(0)
-		}
-
-		this.makeReference(name, base)
-	}
-
-	setArrayElem(name: string, indexes: number[], value: Atom["value"]) {
-		const box = this.getArrayBox(name, indexes)
-		box.value = value
-	}
-
-	getArrayElem(name: string, indexes: number[]): Atom["value"] {
-		const box = this.getArrayBox(name, indexes)
-		return box.value
-	}
-
-	getArrayElemAddr(name: string, indexes: number[]): number {
-		const base = this.getAddress(name)
-		const box = this.getBox(base)
-		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
-
-		const index = this.calculateIndex(box, indexes)
-
-		return base + index
-	}
-
-	// HELPERS
-
-	private addBox(value: Atom["value"]): number {
-		this.values.push({
-			rc: 1,
-			type: ValueType.NORMAL,
-			value
-		})
-
-		return this.values.length - 1;
-	}
-
-	private findIndexOrNull(name: string): number | null {
-		const idx = this.bindings.findLastIndex(v => v.name === name)
-		if (idx === -1) return null;
-
-		return idx;
-	}
-
-	private findIndex(name: string): number {
-		const idx = this.bindings.findLastIndex(v => v.name === name)
-		if (idx === -1) throw new Error(`${name}: No such variable!`)
-
-		return idx;
-	}
-
-	private findBindingOrNull(name: string): VariableBinding | null {
-		const idx = this.findIndexOrNull(name)
-		if (idx === null) return null;
-
-		return this.bindings[idx];
-	}
-
-	private findBinding(name: string): VariableBinding {
-		return this.bindings[this.findIndex(name)];
-	}
-
-	private getBoxOrNull(pointer: number): ValueADT | null {
-		const box = this.values.at(pointer)
-		if (box === undefined) return null;
-
-		return box
-	}
-
-	private getBox(pointer: number): ValueADT {
-		const box = this.values.at(pointer)
-		if (box === undefined) throw new Error(`No box at address ${pointer}!`)
-
-		return box
-	}
-
-	// ARRAY HELPERS
-
-	getDimensions(arr: DeepArray<Atom["value"]>): number[] {
-		let curr: Atom["value"] | DeepArray<Atom["value"]> = arr;
-		let dims = [];
-
-		while (Array.isArray(curr)) {
-			dims.push(curr.length)
-			curr = curr[0]
-		}
-
-		return dims
-	}
-
-	calculateIndex(box: ValueADT, indexes: number[]): number {
-		if (box.type === ValueType.NORMAL) throw new Error(`Box isn't an array variable!`)
-
-		// Drops the first element and adds 1 at the end.
-		// Suppose we have a 4x5x6 array and we want to get [3,2,4]
-		//   [3,2,4]
-		//     \ \ \
-		//  (4) 5 6 1
-		// To step in dimension n, you have to add (n-1)'s length to the array.
-		const lengths = box.dimensions.slice(1).concat(1)
-		// To stay with the previous example, here we'd calculate
-		// (3 * 5) + (2 * 6) + (4 * 1) = 31 as our index.
-		const index = indexes.reduce((prev, curr, idx) => prev + (curr * lengths[idx]), 0)
-
-		return index;
-	}
-
-	getArrayBox(name: string, indexes: number[]): ValueADT {
-		const base = this.getAddress(name)
-		const box = this.getBox(base)
-		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
-
-		const index = this.calculateIndex(box, indexes)
-
-		return this.getBox(base + index)
-	}
-}
-
-class Variables {
-	bounds: { fun: boolean, length: number }[] = [];
-	variables: VariableADT[] = [];//{ name: string, pointer: number }[] = [];
-	values: { rc: number, value: Atom["value"] }[] = [];
-
-	escope(isFun: boolean) {
-		this.bounds.push({
-			fun: isFun,
-			length: this.variables.length
-		})
-	}
-
-	lscope(toFun: boolean) {
-		// Deletes old variables and also decrements the boxes' RCs that they were pointing at.
-		const removeOldVariables = (length: number) => {
-			const toDelete = this.variables.slice(length)
-			toDelete.forEach(v => this.free(v))
-			this.variables = this.variables.slice(0, length)
-		}
-
-		if (!toFun) {
-			const length = this.bounds.pop()?.length;
-			if (length === undefined) throw new Error("Trying to leave scope without being in one.")
-			removeOldVariables(length)
-		} else {
-			const prevFunBound = this.bounds.findLastIndex(b => b.fun)
-			if (prevFunBound === -1) throw new Error("Attempting to return outside a function.")
-
-			const length = this.bounds[prevFunBound].length
-			removeOldVariables(length)
-			this.bounds = this.bounds.slice(0, prevFunBound)
-		}
-
-		this.gc()
-	}
-
-	// This ONLY frees values.
-	// You still need to throw away the variable (which now points at invalid data).
-	free(variable: VariableADT) {
-		if (variable.type === VariableType.NORMAL) {
-			this.values[variable.pointer].rc--;
-		} else {
-			const length = variable.dimensions.reduce((a, b) => a * b)
-
-			for (let i = 0; i < length; i++) {
-				this.values[variable.pointer + i].rc--;
-			}
-		}
-	}
-
-	gc() {
-		this.values = this.values.filter(v => v.rc > 0)
-	}
-
-	findIndex(name: string): number | null {
-		const idx = this.variables.findLastIndex(v => v.name === name);
-		return (idx === -1) ? null : idx;
-	}
-
-	mkRef(name: string, ref: number) {
-		const vIndex = this.findIndex(name);
-
-		if (vIndex !== null) {
-			this.values[this.variables[vIndex].pointer].rc--;
-			this.variables[vIndex].pointer = ref;
-		} else {
-			this.variables.push({
-				type: VariableType.NORMAL,
-				name,
-				pointer: ref
-			})
-		}
-
-		this.values[ref].rc++;
-	}
-
-	setVar(name: string, value: Atom["value"]) {
-		const vIndex = this.findIndex(name);
-
-		if (vIndex !== null) {
-			const boxIndex = this.variables[vIndex].pointer;
-			this.values[boxIndex].value = value;
-
-		} else {
-			const boxIndex = this.values.length;
-			this.values.push({ rc: 1, value });
-
-			this.variables.push({
-				type: VariableType.NORMAL,
-				name,
-				pointer: boxIndex
-			})
-		}
-	}
-
-	getVar(name: string): Atom["value"] | null {
-		const vIndex = this.findIndex(name);
-
-		if (vIndex !== null) {
-			return this.values[this.variables[vIndex].pointer].value
-		}
-
-		return null;
-	}
-
-	getAddr(name: string): number | null {
-		const vIndex = this.findIndex(name);
-
-		if (vIndex !== null) {
-			return this.variables[vIndex].pointer;
-		}
-
-		return null;
-	}
-
-	getArrayDimensions(arr: DeepArray<Atom["value"]>): number[] {
-		let curr: Atom["value"] | DeepArray<Atom["value"]> = arr;
-		let dims = [];
-
-		while (Array.isArray(curr)) {
-			dims.push(curr.length)
-			curr = curr[0]
-		}
-
-		return dims
-	}
-
-	addArray(name: string, arr: DeepArray<Atom["value"]>, dimensions: number[] | null) {
-		const base = this.values.length
-		// TS has a type error with flat(Infinity): https://github.com/microsoft/TypeScript/issues/49280
-		const boxes: { rc: number, value: Atom["value"] }[] =
-			(arr.flat(Infinity as 1) as Atom["value"][]).map(value => ({ rc: 1, value }))
-
-		this.values = this.values.concat(boxes)
-
-		this.variables.push({
-			type: VariableType.REGULAR_ARRAY,
-			name,
-			pointer: base,
-			dimensions: dimensions ?? this.getArrayDimensions(arr)
-		})
-	}
-
-	calculateIndex(variable: VariableADT, indexes: number[]): number {
-		if (variable.type === VariableType.NORMAL) throw new Error(`${variable.name}: Isn't an array variable!`)
-
-		// Drops the first element and adds 1 at the end.
-		// Suppose we have a 4x5x6 array and we want to get [3,2,4]
-		//   [3,2,4]
-		//     \ \ \
-		//  (4) 5 6 1
-		// To step in dimension n, you have to add (n-1)'s length to the array.
-		const lengths = variable.dimensions.slice(1).concat(1)
-		// To stay with the previous example, here we'd calculate
-		// (3 * 5) + (2 * 6) + (4 * 1) = 31 as our index.
-		const index = indexes.reduce((prev, curr, idx) => prev + (curr * lengths[idx]), 0)
-
-		return index;
-	}
-
-	getArray(name: string, indexes: number[]): Atom["value"] {
-		const vIndex = this.findIndex(name)
-		if (vIndex === null) throw new Error(`${name}: No such variable!`)
-
-		const variable = this.variables[vIndex]
-		const index = this.calculateIndex(variable, indexes);
-
-		return this.values[variable.pointer + index].value
-	}
-
-	setArray(name: string, indexes: number[], value: Atom["value"]) {
-		const vIndex = this.findIndex(name)
-		if (vIndex === null) throw new Error(`${name}: No such variable!`)
-
-		const variable = this.variables[vIndex]
-		if (variable.type !== VariableType.REGULAR_ARRAY) throw new Error(`${name}: Isn't an array variable!`)
-
-		const boundsValid = indexes.map((idx, n) => idx >= 0 && idx < variable.dimensions[n]).every(v => v)
-		if (!boundsValid) throw new Error(`${name}[${indexes.join(", ")}]: Out of bounds!`)
-
-		const index = this.calculateIndex(variable, indexes)
-		const box = this.values.at(variable.pointer + index)
-
-		if (!box) throw new Error(`Box with ID ${variable.pointer + index} doesn't exist!`)
-
-		box.value = value;
-	}
-
-	makeArray(name: string, dimensions: number[]) {
-		const length = dimensions.reduce((a, b) => a * b, 1)
-		const arr: number[] = Array(length).fill(0)
-
-		this.addArray(name, arr, dimensions)
-	}
-}
 
 class VM {
 	ipStack: number[] = [];
@@ -845,15 +352,25 @@ class VM {
 		switch (inst.code) {
 			case OC.ADDRESS: {
 				const { name } = inst
-				const value = this.vars.getAddr(name)
+				const value = this.vars.getAddress(name)
 
 				if (value === null) throw new Error(`${name} doesn't exist!`)
 				this.push(value)
 			} break;
 
-			case OC.ARRADDR: { } break;
+			case OC.ARRADDR: {
+				const indexes = this.popMany(inst.dimensions)
 
-			case OC.ARRCMP: { } break;
+				if (!indexes.map(i => typeof i === "number").every(v => v))
+					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
+
+				this.push(this.vars.getArrayElemAddr(inst.name, indexes as number[]))
+			} break;
+
+			case OC.ARRCMP: {
+				const elems = this.popMany(inst.length)
+				this.vars.addArray(inst.name, elems)
+			} break;
 
 			case OC.BINOP: {
 				const { type } = inst
@@ -908,12 +425,12 @@ class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v))
 					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
-				this.push(this.vars.getArray(inst.name, indexes as number[]))
+				this.push(this.vars.getArrayElem(inst.name, indexes as number[]))
 			} break;
 
 			case OC.GETVAR: {
 				const { name } = inst
-				const value = this.vars.getVar(name)
+				const value = this.vars.getVariable(name)
 				if (value === null) throw new Error(`${name} has no value!`);
 				this.push(value)
 			} break;
@@ -933,14 +450,14 @@ class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v))
 					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
-				this.vars.makeArray(inst.name, indexes as number[])
+				this.vars.addEmptyArray(inst.name, indexes as number[])
 			} break;
 
 			case OC.MKREF: {
 				const { name } = inst
 				const pointer = this.pop()
 				if (typeof pointer !== "number") throw new Error(`${name}: Expected address, got ${typeof pointer}`)
-				this.vars.mkRef(name, pointer);
+				this.vars.makeReference(name, pointer);
 			} break;
 
 			case OC.NOT: {
@@ -968,12 +485,12 @@ class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v)) throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
 				const value = this.pop()
-				this.vars.setArray(inst.name, indexes as number[], value)
+				this.vars.setArrayElem(inst.name, indexes as number[], value)
 			} break;
 
 			case OC.SETVAR: {
 				const { name } = inst
-				this.vars.setVar(name, this.pop())
+				this.vars.setVariable(name, this.pop())
 			} break;
 
 			case OC.VOID: { this.pop() } break;
@@ -1000,7 +517,7 @@ class VM {
 }
 
 /*
-
+	
 függvény LNKO(m : egész, n : egész)
 	r <- m mod n
   
@@ -1008,16 +525,14 @@ függvény LNKO(m : egész, n : egész)
 		m <- n
 		n <- r
 		r <- m mod n  
-	ciklus vége
-
+		iklus vége
+																												
 	vissza n
 függvény vége
-kiír LNKO(15, 33)
+	iír LNKO(15, 33)
  */
 
 const block = parseBlock.run(t(`
-
-teszt[1, 3] <- 99
 
 függvény Setter(címszerint teszt : egész tömb)
 teszt[3,3] <- 2
@@ -1027,7 +542,7 @@ kecske <- TáblaLétrehoz(egész)[5, 5]
 
 Setter(&kecske)
 
-kiír kecske[3,4]
+kiír kecske[3,3]
 
 `))
 
@@ -1052,7 +567,6 @@ function printCode(code: Inst[]) {
 	return lines
 }
 
-/*
 if (block.type === "match") {
 	const comp = new Compiler();
 	comp.visit(block.value)
@@ -1062,54 +576,13 @@ if (block.type === "match") {
 
 	const vm = new VM(comp.code)
 
+	vm.vars.escope(true)
 	vm.vars.addArray("teszt", [
 		[1, 2, 3, 0],
 		[4, 5, 6, 0],
 		[7, 8, 9, 0]
-	], null)
+	])
 
 	vm.run()
-
-	//console.log(vm.vars)
+	vm.vars.lscope(true)
 }
- */
-
-/*
-const vars = new Variables()
-
-vars.addArray("test", [
-	[1, 2, 3, 0],
-	[4, 5, 6, 0],
-	[7, 8, 9, 0]
-], null)
-
-console.log(vars)
-vars.setArray("test", [0, 1], 99)
-console.log(vars)
-vars.free(vars.variables[0])
-vars.gc()
-console.log(vars)
-
- */
-
-const vars = new VariablesV2()
-
-vars.escope(false)
-vars.setVariable("test2", 128)
-
-vars.escope(false)
-vars.addArray("test", [
-	[1, 2, 3, 0],
-	[4, 5, 6, 0],
-	[7, 8, 9, 0]
-])
-
-
-console.log(vars)
-vars.setArrayElem("test", [2, 3], 99)
-console.log(vars)
-vars.lscope(false)
-console.log(vars)
-
-vars.lscope(false)
-console.log(vars)
