@@ -4,6 +4,7 @@ import {
 	ArrayIndex,
 	Assignment,
 	Atom,
+	BaseType,
 	BinOpTypeMap,
 	BinaryOperation,
 	Block,
@@ -23,8 +24,11 @@ import {
 	Swap,
 	Variable,
 	While,
+	stringToBaseType,
 } from "../../interfaces/astkinds.ts";
 import { Chain, P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
+
+const parseBaseType: P<BaseType> = Parser.matchT(TT.TYPE).map(t => stringToBaseType(t.lexeme))
 
 const parseStatement: P<Statement> = Parser.of<Statement>(
 	() => {
@@ -78,20 +82,20 @@ const parseNewMultiDimArray: P<NewArray> = Parser.do()
 	.bind("variable", parseVariable)
 	.ignoreT(TT.NYIL)
 	.bindT("token", TT.TABLALETREHOZ)
-	.bind("type", Parser.matchT(TT.TYPE).parens())
+	.bind("type", parseBaseType.parens())
 	.bind("dimensions", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
 	.result(({ variable, token, type, dimensions }) =>
-		mkToken(token, "arrnew", { variable, dimensions, type: type.lexeme }),
+		mkToken(token, "arrnew", { variable, dimensions, type }),
 	);
 
 const parseNewSingleDimArray: P<NewArray> = Parser.do()
 	.bind("variable", parseVariable)
 	.ignoreT(TT.NYIL)
 	.bindT("token", TT.LETREHOZ)
-	.bind("type", Parser.matchT(TT.TYPE).parens())
+	.bind("type", parseBaseType.parens())
 	.bind("length", parseExpression.brackets())
 	.result(({ variable, token, type, length }) =>
-		mkToken(token, "arrnew", { variable, dimensions: [length], type: type.lexeme }),
+		mkToken(token, "arrnew", { variable, dimensions: [length], type }),
 	);
 
 const parseNewArray = parseNewSingleDimArray.or(parseNewMultiDimArray);
@@ -105,15 +109,15 @@ const parseSwap: P<Swap> = Parser.do()
 //#region Atom
 
 const number: P<Atom> = Parser.matchT(TT.NUMBER).map((token) =>
-	mkToken(token, "atom", { value: Number(token.lexeme) }),
+	mkToken(token, "atom", { type: BaseType.NUMBER, value: Number(token.lexeme) }),
 );
 
 const boolean: P<Atom> = Parser.matchT(TT.BOOLEAN).map((token) =>
-	mkToken(token, "atom", { value: ["Igaz", "igaz"].includes(token.lexeme) }),
+	mkToken(token, "atom", { type: BaseType.LOGIC, value: ["Igaz", "igaz"].includes(token.lexeme) }),
 );
 
 const string: P<Atom> = Parser.matchT(TT.STRING).map((token) =>
-	mkToken(token, "atom", { value: token.lexeme }),
+	mkToken(token, "atom", { type: BaseType.STRING, value: token.lexeme }),
 );
 
 const parseAtom = Parser.choice([number, boolean, string]);
@@ -213,7 +217,7 @@ const parseByRef = Parser.matchT(TT.CIMSZERINT)
 	.or(Parser.result(false));
 
 const parseParamType = Parser.do()
-	.bindT("type", TT.TYPE)
+	.bind("type", parseBaseType)
 	.maybeT("isSorted", TT.RENDEZETT)
 	.maybeT("isArray", TT.TOMB)
 	.finalize({});
@@ -227,7 +231,8 @@ const parseParameter: P<Parameter> = Parser.do()
 		mkToken("token" in name ? name.token : name, "param", {
 			byRef,
 			name: "token" in name ? name : name.lexeme,
-			type: type.type.lexeme,
+			type: type.type,
+			isArr: type.isArray !== null
 		}),
 	);
 
