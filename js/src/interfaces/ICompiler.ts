@@ -8,6 +8,7 @@ export enum OpCode {
 
 	CALL,
 	RETURN,
+	RETCMP,
 
 	ARRCMP,
 	PUSH,

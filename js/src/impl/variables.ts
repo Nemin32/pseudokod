@@ -118,8 +118,11 @@ export class Variables {
 
 
 	// ARRAY OPS
-
 	addArray(name: string, array: DeepArray<Atom["value"]>) {
+		this.makeReference(name, this.addArrayRef(array));
+	}
+
+	addArrayRef(array: DeepArray<Atom["value"]>) {
 		const dimensions: number[] = this.getDimensions(array)
 		const values = (array.flat(Infinity as 1) as Atom["value"][]);
 
@@ -135,26 +138,13 @@ export class Variables {
 		const rest: ValueADT[] = values.slice(1).map(value => ({ rc: 1, value, type: ValueType.NORMAL }))
 		this.values = this.values.concat(rest)
 
-		this.makeReference(name, base)
+		return base;
 	}
 
 	addEmptyArray(name: string, dimensions: number[]) {
 		const length = dimensions.reduce((a, b) => a * b, 1)
-
-		const base = this.values.length
-		this.values.push({
-			dimensions,
-			rc: 0,
-			type: ValueType.ARRAY,
-			value: 0
-		})
-
-		// We start with 1, because base is the 0th elem.
-		for (let i = 1; i < length; i++) {
-			this.addBox(0)
-		}
-
-		this.makeReference(name, base)
+		const arr: number[] = Array.from<number>({ length }).fill(0)
+		this.addArray(name, arr)
 	}
 
 	setArrayElem(name: string, indexes: number[], value: Atom["value"]) {

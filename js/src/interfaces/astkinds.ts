@@ -1,17 +1,15 @@
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "./types.ts";
 import { IToken } from "./ITokenizer.ts";
 
-export enum BaseType {
-	NUMBER,
-	STRING,
-	LOGIC
-}
-
-export function stringToBaseType(type: string): BaseType {
+export function stringToBaseType(type: string): SimpleType | GenericType {
 	switch (type) {
-		case "egész": return BaseType.NUMBER
-		case "szöveg": return BaseType.STRING
-		case "logikai": return BaseType.LOGIC
+		case "egész": return NUMBER
+		case "szöveg": return STRING
+		case "logikai": return LOGIC
 	}
+
+	// For stuff like Function(x : T)
+	if (type.length === 1 && type >= 'A' && type <= 'Z') return new GenericType(type)
 
 	throw new Error(`Expected type, got ${type}.`)
 }
@@ -22,7 +20,7 @@ export type AtomValue = number | string | boolean;
 
 export type Atom = ASTBase<"atom", {
 	value: AtomValue;
-	type: BaseType
+	type: SimpleType
 }>
 
 export type Debug = ASTBase<"debug", { msg?: string }>
@@ -93,7 +91,7 @@ export type Reference = ASTBase<"reference", {
 }>
 
 export type NewArray = ASTBase<"arrnew", {
-	type: BaseType;
+	type: SimpleType | GenericType;
 	dimensions: Expression[];
 	variable: Variable
 }>
@@ -130,7 +128,7 @@ export type Print = ASTBase<"print", {
 }>
 
 export type Return = ASTBase<"return", {
-	expr: Expression;
+	expr: Expression | Expression[];
 }>
 
 export type FunctionCall = ASTBase<"funccall", {
@@ -146,7 +144,7 @@ export type FunctionDeclaration = ASTBase<"funcdecl", {
 
 export type Parameter = ASTBase<"param", {
 	name: Variable | string; // string = funcname
-	type: BaseType;
+	type: SimpleType | GenericType;
 	byRef: boolean;
 	isArr: boolean;
 }>

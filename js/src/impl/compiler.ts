@@ -102,8 +102,13 @@ export class Compiler {
 	}
 
 	visitReturn(ast: Return) {
-		this.visitExpression(ast.expr)
-		this.addOp(OC.RETURN, {});
+		if (Array.isArray(ast.expr)) {
+			ast.expr.forEach(expr => this.visitExpression(expr))
+			this.addOp(OC.RETCMP, { length: ast.expr.length });
+		} else {
+			this.visitExpression(ast.expr)
+			this.addOp(OC.RETURN, {});
+		}
 	}
 
 	visitDebug(ast: Debug) {

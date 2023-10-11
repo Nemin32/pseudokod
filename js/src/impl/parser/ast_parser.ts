@@ -4,7 +4,6 @@ import {
 	ArrayIndex,
 	Assignment,
 	Atom,
-	BaseType,
 	BinOpTypeMap,
 	BinaryOperation,
 	Block,
@@ -26,24 +25,32 @@ import {
 	While,
 	stringToBaseType,
 } from "../../interfaces/astkinds.ts";
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "../../interfaces/types.ts";
 import { Chain, P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
-const parseBaseType: P<BaseType> = Parser.matchT(TT.TYPE).map(t => stringToBaseType(t.lexeme))
+const parseBaseType: P<SimpleType | GenericType> = Parser.matchT(TT.TYPE).map(t => stringToBaseType(t.lexeme))
 
 const parseStatement: P<Statement> = Parser.of<Statement>(
 	() => {
+		const symbolParser = Parser.choice([
+			parseSwap as Parser<Statement>,
+			parseAssignment,
+			parseNewArray,
+			parseComprehension
+		])
+
 		const statementMap: ReadonlyMap<TT, Parser<Statement>> = new Map([
 			[TT.HA, parseIf as Parser<Statement>],
 			[TT.VISSZA, parseReturn],
 			[TT.CIKLUS, parseFor.or(parseWhile)],
-			[TT.SYMBOL, parseComprehension.or(parseNewArray).or(parseAssignment).or(parseSwap)],
+			[TT.SYMBOL, symbolParser],
 			[TT.FUGGVENY, parseFuncDecl],
 			[TT.KIIR, parsePrint],
 			[TT.DEBUG, parseDebug],
 			[TT.FUNCNAME, parseFuncCall],
 		]);
 
-		return Parser.peek()
+		return Parser.peek(0)
 			.map((t) => t.type)
 			.mapChoice(statementMap);
 	},
@@ -51,7 +58,7 @@ const parseStatement: P<Statement> = Parser.of<Statement>(
 );
 
 export const parseExpression: P<Expression> = Parser.of(() =>
-	Parser.choice([parseBinOp,]),
+	parseBinOp
 );
 
 export const parseBlock: P<Block> = parseStatement
@@ -109,15 +116,15 @@ const parseSwap: P<Swap> = Parser.do()
 //#region Atom
 
 const number: P<Atom> = Parser.matchT(TT.NUMBER).map((token) =>
-	mkToken(token, "atom", { type: BaseType.NUMBER, value: Number(token.lexeme) }),
+	mkToken(token, "atom", { type: NUMBER, value: Number(token.lexeme) }),
 );
 
 const boolean: P<Atom> = Parser.matchT(TT.BOOLEAN).map((token) =>
-	mkToken(token, "atom", { type: BaseType.LOGIC, value: ["Igaz", "igaz"].includes(token.lexeme) }),
+	mkToken(token, "atom", { type: LOGIC, value: ["Igaz", "igaz"].includes(token.lexeme) }),
 );
 
 const string: P<Atom> = Parser.matchT(TT.STRING).map((token) =>
-	mkToken(token, "atom", { type: BaseType.STRING, value: token.lexeme }),
+	mkToken(token, "atom", { type: STRING, value: token.lexeme }),
 );
 
 const parseAtom = Parser.choice([number, boolean, string]);
@@ -177,7 +184,7 @@ export const parseBinOp: P<Expression> = Parser.chain(parseCompOp, logicOp).map(
 
 //#endregion
 
-const parseAssignment: P<Assignment> = Parser.do()
+export const parseAssignment: P<Assignment> = Parser.do()
 	.bind("variable", parseArrayIndex.or(parseVariable))
 	.bindT("nyil", TT.NYIL)
 	.bind("value", parseExpression)
@@ -236,7 +243,7 @@ const parseParameter: P<Parameter> = Parser.do()
 		}),
 	);
 
-const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
+export const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
 	.bindT("token", TT.FUGGVENY)
 	.bindT("name", TT.FUNCNAME)
 	.bind("parameters", parseParameter.sepBy(Parser.matchT(TT.COMMA)).parens())
@@ -278,8 +285,14 @@ const parsePrint: P<Print> = Parser.matchT(TT.KIIR).bind((token) =>
 	parseExpression.map((expr) => mkToken(token, "print", { expr })),
 );
 
+const comp =
+	parseExpression
+		.sepBy(Parser.matchT(TT.COMMA))
+		.parens()
+
 const parseReturn: P<Return> = Parser.matchT(TT.VISSZA).bind((token) =>
-	parseExpression.map((expr) => mkToken(token, "return", { expr })),
+	Parser.or(comp, parseExpression)
+		.map((expr) => mkToken(token, "return", { expr })),
 );
 
 //#region While
@@ -300,7 +313,7 @@ const parseDoWhile = Parser.do()
 	.bind("predicate", parseExpression)
 	.finalize({ postPred: true });
 
-const parseWhile: P<While> = parseDoWhile
+export const parseWhile: P<While> = parseDoWhile
 	.or(parseNormalWhile)
 	.map((value) => mkToken(value.token, "while", value));
 

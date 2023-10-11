@@ -23,6 +23,7 @@ export type Inst =
 	| { code: OC.PRINT }
 	| { code: OC.PUSH, value: Atom["value"] }
 	| { code: OC.RETURN }
+	| { code: OC.RETCMP, length: number }
 	| { code: OC.SETARR } & ArraySignature
 	| { code: OC.SETVAR, name: string }
 	| { code: OC.VOID }

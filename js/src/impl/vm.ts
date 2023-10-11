@@ -185,6 +185,14 @@ export class VM {
 				this.push(value);
 			} break;
 
+			// @ts-ignore Ignores fallthrough.
+			case OC.RETCMP: {
+				const exprs = this.popMany(inst.length)
+				this.push(this.vars.addArrayRef(exprs));
+				this.push("__mk")
+			}
+
+			/* Falls through! */
 			case OC.RETURN: {
 				this.vars.lscope(true)
 				const newIp = this.ipStack.pop()
@@ -202,7 +210,14 @@ export class VM {
 
 			case OC.SETVAR: {
 				const { name } = inst
-				this.vars.setVariable(name, this.pop())
+				const val = this.pop()
+				if (val === "__mk") {
+					const ref = this.pop()
+					if (typeof ref !== "number") throw new Error(`Expected REFERENCE, got ${typeof ref}`)
+					this.vars.makeReference(name, ref)
+				} else {
+					this.vars.setVariable(name, val)
+				}
 			} break;
 
 			case OC.VOID: { this.pop() } break;

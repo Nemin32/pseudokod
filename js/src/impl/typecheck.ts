@@ -1,77 +1,8 @@
-import { IToken } from "../interfaces/ITokenizer.ts";
-import { ASTKind, BinOpType, BaseType as ASTBaseType } from "../interfaces/astkinds.ts";
+import { ASTKind, BinOpType, Expression, Parameter } from "../interfaces/astkinds.ts";
+import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UnknownType } from "../interfaces/types.ts";
 import { parseBlock } from "./parser/ast_parser.ts";
 import { t } from "./parser/test.ts";
-
-enum TypeVariants {
-	SIMPLE = 0,
-	ARRAY = 1,
-	REFERENCE = 2,
-	HETEROGENOUS = 3,
-	FUNCTION = 4,
-
-	NONE = 5,
-	UNKNOWN = 6,
-}
-
-enum BaseType {
-	NUMBER = 0,
-	STRING = 1,
-	LOGIC = 2,
-}
-
-
-function convertBaseType(bt: ASTBaseType) {
-	switch (bt) {
-		case ASTBaseType.NUMBER: return NUMBER;
-		case ASTBaseType.LOGIC: return LOGIC;
-		case ASTBaseType.STRING: return STRING;
-		default: throw new Error(`Unexpected type: ${bt}`)
-	}
-}
-
-export class TypeCheckError extends Error {
-	constructor(message: string, readonly token: IToken | null) {
-		super(message);
-	}
-}
-
-class SimpleType {
-	readonly kind = TypeVariants.SIMPLE;
-	constructor(readonly t: BaseType) { }
-}
-
-class ArrayType {
-	readonly kind = TypeVariants.ARRAY;
-	constructor(readonly t: Type) { }
-}
-
-class ReferenceType {
-	readonly kind = TypeVariants.REFERENCE;
-	constructor(readonly t: Type) { }
-}
-
-class HeterogenousArrayType {
-	readonly kind = TypeVariants.HETEROGENOUS;
-	ts: Type[]
-	constructor(ts: Type[]) { this.ts = ts.sort() }
-}
-
-class NoneType {
-	readonly kind = TypeVariants.NONE;
-}
-
-class UnknownType {
-	readonly kind = TypeVariants.UNKNOWN;
-}
-
-class FunctionType {
-	readonly kind = TypeVariants.FUNCTION;
-
-	constructor(readonly rType: Type, readonly argTypes: Type[]) { }
-}
-
-type Type = SimpleType | ArrayType | ReferenceType | HeterogenousArrayType | FunctionType | NoneType | UnknownType;
+import { TypeMap } from "./typemap.ts";
 
 function compare(t1: Type, t2: Type): boolean {
 	if (t1 instanceof NoneType && t2 instanceof NoneType) return true;
@@ -86,41 +17,22 @@ function compare(t1: Type, t2: Type): boolean {
 	}
 
 	if (t1 instanceof FunctionType && t2 instanceof FunctionType) {
-		return compare(t1.rType, t2.rType) && t1.argTypes.every((t, idx) => compare(t, t2.argTypes[idx]));
+		const rTypeMatches = compare(t1.rType, t2.rType)
+		const bothNull = t1.argTypes === null && t2.argTypes === null
+
+		if (bothNull) {
+			return rTypeMatches
+		} else {
+			if (t1.argTypes === null || t2.argTypes === null) return false;
+			return t1.argTypes.every((t, idx) => compare(t, t2.argTypes![idx]));
+		}
+	}
+
+	if (t1 instanceof GenericType && t2 instanceof GenericType) {
+		return t1.name === t2.name
 	}
 
 	return false;
-}
-
-const [NUMBER, LOGIC, STRING, NONE] = [
-	new SimpleType(BaseType.NUMBER),
-	new SimpleType(BaseType.LOGIC),
-	new SimpleType(BaseType.STRING),
-	new NoneType()
-]
-
-type Binding = { name: string, type: Type }
-export class TypeMap {
-	constructor(readonly types: Binding[]) { }
-
-	with(name: string, type: Type): TypeMap {
-		return new TypeMap([...this.types, { name, type }]);
-	}
-
-	private find(name: string): Binding | undefined {
-		return this.types.find(t => t.name === name);
-	}
-
-	exists(name: string): boolean {
-		return this.find(name) !== undefined
-	}
-
-	get(name: string): Type {
-		const val = this.find(name)
-		if (!val) throw new Error(`${name} has no binding.`)
-
-		return val.type
-	}
 }
 
 function show(t: Type): string {
@@ -148,15 +60,20 @@ function show(t: Type): string {
 
 	if (t instanceof HeterogenousArrayType) return `[${t.ts.map((type) => show(type))}]`;
 
-	if (t instanceof FunctionType) return `FN(${t.argTypes.map(t => show(t))}) => ${show(t.rType)}`
+	if (t instanceof FunctionType) return t.argTypes ? `FN(${t.argTypes.map(t => show(t))}) => ${show(t.rType)}` : `FN(?) => ${show(t.rType)}`
+	if (t instanceof GenericType) return t.name
 
-	throw new Error("Show: Should not happen.");
+	throw new Error(`Show: Should not happen.`);
 }
 
 
 export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 	function ensure(ast: ASTKind, expected: Type): Type {
 		const actual = typeCheck(ast, env)[0];
+
+		// TEMP FIXME
+		if (actual instanceof GenericType) return actual;
+
 		if (!compare(actual, expected))
 			throw new TypeCheckError(`Expected ${show(expected)}, got ${show(actual)}`, ast.token);
 
@@ -197,6 +114,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			}
 
 			switch (ast.op) {
+				// Arithmetics
 				case BinOpType.ADD:
 				case BinOpType.SUB:
 				case BinOpType.MUL:
@@ -205,6 +123,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 					ensure(lhs, NUMBER) && ensure(rhs, NUMBER)
 					return [NUMBER, env]
 
+				// Comparison
 				case BinOpType.EQ:
 				case BinOpType.GE:
 				case BinOpType.LE:
@@ -214,33 +133,13 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 					eqOrThrow(lhs, rhs);
 					return [LOGIC, env]
 
+				// Logic
 				case BinOpType.AND:
 				case BinOpType.OR:
 					ensure(lhs, LOGIC) && ensure(rhs, LOGIC)
 					return [LOGIC, env]
 			}
 		}
-
-		case "funccall": {
-			const func = env.get(ast.name)
-			if (!(func instanceof FunctionType)) throw new Error(`${ast.name} isn't bound to a function! (${show(func)})`)
-
-			const realArgTypes = ast.arguments.map(arg => {
-				if ("lexeme" in arg) {
-					const innerFunc = env.get(arg.lexeme)
-					if (!(func instanceof FunctionType)) throw new Error(`${arg.lexeme} isn't bound to a function! (${show(func)})`)
-					return innerFunc
-				} else {
-					return typeCheck(arg, env)[0]
-				}
-			})
-
-			if (realArgTypes.every((aT, idx) => compare(aT, func.argTypes[idx]))) {
-				return [func.rType, env];
-			}
-
-
-		} break;
 
 		case "not": {
 			ensure(ast.expr, LOGIC)
@@ -318,22 +217,68 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		}
 
 		case "funcdecl": {
-			const nEnv = ast.parameters.reduce<TypeMap>((map, param) => {
-				const name = (typeof param.name === "string")
-					? param.name
-					: param.name.name
+			const types = ast.parameters.map(t => typeCheck(t, env)[0])
+			const nEnv = types.reduce<TypeMap>((state, t, idx) => {
+				const arg = ast.parameters[idx].name
+				const name = (typeof arg === "string") ? arg : arg.name
+				const inner = (t instanceof ReferenceType) ? t.t : t;
 
-				const rawType = typeCheck(param, env)[0]
-				const type = (rawType instanceof ReferenceType)
-					? rawType.t
-					: rawType
+				return state.with(name, inner)
+			}, env).with(ast.name, new FunctionType(NUMBER, null, null))
 
-				return map.with(name, type)
+			const type = typeCheck(ast.body, nEnv)[0]
+			return [NONE, env.with(ast.name, new FunctionType(type, types, ast))]
+		} break;
+
+		case "funccall": {
+			const func = env.get(ast.name);
+			if (!(func instanceof FunctionType)) throw new Error("nonfunc");
+
+			// argTypes is null if we don't yet know how many / what type of args we have.
+			// For instance:
+			//
+			// függvény A(Belső : egész)
+			//  vissza Belső(5)
+			// függvény vége
+			//
+			// We know Belső has returntype number, but not what args it takes.
+			const at = func.argTypes;
+			if (at === null) {
+				return [func.rType, env];
+			}
+
+			if (func.decl === null) {
+				throw new Error("Nodef")
+			}
+
+			if (at.length != ast.arguments.length) throw new Error("len")
+
+			const nEnv = ast.arguments.reduce<TypeMap>((state, arg, idx) => {
+				const type = ("lexeme" in arg) ? env.get(arg.lexeme) : typeCheck(arg, env)[0]
+				const name = ("lexeme" in arg) ? arg.lexeme : arg.token!.lexeme;
+				const expected = at[idx];
+
+				if (expected instanceof GenericType) {
+					return state.substitute(expected.name, type).with(name, type)
+				} else {
+					if (!compare(type, expected)) throw new Error("Types not match")
+					return state.with(name, type)
+				}
 			}, env)
 
-			const t = typeCheck(ast.body, nEnv)[0]
-			return [t, env.with(ast.name, new FunctionType(t, ast.parameters.map(p => typeCheck(p, env)[0])))]
-		}
+			typeCheck(func.decl, nEnv)
+			return [func.rType, env]
+		} break;
+
+		case "param": {
+			const isFunc = (typeof ast.name === "string")
+			let type: Type = ast.type
+			if (ast.isArr) type = new ArrayType(type);
+			if (ast.byRef) type = new ReferenceType(type);
+			if (isFunc) type = new FunctionType(type, null, null)
+
+			return [type, env]
+		} break;
 
 		case "if": {
 			ensure(ast.main_path.pred, LOGIC)
@@ -358,7 +303,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		case "arrnew": {
 			ast.dimensions.forEach(e => ensure(e, NUMBER))
 
-			return [NONE, env.with(ast.variable.name, new ArrayType(convertBaseType(ast.type)))]
+			return [NONE, env.with(ast.variable.name, new ArrayType(ast.type))]
 		}
 
 		case "print": {
@@ -367,7 +312,11 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		}
 
 		case "return": {
-			return typeCheck(ast.expr, env)
+			if (Array.isArray(ast.expr)) {
+				return [new HeterogenousArrayType(ast.expr.map(e => typeCheck(e, env)[0])), env]
+			} else {
+				return typeCheck(ast.expr, env)
+			}
 		}
 
 		case "swap": {
@@ -381,9 +330,97 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			ensure(ast.predicate, LOGIC)
 			return typeCheck(ast.body, env)
 		}
+	}
+
+	return [new UnknownType(), env]
+}
+
+
+/*
+const block = parseBlock.run(t(`
+függvény Teszt(x : G, y : G)
+vissza (x * y, x, y)
+függvény vége
+
+a <- Teszt(5, 6)
+`))
+
+if (block.type === "match") {
+	console.log(typeCheck(block.value, new TypeMap([], [])))
+}
+ */
+
+/*
+
+
+		case "funcdecl": {
+			const nEnv = ast.parameters.reduce<TypeMap>((map, param) => {
+				const name = (typeof param.name === "string")
+					? param.name
+					: param.name.name
+
+				const rawType = typeCheck(param, env)[0]
+				const type = (rawType instanceof ReferenceType)
+					? rawType.t
+					: rawType
+
+				return map.with(name, type)
+			}, env)
+
+			const rType = typeCheck(ast.body, nEnv)[0]
+			const argTypes = ast.parameters.map(p => typeCheck(p, env)[0])
+			return [NONE, env.with(ast.name, new FunctionType(rType, argTypes, ast))]
+		}
+
+		case "funccall": {
+			const func = env.get(ast.name)
+			if (!(func instanceof FunctionType)) throw new Error(`${ast.name} isn't bound to a function! (${show(func)})`)
+
+			if (func.argTypes.length !== ast.arguments.length) {
+				throw new Error(`${ast.name}: Expected ${func.argTypes.length} arguments, but got ${ast.arguments.length}.`)
+			}
+
+			const argToType = (arg: IToken | Expression) => {
+				if ("lexeme" in arg) {
+					const innerFunc = env.get(arg.lexeme)
+					if (!(func instanceof FunctionType)) throw new Error(`${arg.lexeme} isn't bound to a function! (${show(func)})`)
+					return innerFunc
+				} else {
+					return typeCheck(arg, env)[0]
+				}
+			}
+
+			const nEnv = ast.arguments.reduce<TypeMap>((state, arg, idx) => {
+				const func = state.get(ast.name) as FunctionType
+				const argType = argToType(arg);
+				const rawExpected = func.argTypes[idx]
+				const expected = (rawExpected instanceof GenericType)
+					? state.getSubst(rawExpected)
+					: rawExpected
+
+				if (compare(argType, expected)) {
+					return state;
+				} else {
+					if (expected instanceof GenericType) {
+						return state.substitute(expected.name, argType)
+					} else {
+						throw new Error(`Expected ${show(expected)}, got ${show(argType)}.`)
+					}
+				}
+
+			}, env)
+
+
+			// After substituting the generics, we have to recheck that the function declaration is still consistent.
+			// i.e. no 
+			typeCheck(func.decl, nEnv)
+			return [func.rType, nEnv];
+
+
+		} break;
 
 		case "param": {
-			let paramType: Type = convertBaseType(ast.type)
+			let paramType: Type = ast.type
 			if (ast.isArr) paramType = new ArrayType(paramType);
 
 			if (ast.byRef) {
@@ -392,7 +429,4 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				return [paramType, env]
 			}
 		}
-	}
-
-	return [new UnknownType(), env]
-}
+ */
