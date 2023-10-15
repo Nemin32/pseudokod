@@ -14,16 +14,39 @@ export function stringToBaseType(type: string): SimpleType | GenericType {
 	throw new Error(`Expected type, got ${type}.`)
 }
 
-type ASTBase<Tag extends string, Fields> = { tag: Tag, token: IToken | null } & Fields;
+export enum ASTTag {
+	ARRAYCOMP,
+	ARRINDEX,
+	ASSIGN,
+	ATOM,
+	BINOP,
+	BLOCK,
+	DEBUG,
+	FOR,
+	FUNCCALL,
+	FUNCDECL,
+	IF,
+	NEWARRAY,
+	NOT,
+	PARAMETER,
+	PRINT,
+	REFERENCE,
+	RETURN,
+	SWAP,
+	VARIABLE,
+	WHILE,
+}
+
+type ASTBase<Tag extends ASTTag, Fields> = { tag: Tag, token: IToken | null } & Readonly<Fields>;
 
 export type AtomValue = number | string | boolean;
 
-export type Atom = ASTBase<"atom", {
+export type Atom = ASTBase<ASTTag.ATOM, {
 	value: AtomValue;
 	type: SimpleType
 }>
 
-export type Debug = ASTBase<"debug", { msg?: string }>
+export type Debug = ASTBase<ASTTag.DEBUG, { msg?: string }>
 
 export enum BinOpType {
 	ADD = 0,
@@ -61,95 +84,95 @@ export const BinOpTypeMap = new Map([
 	["vagy", BinOpType.OR],
 ]);
 
-export type BinaryOperation = ASTBase<"binop", {
+export type BinaryOperation = ASTBase<ASTTag.BINOP, {
 	lhs: Expression;
 	rhs: Expression;
 	op: BinOpType;
 }>
 
-export type If = ASTBase<"if", {
+export type If = ASTBase<ASTTag.IF, {
 	main_path: { pred: Expression; branch: Block };
 	elif_path: Array<{ pred: Expression; branch: Block }>;
 	false_path: Block | null;
 }>
 
-export type Block = ASTBase<"block", {
+export type Block = ASTBase<ASTTag.BLOCK, {
 	statements: Statement[];
 }>
 
-export type Variable = ASTBase<"variable", {
+export type Variable = ASTBase<ASTTag.VARIABLE, {
 	name: string;
 }>
 
-export type ArrayIndex = ASTBase<"arrindex", {
+export type ArrayIndex = ASTBase<ASTTag.ARRINDEX, {
 	variable: Variable;
 	index: Expression[];
 }>
 
-export type Reference = ASTBase<"reference", {
+export type Reference = ASTBase<ASTTag.REFERENCE, {
 	inner: Variable | ArrayIndex;
 }>
 
-export type NewArray = ASTBase<"arrnew", {
+export type NewArray = ASTBase<ASTTag.NEWARRAY, {
 	type: SimpleType | GenericType;
 	dimensions: Expression[];
 	variable: Variable
 }>
 
-export type ArrayComprehension = ASTBase<"arrcomp", {
+export type ArrayComprehension = ASTBase<ASTTag.ARRAYCOMP, {
 	variable: Variable;
 	expressions: Array<Expression>;
 }>
 
-export type Assignment = ASTBase<"assign", {
+export type Assignment = ASTBase<ASTTag.ASSIGN, {
 	variable: Variable | ArrayIndex;
 	value: Expression;
 }>
 
-export type For = ASTBase<"for", {
+export type For = ASTBase<ASTTag.FOR, {
 	from: Expression;
 	to: Expression;
 	variable: Variable;
 	body: Block;
 }>
 
-export type While = ASTBase<"while", {
+export type While = ASTBase<ASTTag.WHILE, {
 	predicate: Expression;
 	body: Block;
 	postPred: boolean; // true -> do while
 }>
 
-export type Not = ASTBase<"not", {
+export type Not = ASTBase<ASTTag.NOT, {
 	expr: Expression;
 }>
 
-export type Print = ASTBase<"print", {
+export type Print = ASTBase<ASTTag.PRINT, {
 	expr: Expression;
 }>
 
-export type Return = ASTBase<"return", {
+export type Return = ASTBase<ASTTag.RETURN, {
 	expr: Expression | Expression[];
 }>
 
-export type FunctionCall = ASTBase<"funccall", {
+export type FunctionCall = ASTBase<ASTTag.FUNCCALL, {
 	name: string;
 	arguments: (Expression | IToken)[];
 }>
 
-export type FunctionDeclaration = ASTBase<"funcdecl", {
+export type FunctionDeclaration = ASTBase<ASTTag.FUNCDECL, {
 	name: string;
 	parameters: Parameter[];
 	body: Block;
 }>
 
-export type Parameter = ASTBase<"param", {
+export type Parameter = ASTBase<ASTTag.PARAMETER, {
 	name: Variable | string; // string = funcname
 	type: SimpleType | GenericType;
 	byRef: boolean;
 	isArr: boolean;
 }>
 
-export type Swap = ASTBase<"swap", {
+export type Swap = ASTBase<ASTTag.SWAP, {
 	var1: Variable | ArrayIndex,
 	var2: Variable | ArrayIndex
 }>

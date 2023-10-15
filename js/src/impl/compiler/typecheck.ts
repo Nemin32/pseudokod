@@ -1,7 +1,5 @@
-import { ASTKind, BinOpType, Expression, Parameter } from "../interfaces/astkinds.ts";
-import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UnknownType } from "../interfaces/types.ts";
-import { parseBlock } from "./parser/ast_parser.ts";
-import { t } from "./parser/test.ts";
+import { ASTKind, ASTTag, BinOpType } from "../../interfaces/astkinds.ts";
+import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UnknownType } from "../../interfaces/types.ts";
 import { TypeMap } from "./typemap.ts";
 
 function compare(t1: Type, t2: Type): boolean {
@@ -81,7 +79,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 	}
 
 	switch (ast.tag) {
-		case "arrindex": {
+		case ASTTag.ARRINDEX: {
 			ast.index.forEach(e => ensure(e, NUMBER))
 			const variable = env.get(ast.variable.name)
 
@@ -94,14 +92,14 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			throw new Error(`Expected ${ast.variable.name} to be T ARRAY, got ${show(variable)}.`)
 		}
 
-		case "atom": {
+		case ASTTag.ATOM: {
 			if (typeof ast.value === "number") return [NUMBER, env];
 			if (typeof ast.value === "boolean") return [LOGIC, env];
 			if (typeof ast.value === "string") return [STRING, env];
 			throw new Error(`Expected number|string|boolean, got ${typeof ast.value}`);
 		}
 
-		case "binop": {
+		case ASTTag.BINOP: {
 			const { lhs, rhs } = ast;
 
 			function eqOrThrow(a1: ASTKind, a2: ASTKind) {
@@ -141,20 +139,20 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			}
 		}
 
-		case "not": {
+		case ASTTag.NOT: {
 			ensure(ast.expr, LOGIC)
 			return [LOGIC, env]
 		}
 
-		case "reference": {
+		case ASTTag.REFERENCE: {
 			return [new ReferenceType(typeCheck(ast.inner, env)[0]), env]
 		}
 
-		case "variable": {
+		case ASTTag.VARIABLE: {
 			return [env.get(ast.name), env]
 		}
 
-		case "arrcomp": {
+		case ASTTag.ARRAYCOMP: {
 			const types = ast.expressions.map(e => typeCheck(e, env)[0]);
 			const same = types.every(t => compare(t, types[0]))
 
@@ -165,10 +163,10 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			}
 		}
 
-		case "assign": {
+		case ASTTag.ASSIGN: {
 			const valueType = typeCheck(ast.value, env)[0]
 
-			if (ast.variable.tag === "arrindex") {
+			if (ast.variable.tag === ASTTag.ARRINDEX) {
 				const variable = env.get(ast.variable.variable.name)
 				if (variable.kind === TypeVariants.ARRAY) {
 					if (!compare(variable.t, valueType)) {
@@ -188,8 +186,8 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			}
 		}
 
-		case "block": {
-			const wantToPush = (ast: ASTKind) => ["if", "for", "return", "while"].some(t => ast.tag === t)
+		case ASTTag.BLOCK: {
+			const wantToPush = (ast: ASTKind) => [ASTTag.IF, ASTTag.FOR, ASTTag.RETURN, ASTTag.WHILE].some(t => ast.tag === t)
 
 			const state = ast.statements.reduce<{ types: Type[], env: TypeMap }>(
 				(state, statement) => {
@@ -205,18 +203,18 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			return [new HeterogenousArrayType(types), state.env]
 		}
 
-		case "debug": {
+		case ASTTag.DEBUG: {
 			return [NONE, env]
 		}
 
-		case "for": {
+		case ASTTag.FOR: {
 			ensure(ast.from, NUMBER)
 			ensure(ast.to, NUMBER)
 
 			return typeCheck(ast.body, env.with(ast.variable.name, NUMBER))
 		}
 
-		case "funcdecl": {
+		case ASTTag.FUNCDECL: {
 			const types = ast.parameters.map(t => typeCheck(t, env)[0])
 			const nEnv = types.reduce<TypeMap>((state, t, idx) => {
 				const arg = ast.parameters[idx].name
@@ -228,9 +226,9 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 			const type = typeCheck(ast.body, nEnv)[0]
 			return [NONE, env.with(ast.name, new FunctionType(type, types, ast))]
-		} break;
+		}
 
-		case "funccall": {
+		case ASTTag.FUNCCALL: {
 			const func = env.get(ast.name);
 			if (!(func instanceof FunctionType)) throw new Error("nonfunc");
 
@@ -268,9 +266,9 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 			typeCheck(func.decl, nEnv)
 			return [func.rType, env]
-		} break;
+		}
 
-		case "param": {
+		case ASTTag.PARAMETER: {
 			const isFunc = (typeof ast.name === "string")
 			let type: Type = ast.type
 			if (ast.isArr) type = new ArrayType(type);
@@ -278,9 +276,9 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			if (isFunc) type = new FunctionType(type, null, null)
 
 			return [type, env]
-		} break;
+		}
 
-		case "if": {
+		case ASTTag.IF: {
 			ensure(ast.main_path.pred, LOGIC)
 			const mainType = typeCheck(ast.main_path.branch, env)[0]
 
@@ -300,18 +298,18 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			return [mainType, env]
 		}
 
-		case "arrnew": {
+		case ASTTag.NEWARRAY: {
 			ast.dimensions.forEach(e => ensure(e, NUMBER))
 
 			return [NONE, env.with(ast.variable.name, new ArrayType(ast.type))]
 		}
 
-		case "print": {
+		case ASTTag.PRINT: {
 			typeCheck(ast.expr, env)
 			return [NONE, env]
 		}
 
-		case "return": {
+		case ASTTag.RETURN: {
 			if (Array.isArray(ast.expr)) {
 				return [new HeterogenousArrayType(ast.expr.map(e => typeCheck(e, env)[0])), env]
 			} else {
@@ -319,20 +317,20 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			}
 		}
 
-		case "swap": {
+		case ASTTag.SWAP: {
 			const t2 = typeCheck(ast.var2, env)[0]
 			ensure(ast.var1, t2)
 
 			return [NONE, env]
 		}
 
-		case "while": {
+		case ASTTag.WHILE: {
 			ensure(ast.predicate, LOGIC)
 			return typeCheck(ast.body, env)
 		}
 	}
 
-	return [new UnknownType(), env]
+	// return [new UnknownType(), env]
 }
 
 

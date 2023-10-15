@@ -1,4 +1,4 @@
-import { IToken, ITokenizer, TokenType as TT } from "../interfaces/ITokenizer.ts";
+import { IToken, ITokenizer, TokenType as TT } from "../../interfaces/ITokenizer.ts";
 
 type ParseResult = IToken | null;
 

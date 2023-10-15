@@ -1,6 +1,6 @@
-import { OpCode as OC } from "../interfaces/ICompiler.ts";
-import { ASTKind, ArrayComprehension, ArrayIndex, Assignment, Atom, BinOpType, BinaryOperation, Block, Debug, Expression, For, FunctionCall, FunctionDeclaration, If, NewArray, Not, Parameter, Print, Reference, Return, Statement, Swap, Variable, While } from "../interfaces/astkinds.ts";
-import { Inst } from "../interfaces/instructions.ts";
+import { OpCode as OC } from "../../interfaces/ICompiler.ts";
+import { ASTKind, ASTTag, ArrayComprehension, ArrayIndex, Assignment, Atom, BinOpType, BinaryOperation, Block, Debug, Expression, For, FunctionCall, FunctionDeclaration, If, NewArray, Not, Parameter, Print, Reference, Return, Statement, Swap, Variable, While } from "../../interfaces/astkinds.ts";
+import { Inst } from "../../interfaces/instructions.ts";
 
 export class Compiler {
 	code: Inst[] = [];
@@ -11,7 +11,7 @@ export class Compiler {
 	}
 
 	setVariable(variable: Variable | ArrayIndex) {
-		if (variable.tag === "variable") {
+		if (variable.tag === ASTTag.VARIABLE) {
 			this.addOp(OC.SETVAR, { name: variable.name })
 		} else {
 			variable.index.forEach(e => this.visitExpression(e))
@@ -34,7 +34,7 @@ export class Compiler {
 	}
 
 	visitReference(ast: Reference) {
-		if (ast.inner.tag == "variable") {
+		if (ast.inner.tag == ASTTag.VARIABLE) {
 			this.addOp(OC.ADDRESS, { name: ast.inner.name })
 		} else {
 			ast.inner.index.forEach(e => this.visitExpression(e))
@@ -80,13 +80,13 @@ export class Compiler {
 
 	visitExpression(ast: Expression) {
 		switch (ast.tag) {
-			case "atom": return this.visitAtom(ast)
-			case "binop": return this.visitBinop(ast)
-			case "variable": return this.visitVariable(ast)
-			case "reference": return this.visitReference(ast)
-			case "not": return this.visitNot(ast)
-			case "arrindex": return this.visitArrindex(ast)
-			case "funccall": return this.visitFunccall(ast)
+			case ASTTag.ATOM: return this.visitAtom(ast)
+			case ASTTag.BINOP: return this.visitBinop(ast)
+			case ASTTag.VARIABLE: return this.visitVariable(ast)
+			case ASTTag.REFERENCE: return this.visitReference(ast)
+			case ASTTag.NOT: return this.visitNot(ast)
+			case ASTTag.ARRINDEX: return this.visitArrindex(ast)
+			case ASTTag.FUNCCALL: return this.visitFunccall(ast)
 		}
 	}
 
@@ -243,19 +243,19 @@ export class Compiler {
 
 	visitStatement(ast: Statement) {
 		switch (ast.tag) {
-			case "block": return this.visitBlock(ast)
-			case "if": return this.visitIf(ast)
-			case "assign": return this.visitAssign(ast)
-			case "while": return this.visitWhile(ast)
-			case "for": return this.visitFor(ast)
-			case "print": return this.visitPrint(ast)
-			case "return": return this.visitReturn(ast)
-			case "funcdecl": return this.visitFuncdecl(ast)
-			case "debug": return this.visitDebug(ast)
-			case "swap": return this.visitSwap(ast)
-			case "funccall": { this.visitFunccall(ast); this.addOp(OC.VOID, {}); return; }
-			case "arrnew": return this.visitArrnew(ast)
-			case "arrcomp": return this.visitArrcomp(ast)
+			case ASTTag.BLOCK: return this.visitBlock(ast)
+			case ASTTag.IF: return this.visitIf(ast)
+			case ASTTag.ASSIGN: return this.visitAssign(ast)
+			case ASTTag.WHILE: return this.visitWhile(ast)
+			case ASTTag.FOR: return this.visitFor(ast)
+			case ASTTag.PRINT: return this.visitPrint(ast)
+			case ASTTag.RETURN: return this.visitReturn(ast)
+			case ASTTag.FUNCDECL: return this.visitFuncdecl(ast)
+			case ASTTag.DEBUG: return this.visitDebug(ast)
+			case ASTTag.SWAP: return this.visitSwap(ast)
+			case ASTTag.FUNCCALL: { this.visitFunccall(ast); this.addOp(OC.VOID, {}); return; }
+			case ASTTag.NEWARRAY: return this.visitArrnew(ast)
+			case ASTTag.ARRAYCOMP: return this.visitArrcomp(ast)
 		}
 	}
 
@@ -268,26 +268,26 @@ export class Compiler {
 	visit(ast: ASTKind) {
 		console.log(ast.tag)
 		switch (ast.tag) {
-			case "atom": return this.visitAtom(ast)
-			case "binop": return this.visitBinop(ast)
-			case "variable": return this.visitVariable(ast)
-			case "reference": return this.visitReference(ast)
-			case "not": return this.visitNot(ast)
-			case "arrcomp": return this.visitArrcomp(ast)
-			case "arrindex": return this.visitArrindex(ast)
-			case "funccall": return this.visitFunccall(ast)
-			case "arrnew": return this.visitArrnew(ast)
-			case "block": return this.visitBlock(ast)
-			case "if": return this.visitIf(ast)
-			case "assign": return this.visitAssign(ast)
-			case "while": return this.visitWhile(ast)
-			case "for": return this.visitFor(ast)
-			case "print": return this.visitPrint(ast)
-			case "return": return this.visitReturn(ast)
-			case "funcdecl": return this.visitFuncdecl(ast)
-			case "debug": return this.visitDebug(ast)
-			case "swap": return this.visitSwap(ast)
-			case "param": return this.visitParam(ast)
+			case ASTTag.ATOM: return this.visitAtom(ast)
+			case ASTTag.BINOP: return this.visitBinop(ast)
+			case ASTTag.VARIABLE: return this.visitVariable(ast)
+			case ASTTag.REFERENCE: return this.visitReference(ast)
+			case ASTTag.NOT: return this.visitNot(ast)
+			case ASTTag.ARRAYCOMP: return this.visitArrcomp(ast)
+			case ASTTag.ARRINDEX: return this.visitArrindex(ast)
+			case ASTTag.FUNCCALL: return this.visitFunccall(ast)
+			case ASTTag.NEWARRAY: return this.visitArrnew(ast)
+			case ASTTag.BLOCK: return this.visitBlock(ast)
+			case ASTTag.IF: return this.visitIf(ast)
+			case ASTTag.ASSIGN: return this.visitAssign(ast)
+			case ASTTag.WHILE: return this.visitWhile(ast)
+			case ASTTag.FOR: return this.visitFor(ast)
+			case ASTTag.PRINT: return this.visitPrint(ast)
+			case ASTTag.RETURN: return this.visitReturn(ast)
+			case ASTTag.FUNCDECL: return this.visitFuncdecl(ast)
+			case ASTTag.DEBUG: return this.visitDebug(ast)
+			case ASTTag.SWAP: return this.visitSwap(ast)
+			case ASTTag.PARAMETER: return this.visitParam(ast)
 		}
 	}
 }

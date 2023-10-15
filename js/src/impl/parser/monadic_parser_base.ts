@@ -1,5 +1,6 @@
 import { IToken, TokenType as TT, TokenType } from "../../interfaces/ITokenizer.ts";
 import { ASTKind } from "../../interfaces/astkinds.ts";
+import { Tokenizer } from "./tokenizer.ts";
 
 // Megmutatja, hogy egy adott input hanyadik eleménél járunk.
 type Input = { input: IToken[]; index: number };
@@ -109,7 +110,7 @@ export class Parser<Output> {
 				const thatValue = other.exec(inp);
 				if (thatValue.type === "match") return thatValue;
 
-				return thisValue.location.index > thatValue.location.index ? thisValue : thatValue;
+				return this.fail(thisValue.cause + " OR " + thatValue.cause).exec(inp) //thisValue.location.index > thatValue.location.index ? thisValue : thatValue;
 			}
 			return thisValue;
 		});
@@ -343,3 +344,5 @@ export const mkToken = <T extends ASTKind>(
 		tag,
 		...rest,
 	}) as unknown as T;
+
+export const t = (inp: string) => new Tokenizer().tokenize(inp).filter(token => token.type !== TT.WHITESPACE);

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Pszeudokód Értelmező</title>
+
+	<script type="module" src="newglue.js"></script>
+
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+	<p>Pszeudokód Értelmező</p>
+
+	<div id="buttons">
+		<button id="compile">Fordítás</button>
+		<button id="back">Vissza</button>
+		<button id="step">Utasításnyi Lépés</button>
+		<button id="stepLine">Sornyi Lépés</button>
+		<button id="run">Futtatás</button>
+	</div>
+</header>
+
+<main>
+	<div id="editorContainer">
+		<div id="lineNumbers"></div>
+		<div id="text">
+			<div id="syntax"></div>
+			<textarea id="input" spellcheck="false"></textarea>
+			<div id="error"><img src="./warning.svg"><p></p></div>
+		</div>
+	</div>
+
+	<div id="code" class="caption">
+		<p>VM Utasítások</p>
+		<div></div>
+	</div>
+</main>
+
+<footer>
+	<div id="output" class="caption">
+		<p>Kimenet</p>
+		<div></div>
+	</div>
+
+	<div id="stack" class="caption">
+		<p>Verem</p>
+		<div></div>
+	</div>
+
+	<div id="vars" class="caption">
+		<p>Változók</p>
+		<div></div>
+	</div>
+
+	<div id="ipStack" class="caption">
+		<p>Hívási Verem</p>
+		<div></div>
+	</div>
+
+	<div id="codeSelector" class="caption">
+		<p>Mintakódok</p>
+		<div>
+			<select multiple="true">
+				<option>Minimumkiválasztásos rendezés</option>
+				<option>LNKO</option>
+			</select>
+		</div>
+	</div>
+</footer>
+
+</body>
+
+<!--
+<body>
+	<p>PSZEUDOKÓD ÉRTELMEZŐ</p>
+
+	<div id="buttons">
+		<button id="compile">Fordítás</button>
+		<button id="back">Vissza</button>
+		<button id="step">Utasításnyi Lépés</button>
+		<button id="stepLine">Sornyi Lépés</button>
+		<button id="run">Futtatás</button>
+	</div>
+
+	<div id="halfSplit" class="hhalf">
+		<div id="leftPane">
+			<div id="editorContainer">
+				<div id="lineNumbers"></div>
+				<div id="text">
+					<div id="syntax"></div>
+					<textarea id="input" spellcheck="false"></textarea>
+				</div>
+			</div>
+
+			<div id="error"><img src="./warning.svg"><p></p></div>
+		</div>
+
+		<div id="rightPane">
+			<div id="twoThirds" class="hhalf">
+				<div id="code" class="caption">
+					<p>VM Utasítások</p>
+					<div></div>
+				</div>
+
+				<div id="internalContainer" class="vhalf">
+					<div id="stacks" class="hhalf">
+						<div id="stack" class="caption">
+							<p>Verem</p>
+							<div></div>
+						</div>
+
+						<div id="ipStack" class="caption">
+							<p>Hívási Verem</p>
+							<div></div>
+						</div>
+					</div>
+
+					<div id="vars" class="caption">
+						<p>Változók</p>
+						<div></div>
+					</div>
+				</div>
+			</div>
+
+			<div id="oneThird">
+				<div class="hhalf">
+					<div id="output" class="caption">
+						<p>Kimenet</p>
+						<div></div>
+					</div>
+					<div id="codeSelector" class="caption">
+						<p>Mintakódok</p>
+						<div>
+							<select multiple="true">
+								<option>Minimumkiválasztásos rendezés</option>
+								<option>LNKO</option>
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+-->
+
+</html>

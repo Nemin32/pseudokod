@@ -1,12 +1,11 @@
 import { assertEquals } from "https://deno.land/std@0.202.0/assert/mod.ts";
-import { Tokenizer } from "../src/impl/tokenizer.ts";
+import { Tokenizer } from "../src/impl/parser/tokenizer.ts";
 import { parseAssignment, parseBinOp, parseBlock, parseFuncDecl, parseWhile } from "../src/impl/parser/ast_parser.ts";
 import { TokenType } from "../src/interfaces/ITokenizer.ts";
-import { TT } from "../src/impl/parser/monadic_parser_base.ts";
-import { TypeMap } from "../src/impl/typemap.ts";
-import { t } from "../src/impl/parser/test.ts";
-import { vars } from "../src/impl/std.ts";
-import { typeCheck } from "../src/impl/typecheck.ts";
+import { TT, t } from "../src/impl/parser/monadic_parser_base.ts";
+import { TypeMap } from "../src/impl//compiler/typemap.ts";
+import { vars } from "../src/impl/compiler/std.ts";
+import { typeCheck } from "../src/impl/compiler/typecheck.ts";
 
 type Entry = {
 	name: string,

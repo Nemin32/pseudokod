@@ -1,5 +1,6 @@
 import {
 	ASTKind,
+	ASTTag,
 	Atom,
 	AtomValue,
 	BinOpType,
@@ -9,18 +10,18 @@ import {
 	If,
 	Print,
 	Statement,
-} from "../interfaces/astkinds.ts";
-import { LOGIC, NUMBER, SimpleType } from "../interfaces/types.ts";
+} from "../../interfaces/astkinds.ts";
+import { LOGIC, NUMBER, SimpleType } from "../../interfaces/types.ts";
 
 function optimizeBinOp(value: BinaryOperation): BinaryOperation | Atom {
 	const mkAtom = (aval: Atom["value"], type: SimpleType): Atom => ({
 		token: value.token,
-		tag: "atom", value: aval,
+		tag: ASTTag.ATOM, value: aval,
 		type
 	});
 
 	const [lhsE, rhsE] = [optimizeExpr(value.lhs), optimizeExpr(value.rhs)];
-	if (lhsE.tag === "atom" && rhsE.tag === "atom") {
+	if (lhsE.tag === ASTTag.ATOM && rhsE.tag === ASTTag.ATOM) {
 		const [lhs, rhs] = [lhsE.value, rhsE.value];
 
 		switch (value.op) {
@@ -59,23 +60,23 @@ function optimizeBinOp(value: BinaryOperation): BinaryOperation | Atom {
 function optimizePrint(print: Print): Print {
 	return {
 		token: print.token,
-		tag: "print",
+		tag: ASTTag.PRINT,
 		expr: optimizeExpr(print.expr),
 	};
 }
 
 function optimizeExpr(expr: Expression): Expression {
-	if (expr.tag === "binop") return optimizeBinOp(expr as BinaryOperation);
+	if (expr.tag === ASTTag.BINOP) return optimizeBinOp(expr as BinaryOperation);
 
 	return expr;
 }
 
 function optimizeStatement(statement: Statement): Statement | Block | null {
-	if (statement.tag === "if") {
+	if (statement.tag === ASTTag.IF) {
 		return optimizeIf(statement as If);
 	}
 
-	if (statement.tag === "print") {
+	if (statement.tag === ASTTag.PRINT) {
 		return optimizePrint(statement as Print);
 	}
 
@@ -91,7 +92,7 @@ function optimizeStatements(stmts: Statement[]): Statement[] {
 
 function optimizeIf(ifIAST: If): If | Block | null {
 	function isAtomValue(expr: ASTKind, value: AtomValue) {
-		return expr.tag === "atom" && expr.value === value;
+		return expr.tag === ASTTag.ATOM && expr.value === value;
 	}
 
 	const ifStatement = ifIAST;
@@ -140,7 +141,7 @@ function optimizeIf(ifIAST: If): If | Block | null {
 
 export function optimizeBlock(block: Block): Block {
 	return {
-		tag: "block",
+		tag: ASTTag.BLOCK,
 		token: block.token,
 		statements: optimizeStatements(block.statements),
 	};

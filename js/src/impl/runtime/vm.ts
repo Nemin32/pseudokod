@@ -1,6 +1,6 @@
-import { OpCode as OC } from "../interfaces/ICompiler.ts";
-import { Atom, BinOpType } from "../interfaces/astkinds.ts";
-import { Inst } from "../interfaces/instructions.ts";
+import { OpCode as OC } from "../../interfaces/ICompiler.ts";
+import { Atom, BinOpType } from "../../interfaces/astkinds.ts";
+import { Inst } from "../../interfaces/instructions.ts";
 import { Variables } from "./variables.ts";
 
 export class VM {
@@ -17,12 +17,10 @@ export class VM {
 			const inst = this.tape[i]
 			if (inst.code === OC.LABEL) {
 				const name = inst.name
-				if (this.jmpTable.get(name) !== undefined) throw new Error(`Label "${name}" appears twice in code!`)
+				if (this.jmpTable.has(name)) throw new Error(`Label "${name}" appears twice in code!`)
 				this.jmpTable.set(name, i)
 			}
 		}
-
-		console.log(this.jmpTable)
 	}
 
 	fetch(): Inst | null {

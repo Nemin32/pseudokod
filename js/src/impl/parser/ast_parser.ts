@@ -1,5 +1,6 @@
 import { IToken } from "../../interfaces/ITokenizer.ts";
 import {
+	ASTTag,
 	ArrayComprehension,
 	ArrayIndex,
 	Assignment,
@@ -63,10 +64,10 @@ export const parseExpression: P<Expression> = Parser.of(() =>
 
 export const parseBlock: P<Block> = parseStatement
 	.many1()
-	.map((stmts) => mkToken(null, "block", { statements: stmts }));
+	.map((stmts) => mkToken(null, ASTTag.BLOCK, { statements: stmts }));
 
 const parseVariable: P<Variable> = Parser.matchT(TT.SYMBOL).map((token) =>
-	mkToken(token, "variable", { name: token.lexeme }),
+	mkToken(token, ASTTag.VARIABLE, { name: token.lexeme }),
 );
 
 const parseComprehension: P<ArrayComprehension> = Parser.do()
@@ -76,12 +77,12 @@ const parseComprehension: P<ArrayComprehension> = Parser.do()
 		parseExpression
 			.sepBy(Parser.matchT(TT.COMMA))
 			.parens())
-	.result(({ variable, expressions }) => mkToken(null, "arrcomp", { variable, expressions }));
+	.result(({ variable, expressions }) => mkToken(null, ASTTag.ARRAYCOMP, { variable, expressions }));
 
 const parseArrayIndex: P<ArrayIndex> = Parser.do()
 	.bind("variable", parseVariable)
 	.bind("index", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
-	.result(({ variable, index }) => mkToken(variable.token, "arrindex", { variable, index }));
+	.result(({ variable, index }) => mkToken(variable.token, ASTTag.ARRINDEX, { variable, index }));
 
 // New Array
 
@@ -92,7 +93,7 @@ const parseNewMultiDimArray: P<NewArray> = Parser.do()
 	.bind("type", parseBaseType.parens())
 	.bind("dimensions", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
 	.result(({ variable, token, type, dimensions }) =>
-		mkToken(token, "arrnew", { variable, dimensions, type }),
+		mkToken(token, ASTTag.NEWARRAY, { variable, dimensions, type }),
 	);
 
 const parseNewSingleDimArray: P<NewArray> = Parser.do()
@@ -102,7 +103,7 @@ const parseNewSingleDimArray: P<NewArray> = Parser.do()
 	.bind("type", parseBaseType.parens())
 	.bind("length", parseExpression.brackets())
 	.result(({ variable, token, type, length }) =>
-		mkToken(token, "arrnew", { variable, dimensions: [length], type }),
+		mkToken(token, ASTTag.NEWARRAY, { variable, dimensions: [length], type }),
 	);
 
 const parseNewArray = parseNewSingleDimArray.or(parseNewMultiDimArray);
@@ -111,20 +112,20 @@ const parseSwap: P<Swap> = Parser.do()
 	.bind("var1", parseArrayIndex.or(parseVariable))
 	.bindT("token", TT.SWAP)
 	.bind("var2", parseArrayIndex.or(parseVariable))
-	.result(({ var1, token, var2 }) => mkToken(token, "swap", { var1, var2 }));
+	.result(({ var1, token, var2 }) => mkToken(token, ASTTag.SWAP, { var1, var2 }));
 
 //#region Atom
 
 const number: P<Atom> = Parser.matchT(TT.NUMBER).map((token) =>
-	mkToken(token, "atom", { type: NUMBER, value: Number(token.lexeme) }),
+	mkToken(token, ASTTag.ATOM, { type: NUMBER, value: Number(token.lexeme) }),
 );
 
 const boolean: P<Atom> = Parser.matchT(TT.BOOLEAN).map((token) =>
-	mkToken(token, "atom", { type: LOGIC, value: ["Igaz", "igaz"].includes(token.lexeme) }),
+	mkToken(token, ASTTag.ATOM, { type: LOGIC, value: ["Igaz", "igaz"].includes(token.lexeme) }),
 );
 
 const string: P<Atom> = Parser.matchT(TT.STRING).map((token) =>
-	mkToken(token, "atom", { type: STRING, value: token.lexeme }),
+	mkToken(token, ASTTag.ATOM, { type: STRING, value: token.lexeme }),
 );
 
 const parseAtom = Parser.choice([number, boolean, string]);
@@ -132,11 +133,11 @@ const parseAtom = Parser.choice([number, boolean, string]);
 //#endregion
 
 const parseNot: P<Not> = Parser.matchT(TT.NEGAL).bind((token) =>
-	parseExpression.map((expr) => mkToken(token, "not", { expr })),
+	parseExpression.map((expr) => mkToken(token, ASTTag.NOT, { expr })),
 );
 
 const parseReference: P<Reference> = Parser.matchT(TT.REFERENCE).bind((token) =>
-	parseArrayIndex.or(parseVariable).map((inner) => mkToken(token, "reference", { inner })),
+	parseArrayIndex.or(parseVariable).map((inner) => mkToken(token, ASTTag.REFERENCE, { inner })),
 );
 
 //#region BinOp
@@ -149,7 +150,7 @@ const logicOp = Parser.sat((tok) => ["és", "vagy"].includes(tok.lexeme));
 const parseFuncCall: P<FunctionCall> = Parser.do()
 	.bindT("name", TT.FUNCNAME)
 	.bind("args", parseExpression.or(Parser.matchT(TT.FUNCNAME)).sepBy(Parser.matchT(TT.COMMA)).parens())
-	.result(({ name, args }) => mkToken(name, "funccall", { name: name.lexeme, arguments: args }));
+	.result(({ name, args }) => mkToken(name, ASTTag.FUNCCALL, { name: name.lexeme, arguments: args }));
 
 const primary: P<Expression> = Parser.choice([
 	parseExpression.parens(),
@@ -170,7 +171,7 @@ const chainToExpr = (chain: Expression | Chain<Expression, IToken, Expression>):
 	const binop = BinOpTypeMap.get(chain.op.lexeme);
 	if (binop === undefined) throw new Error(`Unknown binop: "${chain.op.lexeme}".`);
 
-	return mkToken<BinaryOperation>(chain.op, "binop", {
+	return mkToken<BinaryOperation>(chain.op, ASTTag.BINOP, {
 		lhs: "left" in chain.left ? chainToExpr(chain.left) : chain.left,
 		op: binop,
 		rhs: chain.right,
@@ -189,13 +190,13 @@ export const parseAssignment: P<Assignment> = Parser.do()
 	.bindT("nyil", TT.NYIL)
 	.bind("value", parseExpression)
 	.result(({ variable, nyil, value }) =>
-		mkToken(nyil, "assign", {
+		mkToken(nyil, ASTTag.ASSIGN, {
 			variable,
 			value,
 		}),
 	);
 
-const parseDebug: P<Debug> = Parser.matchT(TT.DEBUG).map((token) => mkToken(token, "debug", {}));
+const parseDebug: P<Debug> = Parser.matchT(TT.DEBUG).map((token) => mkToken(token, ASTTag.DEBUG, {}));
 
 const parseFor: P<For> = Parser.do()
 	.bindT("token", TT.CIKLUS)
@@ -209,7 +210,7 @@ const parseFor: P<For> = Parser.do()
 	.ignoreT(TT.CIKLUS)
 	.ignoreT(TT.VEGE)
 	.result(({ token, variable, from, to, body }) =>
-		mkToken(token, "for", {
+		mkToken(token, ASTTag.FOR, {
 			from,
 			to,
 			body,
@@ -235,7 +236,7 @@ const parseParameter: P<Parameter> = Parser.do()
 	.ignoreT(TT.COLON)
 	.bind("type", parseParamType)
 	.result(({ byRef, name, type }) =>
-		mkToken("token" in name ? name.token : name, "param", {
+		mkToken("token" in name ? name.token : name, ASTTag.PARAMETER, {
 			byRef,
 			name: "token" in name ? name : name.lexeme,
 			type: type.type,
@@ -251,7 +252,7 @@ export const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
 	.ignoreT(TT.FUGGVENY)
 	.ignoreT(TT.VEGE)
 	.result(({ token, body, name, parameters }) =>
-		mkToken(token, "funcdecl", { body, name: name.lexeme, parameters }),
+		mkToken(token, ASTTag.FUNCDECL, { body, name: name.lexeme, parameters }),
 	);
 
 //#endregion
@@ -276,13 +277,13 @@ const parseIf: P<If> = Parser.do()
 	.ignoreT(TT.ELAGAZAS)
 	.ignoreT(TT.VEGE)
 	.result(({ main_path, elif_path, false_path }) =>
-		mkToken(main_path.token, "if", { main_path, elif_path, false_path }),
+		mkToken(main_path.token, ASTTag.IF, { main_path, elif_path, false_path }),
 	);
 
 //#endregion
 
 const parsePrint: P<Print> = Parser.matchT(TT.KIIR).bind((token) =>
-	parseExpression.map((expr) => mkToken(token, "print", { expr })),
+	parseExpression.map((expr) => mkToken(token, ASTTag.PRINT, { expr })),
 );
 
 const comp =
@@ -292,7 +293,7 @@ const comp =
 
 const parseReturn: P<Return> = Parser.matchT(TT.VISSZA).bind((token) =>
 	Parser.or(comp, parseExpression)
-		.map((expr) => mkToken(token, "return", { expr })),
+		.map((expr) => mkToken(token, ASTTag.RETURN, { expr })),
 );
 
 //#region While
@@ -315,6 +316,6 @@ const parseDoWhile = Parser.do()
 
 export const parseWhile: P<While> = parseDoWhile
 	.or(parseNormalWhile)
-	.map((value) => mkToken(value.token, "while", value));
+	.map((value) => mkToken(value.token, ASTTag.WHILE, value));
 
 //#endregion
