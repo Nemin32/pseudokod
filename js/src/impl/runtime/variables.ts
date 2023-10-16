@@ -1,4 +1,4 @@
-import { Atom } from "../interfaces/astkinds.ts"
+import { Atom } from "../../interfaces/astkinds.ts"
 
 type DeepArray<T> = (T | DeepArray<T>)[]
 
@@ -19,9 +19,15 @@ type ValueADT = { rc: number, value: Atom["value"] } & (
 
 
 export class Variables {
-	bounds: Boundary[] = [];
-	bindings: VariableBinding[] = [];
-	values: ValueADT[] = [];
+	constructor(
+		public bounds: Boundary[] = [],
+		public bindings: VariableBinding[] = [],
+		public values: ValueADT[] = []
+	) { }
+
+	clone() {
+		return new Variables([...this.bounds], [...this.bindings], [...this.values])
+	}
 
 	escope(isFun: boolean) {
 		this.bounds.push({ isFun, lastIndex: this.bindings.length })
@@ -189,8 +195,8 @@ export class Variables {
 		const lastIndex = this.bounds.at(lastFunBound)?.lastIndex
 		if (lastIndex === undefined) throw new Error("No scope.")
 
-		const currScope = this.bindings.slice(lastIndex - 1)
-		const idx = currScope.findLastIndex(v => v.name === name)
+		const vars = this.bindings.slice(lastIndex)
+		const idx = vars.findLastIndex(v => v.name === name);
 		if (idx === -1) return null;
 
 		return idx;

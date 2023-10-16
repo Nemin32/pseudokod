@@ -3,15 +3,44 @@ import { Atom, BinOpType } from "../../interfaces/astkinds.ts";
 import { Inst } from "../../interfaces/instructions.ts";
 import { Variables } from "./variables.ts";
 
+type Value = Atom["value"];
+
+class State {
+	constructor(
+		public ipStack: Array<number>,
+		public stack: Array<Value>,
+		public vars: Variables,
+		public idx: number) { }
+
+	clone(): State {
+		return new State([...this.ipStack], [...this.stack], this.vars.clone(), this.idx)
+	}
+}
+
 export class VM {
-	ipStack: number[] = [];
-	stack: Atom["value"][] = [];
-	idx = 0;
 	jmpTable: Map<string, number> = new Map()
+	states: State[] = [new State([], [], new Variables(), 0)];
 
-	vars = new Variables();
+	stepBack(): void {
+		if (this.states.length >= 2) {
+			this.states.pop();
+		}
+	}
 
-	constructor(private tape: Inst[]) {
+	saveState(): void {
+		this.states.push(this.currentState.clone())
+	}
+
+	get previousState() {
+		return this.states.at(-2) ?? this.states.at(-1)!;
+	}
+
+	get currentState() {
+		// We must ensure there is always at least one state available.
+		return this.states.at(-1)!
+	}
+
+	constructor(private tape: Inst[], private render: (prevState: State, currState: State) => void) {
 		// build jmpTable
 		for (let i = 0; i < this.tape.length; i++) {
 			const inst = this.tape[i]
@@ -24,19 +53,19 @@ export class VM {
 	}
 
 	fetch(): Inst | null {
-		if (this.idx < this.tape.length)
-			return this.tape[this.idx];
+		if (this.currentState.idx < this.tape.length)
+			return this.tape[this.currentState.idx];
 
 		return null;
 	}
 
-	pop(): Atom["value"] {
-		const val = this.stack.pop()
+	pop(): Value {
+		const val = this.currentState.stack.pop()
 		if (val === undefined) throw new Error("Stack was empty!");
 		return val;
 	}
 
-	popMany(n: number): Atom["value"][] {
+	popMany(n: number): Value[] {
 		const values = [];
 
 		for (let i = 0; i < n; i++) {
@@ -46,8 +75,8 @@ export class VM {
 		return values.reverse()
 	}
 
-	push(val: Atom["value"]) {
-		this.stack.push(val)
+	push(val: Value) {
+		this.currentState.stack.push(val)
 	}
 
 	jmp(label: string): void {
@@ -55,14 +84,14 @@ export class VM {
 		if (addr === undefined)
 			throw new Error(`Can't find label "${label}"!`)
 
-		this.idx = addr - 1;
+		this.currentState.idx = addr - 1;
 	}
 
-	step(inst: Inst) {
+	exec(inst: Inst) {
 		switch (inst.code) {
 			case OC.ADDRESS: {
 				const { name } = inst
-				const value = this.vars.getAddress(name)
+				const value = this.currentState.vars.getAddress(name)
 
 				if (value === null) throw new Error(`${name} doesn't exist!`)
 				this.push(value)
@@ -74,12 +103,12 @@ export class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v))
 					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
-				this.push(this.vars.getArrayElemAddr(inst.name, indexes as number[]))
+				this.push(this.currentState.vars.getArrayElemAddr(inst.name, indexes as number[]))
 			} break;
 
 			case OC.ARRCMP: {
 				const elems = this.popMany(inst.length)
-				this.vars.addArray(inst.name, elems)
+				this.currentState.vars.addArray(inst.name, elems)
 			} break;
 
 			case OC.BINOP: {
@@ -108,18 +137,18 @@ export class VM {
 
 			case OC.CALL: {
 				const { name } = inst
-				this.ipStack.push(this.idx);
+				this.currentState.ipStack.push(this.currentState.idx);
 				this.jmp(name)
 			} break;
 
 			case OC.DEBUG: {
-				this.idx++;
+				this.currentState.idx++;
 				return false;
 			} // break;
 
 			case OC.ESCOPE: {
 				const { isFun } = inst
-				this.vars.escope(isFun)
+				this.currentState.vars.escope(isFun)
 			} break;
 
 			case OC.FJMP: {
@@ -135,12 +164,12 @@ export class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v))
 					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
-				this.push(this.vars.getArrayElem(inst.name, indexes as number[]))
+				this.push(this.currentState.vars.getArrayElem(inst.name, indexes as number[]))
 			} break;
 
 			case OC.GETVAR: {
 				const { name } = inst
-				const value = this.vars.getVariable(name)
+				const value = this.currentState.vars.getVariable(name)
 				if (value === null) throw new Error(`${name} has no value!`);
 				this.push(value)
 			} break;
@@ -152,7 +181,7 @@ export class VM {
 
 			case OC.LABEL: { } break;
 
-			case OC.LSCOPE: { this.vars.lscope(false) } break;
+			case OC.LSCOPE: { this.currentState.vars.lscope(false) } break;
 
 			case OC.MKARR: {
 				const indexes = this.popMany(inst.numDimensions)
@@ -160,14 +189,14 @@ export class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v))
 					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
-				this.vars.addEmptyArray(inst.name, indexes as number[])
+				this.currentState.vars.addEmptyArray(inst.name, indexes as number[])
 			} break;
 
 			case OC.MKREF: {
 				const { name } = inst
 				const pointer = this.pop()
 				if (typeof pointer !== "number") throw new Error(`${name}: Expected address, got ${typeof pointer}`)
-				this.vars.makeReference(name, pointer);
+				this.currentState.vars.makeReference(name, pointer);
 			} break;
 
 			case OC.NOT: {
@@ -186,16 +215,16 @@ export class VM {
 			// @ts-ignore Ignores fallthrough.
 			case OC.RETCMP: {
 				const exprs = this.popMany(inst.length)
-				this.push(this.vars.addArrayRef(exprs));
+				this.push(this.currentState.vars.addArrayRef(exprs));
 				this.push("__mk")
 			}
 
 			/* Falls through! */
 			case OC.RETURN: {
-				this.vars.lscope(true)
-				const newIp = this.ipStack.pop()
+				this.currentState.vars.lscope(true)
+				const newIp = this.currentState.ipStack.pop()
 				if (!newIp) throw new Error("IP Stack is empty.")
-				this.idx = newIp
+				this.currentState.idx = newIp
 			} break;
 
 			case OC.SETARR: {
@@ -203,7 +232,7 @@ export class VM {
 				if (!indexes.map(i => typeof i === "number").every(v => v)) throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
 
 				const value = this.pop()
-				this.vars.setArrayElem(inst.name, indexes as number[], value)
+				this.currentState.vars.setArrayElem(inst.name, indexes as number[], value)
 			} break;
 
 			case OC.SETVAR: {
@@ -212,9 +241,9 @@ export class VM {
 				if (val === "__mk") {
 					const ref = this.pop()
 					if (typeof ref !== "number") throw new Error(`Expected REFERENCE, got ${typeof ref}`)
-					this.vars.makeReference(name, ref)
+					this.currentState.vars.makeReference(name, ref)
 				} else {
-					this.vars.setVariable(name, val)
+					this.currentState.vars.setVariable(name, val)
 				}
 			} break;
 
@@ -222,15 +251,25 @@ export class VM {
 
 		}
 
-		this.idx++;
+		this.currentState.idx++;
 		return true;
 	}
 
+	step() {
+		const inst = this.fetch()
+		if (!inst) return false;
+
+		this.saveState()
+		const retVal = this.exec(inst)
+
+		this.render(this.previousState, this.currentState)
+		return retVal;
+	}
+
 	run() {
-		while (true) {
-			const inst = this.fetch()
-			if (!inst) return;
-			if (!this.step(inst)) return;
+		let running = true;
+		while (running) {
+			running = this.step();
 		}
 	}
 }

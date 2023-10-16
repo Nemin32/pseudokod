@@ -60,6 +60,12 @@ export class Tokenizer implements ITokenizer {
 	eat(): string | null {
 		if (this.index >= this.input.length) return null;
 		this.column++;
+
+		if (this.input[this.index] === "\n") {
+			this.column = 0;
+			this.row++;
+		}
+
 		return this.input[this.index++];
 	}
 
@@ -269,9 +275,11 @@ export class Tokenizer implements ITokenizer {
 	// === Driver ===
 
 	parse(): ParseResult {
-		this.newLine();
+		//this.newLine();
 
 		const parsers = [
+			//this.newLine,
+			this.whitespace,
 			this.comment,
 			this.keyword,
 			this.binop,
@@ -281,7 +289,6 @@ export class Tokenizer implements ITokenizer {
 			this.type,
 			this.funcName,
 			this.symbol,
-			this.whitespace,
 		];
 
 		for (const parser of parsers) {
