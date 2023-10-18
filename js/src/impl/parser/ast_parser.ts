@@ -147,10 +147,11 @@ const mulOp = Parser.sat((tok) => ["*", "/", "mod"].includes(tok.lexeme));
 const compOp = Parser.sat((tok) => [">", "<", "=", "<=", ">=", "=/="].includes(tok.lexeme));
 const logicOp = Parser.sat((tok) => ["és", "vagy"].includes(tok.lexeme));
 
+// Because we're using a stack based VM, we need to reverse arguments, hence args.reverse()
 const parseFuncCall: P<FunctionCall> = Parser.do()
 	.bindT("name", TT.FUNCNAME)
 	.bind("args", parseExpression.or(Parser.matchT(TT.FUNCNAME)).sepBy(Parser.matchT(TT.COMMA)).parens())
-	.result(({ name, args }) => mkToken(name, ASTTag.FUNCCALL, { name: name.lexeme, arguments: args }));
+	.result(({ name, args }) => mkToken(name, ASTTag.FUNCCALL, { name: name.lexeme, arguments: args.reverse() }));
 
 const primary: P<Expression> = Parser.choice([
 	parseExpression.parens(),

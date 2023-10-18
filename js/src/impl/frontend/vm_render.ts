@@ -56,7 +56,11 @@ export function render(prev: State, current: State): {
 		if (s.state === ComparisonResult.DELETED) {
 			return `${s.value.name} => [DELETED]`
 		} else {
-			return `${s.value.name} => ${current.vars.getVariable(s.value.name)}`
+			const value = current.vars.isArray(s.value.name) ?
+				current.vars.getArray(s.value.name)
+				: current.vars.getVariableOrNull(s.value.name) ?? "[DOESN'T EXIST]"
+
+			return `${s.value.name} => ${value}`
 		}
 	}))
 

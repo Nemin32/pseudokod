@@ -278,8 +278,6 @@ export class Tokenizer implements ITokenizer {
 	// === Driver ===
 
 	parse(): ParseResult {
-		//this.newLine();
-
 		const parsers = [
 			this.newLine,
 			this.whitespace,
@@ -314,6 +312,12 @@ export class Tokenizer implements ITokenizer {
 			} else {
 				break;
 			}
+		}
+
+		if (!(this.peek() === null)) {
+			const errTok = this.mkToken(TT.ERROR, () => this.eatWhile(_ => true))
+			if (errTok)
+				retval.push(errTok)
 		}
 
 		return retval;

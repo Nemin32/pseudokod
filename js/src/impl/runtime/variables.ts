@@ -73,6 +73,10 @@ export class Variables {
 		this.values = this.values.filter(v => v.rc > 0)
 	}
 
+	getAddressOrNull(name: string): number | null {
+		return this.findBindingOrNull(name)?.pointer ?? null
+	}
+
 	getAddress(name: string): number {
 		return this.findBinding(name).pointer
 	}
@@ -80,7 +84,7 @@ export class Variables {
 	// NORMAL OPS
 
 	makeReference(name: string, pointer: number) {
-		const variable = this.findBindingOrNull(name);
+		const variable = this.findBindingOrNullGlobal(name);
 		const box = this.getBox(pointer)
 
 		if (box.type === ValueType.NORMAL) {
@@ -112,10 +116,12 @@ export class Variables {
 			const box = this.getBox(variable.pointer)
 			box.value = value;
 		} else {
-			this.bindings.push({
+			const binding = {
 				name,
 				pointer: this.addBox(value)
-			})
+			}
+
+			this.bindings.push(binding)
 		}
 	}
 
@@ -124,7 +130,10 @@ export class Variables {
 	}
 
 	getVariableOrNull(name: string): Atom["value"] | null {
-		return this.getBoxOrNull(this.getAddress(name))?.value ?? null
+		const address = this.getAddressOrNull(name);
+		if (address === null) return null;
+
+		return this.getBoxOrNull(address)?.value ?? null
 	}
 
 
@@ -165,12 +174,18 @@ export class Variables {
 
 
 	getArrayElem(name: string, indexes: number[]): Atom["value"] {
-		console.log(this.bindings, this.values)
-
 		const box = this.getArrayBox(name, indexes)
 		return box.value
 	}
 
+	isArray(name: string): boolean {
+		const base = this.getAddressOrNull(name)
+		if (base === null) return false;
+
+		const box = this.getBox(base)
+
+		return box.type === ValueType.ARRAY;
+	}
 
 	getArrayElemAddr(name: string, indexes: number[]): number {
 		const base = this.getAddress(name)
@@ -180,6 +195,15 @@ export class Variables {
 		const index = this.calculateIndex(box, indexes)
 
 		return base + index
+	}
+
+	getArray(name: string): DeepArray<Atom["value"]> {
+		const base = this.getAddress(name)
+		const box = this.getBox(base)
+		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
+
+		const length = box.dimensions.reduce((a, b) => a * b, 1)
+		return this.values.slice(base, base + length).map(v => v.value)
 	}
 
 	// HELPERS
@@ -194,6 +218,13 @@ export class Variables {
 		return this.values.length - 1;
 	}
 
+	private findBindingOrNullGlobal(name: string): VariableBinding | null {
+		const idx = this.bindings.findLastIndex(b => b.name === name);
+		if (idx === -1) return null;
+
+		return this.bindings[idx];
+	}
+
 	private findIndexOrNull(name: string): number | null {
 		// If there are no function boundary, findLastIndex will return -1, so we just default to the outermost scope, hence the max(0).
 		const lastFunBound = Math.max(this.bounds.findLastIndex(b => b.isFun), 0)
@@ -204,7 +235,7 @@ export class Variables {
 		const idx = vars.findLastIndex(v => v.name === name);
 		if (idx === -1) return null;
 
-		return idx;
+		return lastIndex + idx;
 	}
 
 	private findIndex(name: string): number {
@@ -217,7 +248,6 @@ export class Variables {
 	private findBindingOrNull(name: string): VariableBinding | null {
 		const idx = this.findIndexOrNull(name)
 		if (idx === null) return null;
-
 		return this.bindings[idx];
 	}
 

@@ -77,8 +77,8 @@ window.addEventListener("load", () => {
 				ipStackDiv.replaceChildren(...renderResult.ipStackSpans)
 				varsDiv.replaceChildren(...renderResult.varsSpans)
 
-				instructionSpans.at(current.idx)?.classList.add("current");
-				instructionSpans.at(prev.idx)?.classList.remove("current");
+				instructionSpans.at(current.idx - 1)?.classList.add("current");
+				instructionSpans.at(prev.idx - 1)?.classList.remove("current");
 
 				output.innerText = current.output;
 			});
