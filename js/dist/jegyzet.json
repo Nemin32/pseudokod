@@ -1,0 +1,2104 @@
+{
+	"1": [
+		{
+			"name": "1. Euklideszi algoritmus",
+			"inputs": "m - egész, n - egész",
+			"outputs": "n - egész",
+			"code": [
+				"függvény LNKO(m : egész, n : egész)",
+				"r <- m mod n",
+				"ciklus amíg r =/= 0",
+				"m <- n",
+				"n <- r",
+				"r <- m mod n",
+				"ciklus vége",
+				"vissza n",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "2. Euklideszi algoritmus (2)",
+			"inputs": "m - egész, n - egész",
+			"outputs": "n - egész",
+			"code": [
+				"eljárás LNKO(m : egész, címszerint n : egész)",
+				"r <- m mod n",
+				"ciklus amíg r =/= 0",
+				"m <- n",
+				"n <- r",
+				"r <- m mod n",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "3. Relatív prím vizsgálat",
+			"inputs": "x - egész tömb, n - egész (tömb mérete), érték - egész",
+			"outputs": "y - logikai tömb",
+			"code": [
+				"függvény RelatívPrímVizsgálat(x : egész tömb, n : egész, érték : egész)",
+				"ciklus i <- 1-től n-ig",
+				"ha LNKO(x[i], érték) = 1 akkor",
+				"y[i] <- igaz",
+				"különben",
+				"y[i] <- hamis",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza y",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "4. Nullát eredményező elempárok száma",
+			"inputs": "x - egész tömb, n - egész",
+			"outputs": "db - egész",
+			"code": [
+				"függvény NullátAdóElempárokSzáma(x : egész tömb, n : egész)",
+				"db <- 0",
+				"ciklus i <- 1-től (n - 1)-ig",
+				"ciklus j <- (i + 1)-től n-ig",
+				"ha x[i] + x[j] = 0 akkor",
+				"db <- db + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus vége",
+				"vissza db",
+				"függvény vége"
+			]
+		}
+	],
+
+	"2": [
+		{
+			"name": "1. Sorozatszámítás programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete)",
+			"outputs": "érték - T",
+			"code": [
+				"függvény Sorozatszámítás(x : T tömb, n : egész)",
+				"érték <- 0",
+				"ciklus i <- 1-től n-ig",
+				"érték <- érték + x[i]",
+				"ciklus vége",
+				"vissza érték",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "2. Eldöntés programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai (tulajdonság)",
+			"outputs": "van - logikai",
+			"code": [
+				"függvény Eldöntés(x : T tömb, n : egész, Pred : logikai)",
+				"i <- 1",
+				"ciklus amíg (i <= n) és ~Pred(x[i])",
+				"i <- i + 1",
+				"ciklus vége",
+				"van <- (i <= n)",
+				"vissza van",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "3. Módosított eldöntés programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai (tulajdonság)",
+			"outputs": "van - logikai",
+			"code": [
+				"függvény Eldöntés_Minden(x : T tömb, n : egész, Pred : logikai)",
+				"i <- 1",
+				"ciklus amíg (i <= n) és Pred(x[i])",
+				"i <- i + 1",
+				"ciklus vége",
+				"van <- (i > n)",
+				"vissza van",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "4. Prím teszt",
+			"inputs": "N - egész (N >= 2)",
+			"outputs": "prím - logikai",
+			"code": [
+				"függvény PrímTeszt(n : egész)",
+				"i <- 2",
+				"ciklus amíg (i <= Gyök(n)) és ~Osztója(i, n)",
+				"i <- i + 1",
+				"ciklus vége",
+				"prím <- (i > Gyök(n))",
+				"vissza prím",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "5. Növekvő rendezettség vizsgálata",
+			"inputs": "x - T tömb, n - egész; ahol T összehasonlítható",
+			"outputs": "rendezett - logikai",
+			"code": [
+				"függvény Rendezett_E(x : T tömb, n : egész)",
+				"i <- 1",
+				"ciklus amíg (i <= n - 1) és (x[i] <= x[i + 1])",
+				"i <- i + 1",
+				"ciklus vége",
+				"tombRendezett <- (i > n - 1)",
+				"vissza tombRendezett",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "6. Kiválasztás programozási tétel",
+			"inputs": "x - T tömb, n - egész, P - logikai",
+			"outputs": "idx - egész",
+			"code": [
+				"függvény Kiválasztás(x : T tömb, n : egész, Pred : logikai)",
+				"i <- 1",
+				"ciklus amíg ~Pred(x[i])",
+				"i <- i + 1",
+				"ciklus vége",
+				"idx <- i",
+				"vissza idx",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "7. Lineáris keresés programozási tétel",
+			"inputs": "x - T tömb, n - egész, P - logikai",
+			"outputs": "van - logikai, idx - egész",
+			"code": [
+				"függvény LineárisKeresés(x : T tömb, n : egész, Pred : logikai)",
+				"i <- 1",
+				"ciklus amíg (i <= n) és ~Pred(x[i])",
+				"i <- i + 1",
+				"ciklus vége",
+				"van <- (i <= n)",
+				"ha van akkor",
+				"idx <- i",
+				"vissza (van, idx)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "8. Lineáris keresés programozási tétel (konkrét érték keresése)",
+			"inputs": "x - T tömb, n - egész, érték - T",
+			"outputs": "van - logikai, idx - egész",
+			"code": [
+				"függvény LineárisKeresés(x : T tömb, n : egész, érték : T)",
+				"i <- 1",
+				"ciklus amíg (i <= n) és (x[i] =/= érték)",
+				"i <- i + 1",
+				"ciklus vége",
+				"van <- (i <= n)",
+				"ha van akkor",
+				"idx <- i",
+				"vissza (van, idx)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "9. Megszámlálás programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai (tulajdonság)",
+			"outputs": "db - egész (darabszám)",
+			"code": [
+				"függvény Megszámlálás(x : T tömb, n : egész, Pred : logikai)",
+				"db <- 0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "10. Maximumkiválasztás programozási tétel.",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "max - egész",
+			"code": [
+				"függvény Maximumkiválasztás(x : T tömb, n : egész)",
+				"max <- 1",
+				"ciklus i <- 2-től n-ig",
+				"ha x[i] > x[max] akkor",
+				"max <- i",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza max",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "11. Másolás programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete), F - művelet",
+			"outputs": "y - T tömb",
+			"code": [
+				"függvény Másolás(x : T tömb, n : egész, Fgv : T)",
+				"y <- Létrehoz(T)[n]",
+				"ciklus i <- 1-től n-ig",
+				"y[i] <- Fgv(x[i])",
+				"ciklus vége",
+				"vissza y",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "12. Kiválogatás programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "y - T tömb, db - egész",
+			"code": [
+				"függvény Kiválogatás(x : T tömb, n : egész, Pred : logikai)",
+				"y <- Létrehoz(T)[n]",
+				"db <- 0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"y[db] <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (y, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "13. Kiválogatás programozási tétel az eredeti tömbben",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "x - T tömb, db - egész",
+			"code": [
+				"függvény KiválogatásHelyben(címszerint x : T tömb, n : egész, Pred : logikai)",
+				"db <- 0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"x[db] <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "14. Kiválogatás programozási tétel az eredeti tömbben az eredeti elemek megtartásával",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "x - T tömb, db - egész",
+			"code": [
+				"függvény Szétválogatás(címszerint x : T tömb, n : egész, Pred : logikai)",
+				"db <- 0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"x[db] <-> x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "15. Szétválogatás programozási tétel",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "y1 - T tömb, db1 - egész, y2 - T tömb, db2 - egész",
+			"code": [
+				"függvény Szétválogatás(x : T tömb, n : egész, Pred : logikai)",
+				"y1 <- Létrehoz(T)[n]",
+				"y2 <- Létrehoz(T)[n]",
+				"db1 <- 0",
+				"db2 <- 0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db1 <- db1 + 1",
+				"y1[db1] <- x[i]",
+				"különben",
+				"db2 <- db2 + 1",
+				"y2[db2] <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza(y1, db1, y2, db2)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "16. Szétválogatás programozási tétel egyetlen új kimeneti tömbbe",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "y - T tömb, db - egész",
+			"code": [
+				"függvény Szétválogatás(x : T tömb, n : egész, Pred : logikai)",
+				"y <- Létrehoz(T)[n]",
+				"db <- 0",
+				"jobb <- n + 1",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"y[db] <- x[i]",
+				"különben",
+				"jobb <- jobb - 1",
+				"y[jobb] <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza(y, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "17. Szétválogatás programozási tétel az eredeti tömbben",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "x - T tömb, db - egész",
+			"code": [
+				"függvény Szétválogat(címszerint x : T tömb, n : egész, Pred : logikai)",
+				"bal <- 1",
+				"jobb <- n",
+				"segéd <- x[1]",
+				"ciklus amíg bal < jobb",
+				"ciklus amíg (bal < jobb) és ~Pred(x[jobb])",
+				"jobb <- jobb - 1",
+				"ciklus vége",
+				"ha bal < jobb akkor",
+				"x[bal] <- x[jobb]",
+				"bal <- bal + 1",
+				"ciklus amíg (bal < jobb) és Pred(x[bal])",
+				"bal <- bal + 1",
+				"ciklus vége",
+				"ha bal < jobb akkor",
+				"x[jobb] <- x[bal]",
+				"jobb <- jobb - 1",
+				"elágazás vége",
+				"elágazás vége",
+				"ciklus vége",
+				"x[bal] <- segéd",
+				"ha Pred(x[bal]) akkor",
+				"db <- bal",
+				"különben",
+				"db <- bal - 1",
+				"elágazás vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "18. Metszet programozási tétel",
+			"inputs": "x1 - T tömb, n1 - egész (tömb mérete), x2 - T tömb, n2 - egész (tömb mérete)",
+			"outputs": "y - T tömb, db - egész",
+			"code": [
+				"függvény Metszet(x1 : T tömb, n1 : egész, x2 : T tömb, n2 : egész)",
+				"y <- Létrehoz(T)[n1]",
+				"db <- 0",
+				"ciklus i <- 1-től n1-ig",
+				"j <- 1",
+				"ciklus amíg (j <= n2) és (x1[i] =/= x2[j])",
+				"j <- j + 1",
+				"ciklus vége",
+				"ha j <= n2 akkor",
+				"db <- db + 1",
+				"y[db] <- x1[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (y, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "19. Közös elem létezésének vizsgálata",
+			"inputs": "x1 - T tömb, n1 - egész (tömb mérete), x2 - T tömb, n2 - egész (tömb mérete)",
+			"outputs": "van - logikai",
+			"code": [
+				"függvény KözösElemEldöntése(x1 : T tömb, n1 : egész, x2 : T tömb, n2 : T tömb)",
+				"i <- 1",
+				"van <- hamis",
+				"ciklus amíg (i <= n1) és ~van",
+				"j <- 1",
+				"ciklus amíg (j <= n2) és (x1[i] =/= x2[j])",
+				"j <- j + 1",
+				"ciklus vége",
+				"ha j <= n2 akkor",
+				"van <- igaz",
+				"különben",
+				"i <- i + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza van",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "20. Unió programozási tétel",
+			"inputs": "x1 - T tömb, n1 - egész (tömb mérete), x2 - T tömb, n2 - egész (tömb mérete)",
+			"outputs": "y - T tömb, db - egész",
+			"code": [
+				"függvény Unió(x1 : T tömb, n1 : egész, x2 : T tömb, n2 : egész)",
+				"y <- Létrehoz(T)[n1 + n2]",
+				"ciklus i <- 1-től n1-ig",
+				"y[i] <- x1[i]",
+				"ciklus vége",
+				"db <- n1",
+				"ciklus j <- 1-től n2-ig",
+				"i <- 1",
+				"ciklus amíg (i <= n1) és (x1[i] =/= x2[j])",
+				"i <- i + 1",
+				"ciklus vége",
+				"ha i > n1 akkor",
+				"db <- db + 1",
+				"y[db] <- x2[j]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (y, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "21. Ismétlődések kiszűrése",
+			"inputs": "x - T tömb, n - egész (tömb mérete)",
+			"outputs": "x - T tömb, db - egész",
+			"code": [
+				"függvény IsmétlődésekKiszűrése(címszerint x : T tömb, n : egész)",
+				"db <- 1",
+				"ciklus i <- 2-től n-ig",
+				"j <- 1",
+				"ciklus amíg (j <= db) és (x[i] =/= x[j])",
+				"j <- j + 1",
+				"ciklus vége",
+				"ha j > db akkor",
+				"db <- db + 1",
+				"x[db] <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "22. Összefuttatás programozási tétel",
+			"inputs": "x1 - T rendezett tömb, n1 - egész (tömb mérete), x2 - T rendezett tömb, n2 - Egész (tömb mérete)",
+			"outputs": "y - T rendezett tömb, db - egész",
+			"code": [
+				"függvény Összefuttatás(x1 : T tömb, n1 : egész, x2 : T tömb, n2 : egész)",
+				"y <- Létrehoz(T)[n1 + n2]",
+				"i <- 1",
+				"j <- 1",
+				"db <- 0",
+				"ciklus amíg (i <= n1) és (j <= n2)",
+				"db <- db + 1",
+				"ha x1[i] < x2[j] akkor",
+				"y[db] <- x1[i]",
+				"i <- i + 1",
+				"különben ha x1[i] > x2[j] akkor",
+				"y[db] <- x2[j]",
+				"j <- j + 1",
+				"különben",
+				"y[db] <- x1[i]",
+				"i <- i + 1",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus amíg i <= n1",
+				"db <- db + 1",
+				"y[db] <- x1[i]",
+				"i <- i + 1",
+				"ciklus vége",
+				"ciklus amíg j <= n2",
+				"db <- db + 1",
+				"y[db] <- x2[j]",
+				"j <- j + 1",
+				"ciklus vége",
+				"vissza (y, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "23. Módosított összefuttatás programozási tétel",
+			"inputs": "x1 - T rendezett tömb, n1 - egész (tömb mérete), x2 - T rendezett tömb, n2 - Egész (tömb mérete)",
+			"outputs": "y - T rendezett tömb, db - egész",
+			"code": [
+				"függvény MódosítottÖsszefuttatás(x1 : T rendezett tömb, n1 : egész, x2 : T rendezett",
+				"tömb, n2 : egész)",
+				"y <- Létrehoz(T)[n1 + n2]",
+				"n1 <- n1 + 1",
+				"x1[n1] <- végtelen",
+				"n2 <- n2 + 1",
+				"x2[n2] <- végtelen",
+				"i <- 1",
+				"j <- 1",
+				"db <- 0",
+				"ciklus amíg (i < n1) vagy (j < n2)",
+				"db <- db + 1",
+				"ha x1[i] < x2[j] akkor",
+				"y[db] <- x1[i]",
+				"i <- i + 1",
+				"különben ha x1[i] > x2[j] akkor",
+				"y[db] <- x2[j]",
+				"j <- j + 1",
+				"különben",
+				"y[db] <- x1[i]",
+				"i <- i + 1",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (y, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "24. Másolás és sorozatszámítás összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete), f - művelet",
+			"outputs": "érték - T",
+			"code": [
+				"függvény Másolás_Sorozatszámítás(x : T tömb, n : egész, Fgv : T)",
+				"érték <- érték0",
+				"ciklus i <- 1-től n-ig",
+				"érték <- érték + Fgv(x[i])",
+				"ciklus vége",
+				"vissza érték",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "25. Másolás és maximumkiválasztás összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete), f - művelet; ahol T összehasonlítható",
+			"outputs": "max - egész, maxérték - T",
+			"code": [
+				"függvény Másolás_Maximumkiválasztás(x : T tömb, n : egész, Fgv : T)",
+				"max <- 1",
+				"maxérték <- Fgv(x[1])",
+				"ciklus i <- 2-től n-ig",
+				"segéd <- Fgv(x[i])",
+				"ha maxérték < segéd akkor",
+				"max <- i",
+				"maxérték <- segéd",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (max, maxérték)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "26. Másolás és maximumkiválasztás összeépítése (módosított, kevésbé hatékony változat)",
+			"inputs": "x - T tömb, n - egész (tömb mérete), f - művelet; ahol T összehasonlítható",
+			"outputs": "max - egész",
+			"code": [
+				"függvény Másolás_Maximumkiválasztás_Módosított(x : T tömb, n : egész, Fgv : T)",
+				"max <- 1",
+				"ciklus i <- 2-től n-ig",
+				"ha Fgv(x[max]) < Fgv(x[i]) akkor",
+				"max <- i",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza max",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "27. Megszámolás és keresés összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai, k - egész",
+			"outputs": "van - logikai, idx - egész",
+			"code": [
+				"függvény Megszámolás_Keresés(x : T tömb, n : egész, Pred : logikai, k : egész)",
+				"db <- 0",
+				"i <- 0",
+				"ciklus amíg (i < n) és (db < k)",
+				"i <- i + 1",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"van <- (db = k)",
+				"ha van akkor",
+				"idx <- i",
+				"vissza (van, idx)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "28. Maximumkiválasztás és kiválogatás összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "db - egész, y - egész tömb, maxérték - T",
+			"code": [
+				"függvény Maximumkiválogatás(x : T tömb, n : egész)",
+				"y <- Létrehoz(egész)[n]",
+				"maxérték <- x[1]",
+				"db <- 1",
+				"y[db] <- 1",
+				"ciklus i <- 2-től n-ig",
+				"ha x[i] > maxérték akkor",
+				"maxérték <- x[i]",
+				"db <- 1",
+				"y[db] <- i",
+				"különben",
+				"ha x[i] = maxérték akkor",
+				"db <- db + 1",
+				"y[db] <- i",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (db, y, maxérték)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "29. Kiválogatás és sorozatszámítás összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai",
+			"outputs": "érték - T",
+			"code": [
+				"függvény Kiválogatás_Sorozatszámítás(x : T tömb, n : egész, Pred : logikai)",
+				"érték <- érték0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"érték <- érték + x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza érték",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "30. Kiválogatás és maximumkiválasztás összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai; ahol T összehasonlítható",
+			"outputs": "van - logikai, max - egész, maxérték - T",
+			"code": [
+				"függvény Kiválogatás_Maximumkiválasztás(x : T tömb, n : egész, Pred : logikai)",
+				"maxérték <- minuszVégtelen",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) és (x[i] > maxérték) akkor",
+				"max <- i",
+				"maxérték <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"van <- (maxérték > minuszVégtelen)",
+				"ha van akkor",
+				"vissza (van, max, maxérték)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "31. Kiválogatás és másolás összeépítése",
+			"inputs": "x - T tömb, n - egész (tömb mérete), P - logikai, f - művelet",
+			"outputs": "db - egész, y - T tömb",
+			"code": [
+				"függvény Kiválogatás_Másolás(x : T tömb, n : egész, Pred : logikai, Fgv : T)",
+				"y <- Létrehoz(T)[n]",
+				"db <- 0",
+				"ciklus i <- 1-től n-ig",
+				"ha Pred(x[i]) akkor",
+				"db <- db + 1",
+				"y[db] <- Fgv(x[i])",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (db, y)",
+				"függvény vége"
+			]
+		}
+	],
+	"3": [
+		{
+			"name": "1. Csere",
+			"inputs": "a - T, b - T",
+			"outputs": "a - T, b - T",
+			"code": [
+				"eljárás Csere(címszerint a : T, címszerint b : T)",
+				"segéd <- a",
+				"a <- b",
+				"b <- segéd",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "2. Egyszerű cserés rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás EgyszerűCserésRendezés(címszerint x : T tömb, n : egész)",
+				"ciklus i <- 1-től (n - 1)-ig",
+				"ciklus j <- (i + 1)-től n-ig",
+				"ha x[i] > x[j] akkor",
+				"x[i] <-> x[j]",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "3. Minimumkiválasztásos rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás MinimumkiválasztásosRendezés(címszerint x : T tömb, n : egész)",
+				"ciklus i <- 1-től (n - 1)-ig",
+				"min <- i",
+				"ciklus j <- (i + 1)-től n-ig",
+				"ha x[min] > x[j] akkor",
+				"min <- j",
+				"elágazás vége",
+				"ciklus vége",
+				"x[i] <-> x[min]",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "4. Buborékrendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás BuborékRendezés(címszerint x : T tömb, n : egész)",
+				"ciklus i <- n-től 2-ig",
+				"ciklus j <- 1-től (i - 1)-ig",
+				"ha x[j] > x[j + 1] akkor",
+				"x[j] <-> x[j + 1]",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "5. Javított buborékrendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás JavítottBuborékRendezés(címszerint x : T tömb, n : egész)",
+				"i <- n",
+				"ciklus amíg i >= 2",
+				"idx <- 0",
+				"ciklus j <- 1-től (i - 1)-ig",
+				"ha x[j] > x[j + 1] akkor",
+				"x[j] <-> x[j + 1]",
+				"idx <- j",
+				"elágazás vége",
+				"ciklus vége",
+				"i <- idx",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "6. Beillesztéses rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás BeillesztésesRendezés(címszerint x : T tömb, n : egész)",
+				"ciklus i <- 2-től n-ig",
+				"j <- i - 1",
+				"ciklus amíg (j > 0) és (x[j] > x[j + 1])",
+				"x[j] <-> x[j + 1]",
+				"j <- j - 1",
+				"ciklus vége",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "7. Javított beillesztéses rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás JavítottBeillesztésesRendezés(címszerint x : T tömb, n : egész)",
+				"ciklus i <- 2-től n-ig",
+				"j <- i - 1",
+				"segéd <- x[i]",
+				"ciklus amíg (j > 0) és (x[j] > segéd)",
+				"x[j + 1] <- x[j]",
+				"j <- j - 1",
+				"ciklus vége",
+				"x[j + 1] <- segéd",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "8. Shell rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás ShellRendezés(címszerint x : T tömb, n : egész)",
+				"d <- KezdetiTávolság(n)",
+				"ciklus amíg d >= 1",
+				"ciklus i <- (d + 1)-től n-ig",
+				"j <- i - d",
+				"segéd <- x[i]",
+				"ciklus amíg (j > 0) és (x[j] > segéd)",
+				"x[j + d] <- x[j]",
+				"j <- j - d",
+				"ciklus vége",
+				"x[j + d] <- segéd",
+				"ciklus vége",
+				"d <- KövetkezőTávolság(d)",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "9. Szétosztó rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T kulccsal rendelkezik",
+			"outputs": "y - T rendezett tömb",
+			"code": [
+				"függvény SzétosztóRendezés(x : T tömb, n : egész)",
+				"y <- Létrehoz(T)[n]",
+				"ciklus i <- 1-től n-ig",
+				"y[Kulcs(x[i])] <- x[i]",
+				"ciklus vége",
+				"vissza y",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "10. Számlálva szétosztó rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete), m - egész; ahol T kulccsal rendelkezik",
+			"outputs": "y - T rendezett tömb",
+			"code": [
+				"függvény SzámlálvaSzétosztóRendezés(x : T tömb, n : egész, m : egész)",
+				"db <- Létrehoz(egész)[m]",
+				"ciklus i <- 1-től m-ig",
+				"db[i] <- 0",
+				"ciklus vége",
+				"ciklus i <- 1-től n-ig",
+				"db[Kulcs(x[i])] <- db[Kulcs(x[i])] + 1",
+				"ciklus vége",
+				"ciklus i <- 2-től m-ig",
+				"db[i] <- db[i] + db[i - 1]",
+				"ciklus vége",
+				"y <- Létrehoz(T)[n]",
+				"ciklus i <- 1-től n-ig",
+				"y[db[Kulcs(x[i])]] <- x[i]",
+				"db[Kulcs(x[i])] <- db[Kulcs(x[i])] - 1",
+				"ciklus vége",
+				"vissza y",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "11. Számláló rendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "y - T rendezett tömb",
+			"code": [
+				"függvény SzámlálóRendezés(x : T tömb, n : egész)",
+				"db <- Létrehoz(egész)[n]",
+				"ciklus i <- 1-től n-ig",
+				"db[i] <- 1",
+				"ciklus vége",
+				"ciklus i <- 1-től n - 1-ig",
+				"ciklus j <- i + 1-től n-ig",
+				"ha x[i] > x[j] akkor",
+				"db[i] <- db[i] + 1",
+				"különben",
+				"db[j] <- db[j] + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus vége",
+				"y <- Létrehoz(T)[n]",
+				"ciklus i <- 1-től n-ig",
+				"y[db[i]] <- x[i]",
+				"ciklus vége",
+				"vissza y",
+				"függvény vége"
+			]
+		}
+	],
+	"4": [
+		{
+			"name": "1. Faktoriális iteratív kiszámítása",
+			"inputs": "N - egész (természetes szám)",
+			"outputs": "érték - egész",
+			"code": [
+				"függvény FaktoriálisIteratív(n : egész)",
+				"érték <- 1",
+				"ciklus i <- 2-től n-ig",
+				"érték <- érték * i",
+				"ciklus vége",
+				"vissza érték",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "2. Faktoriális rekurzív kiszámítása",
+			"inputs": "N - egész (természetes szám)",
+			"outputs": "N faktoriálisa",
+			"code": [
+				"függvény FaktoriálisRekurzív(n : egész)",
+				"ha n = 0 akkor",
+				"vissza 1",
+				"különben",
+				"vissza n * FaktoriálisRekurzív(n - 1)",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "3. Fibonacci sorozat N -edik elemének rekurzív meghatározása",
+			"inputs": "N - egész",
+			"outputs": "N -edik Fibonacci szám",
+			"code": [
+				"függvény FibonacciRekurzív(n : egész)",
+				"ha n <= 1 akkor",
+				"vissza 1",
+				"különben",
+				"vissza FibonacciRekurzív(n - 2) + FibonacciRekurzív(n - 1)",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "4. Fibonacci sorozat N -edik elemének iteratív meghatározása",
+			"inputs": "N - egész",
+			"outputs": "aktuális - egész",
+			"code": [
+				"függvény FibonacciIteratív(n : egész)",
+				"aktuális <- 1",
+				"előző <- 1",
+				"ciklus i <- 1-től (n - 1)-ig",
+				"átmeneti <- aktuális + előző",
+				"előző <- aktuális",
+				"aktuális <- átmeneti",
+				"ciklus vége",
+				"vissza aktuális",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "5. Az első N darab Fibonacci szám megadása",
+			"inputs": "N - egész",
+			"outputs": "x - egész tömb",
+			"code": [
+				"függvény FibonacciKigyűjt(n : egész)",
+				"x <- Létrehoz(egész)[n]",
+				"x[1] <- 1",
+				"x[2] <- 2",
+				"ciklus i <- 3-től n-ig",
+				"x[i] <- x[i - 2] + x[i - 1]",
+				"ciklus vége",
+				"vissza x",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "6. aN iteratív meghatározása",
+			"inputs": "a - egész, N - egész",
+			"outputs": "érték - szám",
+			"code": [
+				"függvény HatványIteratív(a : egész, n : egész)",
+				"érték <- a",
+				"ciklus i <- 2-től n-ig",
+				"érték <- érték * a",
+				"ciklus vége",
+				"vissza érték",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "7. aN rekurzív meghatározása",
+			"inputs": "a - szám, n - egész",
+			"outputs": "aN értéke",
+			"code": [
+				"függvény HatványRekurzív(a : egész, n : egész)",
+				"ha n = 1 akkor",
+				"vissza a",
+				"különben",
+				"vissza a * HatványRekurzív(a, n - 1)",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "8. a^n felezéses elvű rekurzív meghatározása",
+			"inputs": "a - szám, n - egész",
+			"outputs": "a^n értéke",
+			"code": [
+				"függvény HatványFelező(a : egész, n : egész)",
+				"ha n = 1 akkor",
+				"vissza a",
+				"különben ha n mod 2 = 0 akkor",
+				"segéd <- HatványFelező(a, n/2)",
+				"vissza segéd * segéd",
+				"különben",
+				"segéd <- HatványFelező (a, (n-1)/2)",
+				"vissza a * segéd * segéd",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "10. Sorozatszámítás programozási tétel rekurzív megvalósítása",
+			"inputs": "x - T tömb, jobb - egész",
+			"outputs": "A vizsgált résztömb elemeire nézve a + művelet eredménye.",
+			"code": [
+				"függvény SorozatszámításRekurzív(x : T tömb, jobb : egész)",
+				"ha jobb = 0 akkor",
+				"vissza érték0",
+				"különben",
+				"vissza SorozatszámításRekurzív(x, jobb - 1) + x[jobb]",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "11. Lineáris keresés programozási tétel rekurzív megvalósítása",
+			"inputs": "x - T tömb, bal - egész, n - egész (tömb mérete), P - logikai (tulajdonság)",
+			"outputs": "Az első P tulajdonságú elem indexe, illetve ha nincs P tulajdonságú elem, akkor 0.",
+			"code": [
+				"függvény LineárisKeresésRekurzív(x : T tömb, bal : egész, n : egész, Pred : logikai)",
+				"ha bal > n akkor",
+				"vissza 0",
+				"különben ha Pred(x[bal]) akkor",
+				"vissza bal",
+				"különben",
+				"vissza LineárisKeresésRekurzív(x, bal + 1, n, Pred)",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "12. Megszámlálás programozási tétel rekurzív megvalósítása",
+			"inputs": "x - T tömb, jobb - egész, P - logikai (tulajdonság)",
+			"outputs": "A vizsgált résztömbben az P tulajdonságú elemek száma.",
+			"code": [
+				"függvény MegszámlálásRekurzív(x : T tömb, jobb : egész, Pred : logikai)",
+				"ha jobb = 0 akkor",
+				"vissza 0",
+				"különben ha Pred(x[jobb]) akkor",
+				"vissza 1 + MegszámlálásRekurzív(x, jobb - 1, Pred)",
+				"különben",
+				"vissza MegszámlálásRekurzív(x, jobb - 1, Pred)",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "13. Maximumkiválasztás programozási tétel rekurzív megvalósítása",
+			"inputs": "x - T tömb, jobb - egész; ahol T összehasonlítható",
+			"outputs": "A vizsgált résztömbben a maximális értékű elem indexe.",
+			"code": [
+				"függvény MaximumkiválasztásRekurzív(x : T tömb, jobb : egész)",
+				"ha jobb = 1 akkor",
+				"vissza 1",
+				"különben",
+				"max <- MaximumkiválasztásRekurzív(x, jobb - 1)",
+				"ha x[jobb] > x[max] akkor",
+				"vissza jobb",
+				"különben",
+				"vissza max",
+				"elágazás vége",
+				"elágazás vége",
+				"függvény vége"
+			]
+		}
+	],
+	"5": [
+		{
+			"name": "1. Lineáris keresés rendezett tömbben",
+			"inputs": "x - T rendezett tömb, n - egész (tömb mérete), érték - T; ahol T összehasonlítható",
+			"outputs": "van - logikai, idx - egész",
+			"code": [
+				"függvény LineárisKeresésRendezettben(x : T rendezett tömb, n : egész, érték : T)",
+				"i <- 1",
+				"ciklus amíg (i <= n) és (x[i] < érték)",
+				"i <- i + 1",
+				"ciklus vége",
+				"van <- (i <= n) és (x[i] = érték)",
+				"ha van akkor",
+				"idx <- i",
+				"vissza (van, idx)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "2. Logaritmikus keresés iteratív megvalósítása",
+			"inputs": "x - T rendezett tömb, n - egész, érték - T; ahol T összehasonlítható",
+			"outputs": "van - logikai, idx - egész",
+			"code": [
+				"függvény LogaritmikusKeresés(x : T rendezett tömb, n : egész, érték : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és (x[center] =/= érték)",
+				"ha x[center] > érték akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"van <- (bal <= jobb)",
+				"ha van akkor",
+				"idx <- center",
+				"vissza (van, idx)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "3. Logaritmikus keresés rekurzív megvalósítása",
+			"inputs": "x - T rendezett tömb, bal - egész, jobb - egész, érték - T; ahol T összehasonlítható",
+			"outputs": "Az érték-kel megegyező elem indexe, illetve ha nincs ilyen, akkor 0.",
+			"code": [
+				"függvény LogaritmikusKeresésRekurzív(x : T rendezett tömb, bal : egész, jobb : egész, érték : T)",
+				"ha bal > jobb akkor",
+				"vissza 0",
+				"különben",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ha x[center] = érték akkor",
+				"vissza center",
+				"különben",
+				"ha x[center] > érték akkor",
+				"vissza LogaritmikusKeresésRekurzív(x, bal, center - 1, érték)",
+				"különben",
+				"vissza LogaritmikusKeresésRekurzív(x, center + 1, jobb, érték)",
+				"elágazás vége",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "4. Eldöntés programozási tétel rendezett tömbben",
+			"inputs": "x - T rendezett tömb, n - egész (tömb mérete), érték - T; ahol T összehasonlítható",
+			"outputs": "van - logikai",
+			"code": [
+				"függvény EldöntésRendezettben(x : T rendezett tömb, n : egész, érték : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és (x[center] =/= érték)",
+				"ha x[center] > érték akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"van <- (bal <= jobb)",
+				"vissza van",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "5. Módosított eldöntés programozási tétel rendezett tömbben",
+			"inputs": "x - T rendezett tömb, n - egész (tömb mérete), alsóhatár - T, felsőhatár - T; ahol T összehasonlítható",
+			"outputs": "van - logikai",
+			"code": [
+				"függvény MódosítottEldöntésRendezettben(x : T rendezett tömb, n : egész, alsóhatár : T, felsőhatár : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és ~((alsóhatár <= x[center]) és (x[center] <= felsőhatár))",
+				"ha x[center] > felsőhatár akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"van <- (bal <= jobb)",
+				"vissza van",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "6. Kiválasztás programozási tétel rendezettben",
+			"inputs": "x - T rendezett tömb, n - egész, érték - T; ahol T összehasonlítható",
+			"outputs": "idx - egész",
+			"code": [
+				"függvény KiválasztásRendezettben(x : T rendezett tömb, n : egész, érték : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg x[center] =/= érték",
+				"ha x[center] > érték akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"idx <- center",
+				"vissza idx",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "7. Kiválogatás programozási tétel rendezett tömbben",
+			"inputs": "x - T rendezett tömb, n - egész, érték - T; ahol T összehasonlítható",
+			"outputs": "van - logikai, bal - egész, jobb - egész",
+			"code": [
+				"függvény KiválogatásRendezettben(x : T rendezett tömb, n : egész, érték : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és (x[center] =/= érték)",
+				"ha x[center] > érték akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"van <- (bal <= jobb)",
+				"ha van akkor",
+				"bal <- center",
+				"ciklus amíg (bal > 1) és (x[bal - 1] = érték)",
+				"bal <- bal - 1",
+				"ciklus vége",
+				"jobb <- center",
+				"ciklus amíg (jobb < n) és (x[jobb + 1] = érték)",
+				"jobb <- jobb + 1",
+				"ciklus vége",
+				"vissza (van, bal, jobb)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "8. Módosított kiválogatás programozási tétel rendezett tömbben",
+			"inputs": "x-T rendezett tömb, n-egész, alsóhatár-T, felsőhatár-T; ahol T összehasonlítható",
+			"outputs": "van - logikai, bal - egész, jobb - egész",
+			"code": [
+				"függvény MódosítottKiválogatásRendezettben(x : T rendezett tömb, n : egész, alsóhatár",
+				": T, felsőhatár : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és ~ ((alsóhatár <= x[center]) és (x[center] <= felsőhatár))",
+				"ha x[center] > felsőhatár akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"van <- (bal <= jobb)",
+				"ha van akkor",
+				"bal <- center",
+				"ciklus amíg (bal > 1) és (x[bal - 1] >= alsóhatár)",
+				"bal <- bal - 1",
+				"ciklus vége",
+				"jobb <- center",
+				"ciklus amíg (jobb < n) és (x[jobb + 1] <= felsőhatár)",
+				"jobb <- jobb + 1",
+				"ciklus vége",
+				"vissza (van, bal, jobb)",
+				"különben",
+				"vissza van",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "9. Megszámlálás programozási tétel rendezett tömbben",
+			"inputs": "x - T rendezett tömb, n - egész, érték - T; ahol T összehasonlítható",
+			"outputs": "db - egész",
+			"code": [
+				"függvény MegszámlálásRendezettben(x : T rendezett tömb, n : egész, érték : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és (x[center] =/= érték)",
+				"ha x[center] > érték akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"ha bal <= jobb akkor",
+				"bal <- center",
+				"ciklus amíg (bal > 1) és (x[bal - 1] = érték)",
+				"bal <- bal - 1",
+				"ciklus vége",
+				"jobb <- center",
+				"ciklus amíg (jobb < n) és (x[jobb + 1] = érték)",
+				"jobb <- jobb + 1",
+				"ciklus vége",
+				"db <- jobb - bal + 1",
+				"különben",
+				"db <- 0",
+				"elágazás vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "10. Halmaztulajdonság vizsgálata",
+			"inputs": "x - T rendezett tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "l - logikai",
+			"code": [
+				"függvény HalmazE(x : T rendezett tömb, n : egész)",
+				"i <- 2",
+				"ciklus amíg (i <= n) és (x[i] =/= x[i - 1])",
+				"i <- i + 1",
+				"ciklus vége",
+				"l <- (i > n)",
+				"vissza l",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "11. Halmaz létrehozása",
+			"inputs": "x - T rendezett tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "a - T halmaz, db - egész",
+			"code": [
+				"függvény HalmazLétrehozás(x : T rendezett tömb, n : egész)",
+				"a <- Létrehoz(T)[n]",
+				"db <- 1",
+				"a[db] <- x[1]",
+				"ciklus i <- 2-től n-ig",
+				"ha x[i] <= a[db] akkor",
+				"db <- db + 1",
+				"a[db] <- x[i]",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (a, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "12. Tartalmazás vizsgálat",
+			"inputs": "a - T halmaz, n - egész (halmaz mérete), érték - T; ahol T összehasonlítható",
+			"outputs": "l - logikai",
+			"code": [
+				"függvény TartalmazzaE(a : T halmaz, n : egész, érték : T)",
+				"bal <- 1",
+				"jobb <- n",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus amíg (bal <= jobb) és (a[center] <= érték)",
+				"ha a[center] > érték akkor",
+				"jobb <- center - 1",
+				"különben",
+				"bal <- center + 1",
+				"elágazás vége",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ciklus vége",
+				"l <- (bal <= jobb)",
+				"vissza l",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "13. Részhalmaz vizsgálat",
+			"inputs": "a - T halmaz, m - egész (a mérete), b - T halmaz, n - T halmaz (b mérete)",
+			"outputs": "l - logikai",
+			"code": [
+				"függvény Részhalmaz_e(a : T halmaz, m : egész, b : T halmaz, n : egész)",
+				"i <- 1",
+				"j <- 1",
+				"ciklus amíg (i <= m) és (j <= n) és (a[i] >= b[j])",
+				"ha a[i] = b[j] akkor",
+				"i <- i + 1",
+				"elágazás vége",
+				"j <- j + 1",
+				"ciklus vége",
+				"l <- (i > m)",
+				"vissza l",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "14. Halmazok uniója",
+			"inputs": "a1 - T halmaz, n1 - egész (halmaz mérete), a2 - T halmaz, n2 - egész (halmaz mérete)",
+			"outputs": "b - T halmaz, db - egész",
+			"code": [
+				"függvény HalmazUnió(a1 : T halmaz, n1 : egész, a2 : T halmaz, n2 : egész)",
+				"b <- Létrehoz(T)[n1 + n2]",
+				"i <- 1",
+				"j <- 1",
+				"db <- 0",
+				"n1 <- n1 + 1",
+				"a1[n1] <- végtelen",
+				"n2 <- n2 + 1",
+				"a2[n2] <- végtelen",
+				"ciklus amíg (i < n1) vagy (j < n2)",
+				"db <- db + 1",
+				"ha a1[i] < a2[j] akkor",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"különben ha a1[i] > a2[j] akkor",
+				"b[db] <- a2[j]",
+				"j <- j + 1",
+				"különben",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (b, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "15. Halmazok metszete",
+			"inputs": "a1 - T halmaz, n1 - egész (halmaz mérete), a2 - T halmaz, n2 - egész (halmaz mérete)",
+			"outputs": "b - T halmaz, db - egész",
+			"code": [
+				"függvény HalmazMetszet(a1 : T halmaz, n1 : egész, a2 : T halmaz, n2 : egész)",
+				"b <- Létrehoz(T)[Min(n1, n2)]",
+				"i <- 1",
+				"j <- 1",
+				"db <- 0",
+				"ciklus amíg (i <= n1) és (j <= n2)",
+				"ha a1[i] < a2[j] akkor",
+				"i <- i + 1",
+				"különben ha a1[i] > a2[j] akkor",
+				"j <- j + 1",
+				"különben",
+				"db <- db + 1",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza (b, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "16. Halmazok különbsége",
+			"inputs": "a1 - T halmaz, n1 - egész (halmaz mérete), a2 - T halmaz, n2 - egész (halmaz mérete)",
+			"outputs": "b - T halmaz, db - egész",
+			"code": [
+				"függvény HalmazKulonbseg(a1 : T halmaz, n1 : egész, a2 : T halmaz, n2 : egész)",
+				"b <- Létrehoz(T)[n1]",
+				"i <- 1",
+				"j <- 1",
+				"db <- 0",
+				"ciklus amíg (i <= n1) és (j <= n2)",
+				"ha a1[i] < a2[j] akkor",
+				"db <- db + 1",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"különben ha a1[i] > a2[j] akkor",
+				"j <- j + 1",
+				"különben",
+				"i <- i + 1",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus amíg i <= n1",
+				"db <- db + 1",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"ciklus vége",
+				"vissza (b, db)",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "17. Halmazok szimmetrikus differenciája",
+			"inputs": "a1 - T halmaz, n1 - egész (halmaz mérete), a2 - T halmaz, n2 - egész (halmaz mérete)",
+			"outputs": "b - T halmaz, db - egész",
+			"code": [
+				"függvény HalmazSzimmetrikusDifferencia(a1 : T halmaz, n1 : egész, a2 : T halmaz, n2 :",
+				"egész)",
+				"b <- Létrehoz(T)[n1 + n2]",
+				"i <- 1",
+				"j <- 1",
+				"db <- 0",
+				"ciklus amíg (i <= n1) és (j <= n2)",
+				"ha a1[i] < a2[j] akkor",
+				"db <- db + 1",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"különben ha a1[i] > a2[j] akkor",
+				"db <- db + 1",
+				"b[db] <- a2[j]",
+				"j <- j + 1",
+				"különben",
+				"i <- i + 1",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus amíg i <= n1",
+				"db <- db + 1",
+				"b[db] <- a1[i]",
+				"i <- i + 1",
+				"ciklus vége",
+				"ciklus amíg j <= n2",
+				"db <- db + 1",
+				"b[db] <- a2[j]",
+				"j <- j + 1",
+				"ciklus vége",
+				"vissza (b, db)",
+				"függvény vége"
+			]
+		}
+	],
+	"6": [
+		{
+			"name": "1. Felező maximumkiválasztás",
+			"inputs": "x - T tömb, bal - egész, jobb - egész; ahol T összehasonlítható",
+			"outputs": "Az x tömb bal és jobb indexei közötti résztömbje maximális elemének indexe.",
+			"code": [
+				"függvény FelezőMaximumkiválasztás(x : T tömb, bal : egész, jobb : egész)",
+				"ha bal = jobb akkor",
+				"vissza bal",
+				"különben",
+				"center <- Kerekit((bal+jobb)/2)",
+				"balmax <- FelezőMaximumkiválasztás(x, bal, center)",
+				"jobbmax <- FelezőMaximumkiválasztás(x, center + 1, jobb)",
+				"ha x[balmax] >= x[jobbmax] akkor",
+				"vissza balmax",
+				"különben",
+				"vissza jobbmax",
+				"elágazás vége",
+				"elágazás vége",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "2. Összefésülő rendezés",
+			"inputs": "x - T tömb, bal - egész, jobb - egész; ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás ÖsszefésülőRendezés(címszerint x : T tömb, bal : egész, jobb : egész)",
+				"ha bal < jobb akkor",
+				"center <- Kerekit((bal+jobb)/2)",
+				"ÖsszefésülőRendezés(x, bal, center)",
+				"ÖsszefésülőRendezés(x, center + 1, jobb)",
+				"Összefésül(x, bal, center, jobb)",
+				"elágazás vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "3. Összefésülés",
+			"inputs": "x - T tömb, bal - egész, center - egész, jobb - egész; ahol T összehasonlítható",
+			"outputs": "x - T tömb",
+			"code": [
+				"eljárás Összefésül(címszerint x : T tömb, bal : egész, center : egész, jobb : egész)",
+				"n1 <- center - bal + 1",
+				"n2 <- jobb - center",
+				"y1 <- Létrehoz(T)[n1 + 1]",
+				"ciklus i <- 1-től n1-ig",
+				"y1[i] <- x[bal + i - 1]",
+				"ciklus vége",
+				"y2 <- Létrehoz(T)[n2 + 1]",
+				"ciklus j <- 1-től n2-ig",
+				"y2[j] <- x[center + j]",
+				"ciklus vége",
+				"y1[n1 + 1] <- végtelen",
+				"y2[n2 + 1] <- végtelen",
+				"i <- 1",
+				"j <- 1",
+				"ciklus k <- bal-től jobb-ig",
+				"ha y1[i] <= y2[j] akkor",
+				"x[k] <- y1[i]",
+				"i <- i + 1",
+				"különben",
+				"x[k] <- y2[j]",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "4. Gyorsrendezés",
+			"inputs": "x - T tömb, bal - egész, jobb - egész; ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás GyorsRendezés(címszerint x : T tömb, bal : egész, jobb : egész)",
+				"idx <- Szétválogat(x, bal, jobb)",
+				"ha idx > bal + 1 akkor",
+				"GyorsRendezés(x, bal, idx - 1)",
+				"elágazás vége",
+				"ha idx < jobb - 1 akkor",
+				"GyorsRendezés(x, idx + 1, jobb)",
+				"elágazás vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "5. Gyorsrendezés szétválogatása",
+			"inputs": "x - T tömb, bal - egész, jobb - egész; ahol T összehasonlítható",
+			"outputs": "x - T tömb, idx - egész",
+			"code": [
+				"függvény Szétválogat(címszerint x : T tömb, bal : egész, jobb : egész)",
+				"segéd <- x[bal]",
+				"ciklus amíg bal < jobb",
+				"ciklus amíg (bal < jobb) és (x[jobb] > segéd)",
+				"jobb <- jobb - 1",
+				"ciklus vége",
+				"ha bal < jobb akkor",
+				"x[bal] <- x[jobb]",
+				"bal <- bal + 1",
+				"ciklus amíg (bal < jobb) és (x[bal] <= segéd)",
+				"bal <- bal + 1",
+				"ciklus vége",
+				"ha bal < jobb akkor",
+				"x[jobb] <- x[bal]",
+				"jobb <- jobb - 1",
+				"elágazás vége",
+				"elágazás vége",
+				"ciklus vége",
+				"idx <- bal",
+				"x[idx] <- segéd",
+				"vissza idx",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "6. k-adik legkisebb elem kiválasztása",
+			"inputs": "x - T tömb, bal - egész, jobb - egész, k - egész; ahol T összehasonlítható",
+			"outputs": "k-adik legkisebb tömbelem értéke",
+			"code": [
+				"függvény KAdikLegkisebbElem(x : T tömb, bal : egész, jobb : egész, k : egész)",
+				"ha bal = jobb akkor",
+				"vissza x[bal]",
+				"különben",
+				"idx <- Szétválogat(x, bal, jobb)",
+				"ha k = idx - bal + 1 akkor",
+				"vissza x[idx]",
+				"különben ha k < idx - bal + 1 akkor",
+				"vissza KAdikLegkisebbElem(x, bal, idx - 1, k)",
+				"különben",
+				"vissza KAdikLegkisebbElem(x, idx + 1, jobb, k - (idx - bal + 1))",
+				"elágazás vége",
+				"elágazás vége",
+				"függvény vége"
+			]
+		}
+	],
+	"7": [
+		{
+			"name": "1. 0-1 hátizsák probléma",
+			"inputs": "p - egész tömb, w - egész tömb, n - egész (tömb mérete), c - egész",
+			"outputs": "F - egész tábla",
+			"code": [
+				"függvény NullaEgyHátizsák(p : egész tömb, w : egész tömb, n : egész, c : egész)",
+				"f <- TáblaLétrehoz(egész)[n + 1, c + 1]",
+				"ciklus x <- 0-től c-ig",
+				"f[0, x] <- 0",
+				"ciklus vége",
+				"ciklus i <- 1-től n-ig",
+				"f[i, 0] <- 0",
+				"ciklus vége",
+				"ciklus i <- 1-től n-ig",
+				"ciklus x <- 1-től c-ig",
+				"ha w[i] <= x akkor",
+				"f[i, x] <- Max(f[i - 1, x], f[i - 1, x - w[i]] + p[i])",
+				"különben",
+				"f[i, x] <- f[i - 1, x]",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus vége",
+				"vissza f",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "2. Kiválasztott elemek kiolvasása",
+			"inputs": "F - egész tábla, n - egész, c - egész",
+			"outputs": "S - egész halmaz",
+			"code": [
+				"függvény Kiolvas(f : egész tábla, n : egész, c : egész)",
+				"s <- Halmaz()",
+				"i <- n",
+				"x <- c",
+				"ciklus amíg (i > 0) és (x > 0)",
+				"ha f[i, x] <= f[i - 1, x] akkor",
+				"s <- Unio(s, i)",
+				"x <- x - w[i]",
+				"elágazás vége",
+				"i <- i - 1",
+				"ciklus vége",
+				"vissza s",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "3. Leghosszabb közös részsorozat hossza",
+			"inputs": "X - T tömb, n - egész (tömb mérete), Y - T tömb, m - egész (tömb mérete)",
+			"outputs": "F - egész tábla",
+			"code": [
+				"függvény LKRHossza(x : T tömb, n : egész, y : T tömb, m : egész)",
+				"f <- TáblaLétrehoz(egész)[n + 1, m + 1]",
+				"ciklus j <- 0-től m-ig",
+				"f[0, j] <- 0",
+				"ciklus vége",
+				"ciklus i <- 1-től n-ig",
+				"f[i, 0] <- 0",
+				"ciklus vége",
+				"ciklus i <- 1-től n-ig",
+				"ciklus j <- 1-től m-ig",
+				"ha x[i] = y[j] akkor",
+				"f[i, j] <- f[i - 1, j - 1] + 1",
+				"különben",
+				"f[i, j] <- Max(f[i - 1, j], f[i, j - 1])",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus vége",
+				"vissza f",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "4. Leghosszabb közös részsorozat előállítása",
+			"inputs": "F - egész tábla, X - T tömb, n - egész, Y - T tömb, m - egész",
+			"outputs": "S - T tömb",
+			"code": [
+				"függvény LKRElőállítás(f : egész tábla, x : T tömb, n : egész, y : T tömb, m : egész)",
+				"s <- Létrehoz(T)[f[n, m]]",
+				"i <- n",
+				"j <- m",
+				"idx <- f[n, m]",
+				"ciklus amíg idx > 0",
+				"ha x[i] = y[j] akkor",
+				"s[idx] <- x[i]",
+				"idx <- idx - 1",
+				"i <- i - 1",
+				"j <- j - 1",
+				"különben ha f[i - 1, j] > f[i, j - 1] akkor",
+				"i <- i - 1",
+				"különben",
+				"j <- j - 1",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza s",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "5. Pénzkifizetés mohó algoritmusa",
+			"inputs": "x - egész, c - egész rendezett tömb, n - egész",
+			"outputs": "db - egész tömb",
+			"code": [
+				"függvény Pénzkifizetés(x : egész, c : egész tömb, n : egész)",
+				"db <- Létrehoz(egész)[n]",
+				"ciklus i <- 1-től n-ig",
+				"db[i] <- 0",
+				"ciklus vége",
+				"j <- n",
+				"ciklus amíg x > 0",
+				"ciklus amíg c[j] > x",
+				"j <- j - 1",
+				"ciklus vége",
+				"db[j] <- db[j] + 1",
+				"x <- x - c[j]",
+				"ciklus vége",
+				"vissza db",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "6. 0-1 hátizsák probléma mohó megoldása",
+			"inputs": "p - egész tömb, w - egész tömb, n - egész (tömb mérete), c - egész",
+			"outputs": "S - egész halmaz",
+			"code": [
+				"függvény MohóNullaEgyHátizsák(p : egész tömb, w : egész tömb, n : egész, c : egész)",
+				"s <- Halmaz()",
+				"i <- 1",
+				"ciklus amíg (c > 0) és (i <= n)",
+				"ha w[i] <= c akkor",
+				"s <- Unio(s, i)",
+				"c <- c - w[i]",
+				"elágazás vége",
+				"i <- i + 1",
+				"ciklus vége",
+				"vissza s",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "7. Összegyűjtött kincsek összege (dinamikus programozás)",
+			"inputs": "C - egész tömb, m - egész (C sorainak száma), n - egész (C oszlopainak száma)",
+			"outputs": "F - egész tömb",
+			"code": [
+				"függvény KincsÖsszeg(c : egész tömb, m : egész, n : egész)",
+				"f <- TáblaLétrehoz(egész)[m, n]",
+				"f[1, 1] <- c[1, 1]",
+				"ciklus j <- 2-től n-ig",
+				"f[1, j] <- f[1, j - 1] + c[i, j]",
+				"ciklus vége",
+				"ciklus i <- 2-től m-ig",
+				"f[i, 1] <- f[i - 1, 1] + c[i, j]",
+				"ciklus vége",
+				"ciklus i <- 2-től m-ig",
+				"ciklus j <- 2-től n-ig",
+				"f[i, j] <- Max(f[i - 1, j], f[i, j - 1]) + c[i, j]",
+				"ciklus vége",
+				"ciklus vége",
+				"vissza f",
+				"függvény vége"
+			]
+		},
+
+		{
+			"skip": true,
+			"name": "8. Bejárási út kiolvasása (dinamikus programozás)",
+			"inputs": "F - egész tömb, m - egész (F sorainak száma), n - egész (F oszlopainak száma)",
+			"outputs": "P - egész tömb",
+			"code": [
+				"függvény BejárásiÚtKiolvas(f : egész tömb, m : egész, n : egész)",
+				"p <- Létrehoz(egész)[m + n - 1]",
+				"i <- m",
+				"j <- n",
+				"k <- m + n - 1",
+				"ciklus amíg (i >= 2) és (j >= 2)",
+				"p[k] <- (i, j)",
+				"k <- k - 1",
+				"ha f[i - 1, j] > f[i, j - 1] akkor",
+				"i <- i - 1",
+				"különben",
+				"j <- j - 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus amíg i >= 2",
+				"p[k] <- (i, j)",
+				"k <- k - 1",
+				"i <- i - 1",
+				"ciklus vége",
+				"ciklus amíg j >= 2",
+				"p[k] <- (i, j)",
+				"k <- k - 1",
+				"j <- j - 1",
+				"ciklus vége",
+				"p[1] <- (1, 1)",
+				"vissza p",
+				"függvény vége"
+			]
+		},
+
+		{
+			"skip": true,
+			"name": "9. Kincsek begyűjtése (mohó algoritmus)",
+			"inputs": "C - egész tömb, m - egész (C sorainak száma), n - egész (C oszlopainak száma)",
+			"outputs": "P - egész tömb",
+			"code": [
+				"függvény MohóKincsGyűjtés(c : egész tömb, m : egész, n : egész)",
+				"p <- Létrehoz(egész)[m + n - 1]",
+				"i <- 1",
+				"j <- 1",
+				"k <- 0",
+				"ciklus amíg (i < m) és (j < n)",
+				"k <- k + 1",
+				"p[k] <- (i, j)",
+				"ha c[i + 1, j] > c[i, j + 1] akkor",
+				"i <- i + 1",
+				"különben",
+				"j <- j + 1",
+				"elágazás vége",
+				"ciklus vége",
+				"ciklus amíg i < m",
+				"k <- k + 1",
+				"p[k] <- (i, j)",
+				"i <- i + 1",
+				"ciklus vége",
+				"ciklus amíg j < n",
+				"k <- k + 1",
+				"p[k] <- (i, j)",
+				"j <- j + 1",
+				"ciklus vége",
+				"k <- k + 1",
+				"p[k] <- (i, j)",
+				"vissza p",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "10. Esemény kiválasztás",
+			"inputs": "s - idő tömb, f - idő rendezett tömb, n - egész (tömbök mérete)",
+			"outputs": "A - egész halmaz",
+			"code": [
+				"függvény EseményKiválasztás(s : egész tömb, f : egész tömb, n : egész)",
+				"a <- Halmaz(1)",
+				"utolsó <- 1",
+				"ciklus i <- 2-től n-ig",
+				"ha s[i] >= f[utolsó] akkor",
+				"a <- Unio(a, i)",
+				"utolsó <- i",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza a",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "11. Esemény elkülönítés",
+			"inputs": "s - idő rendezett tömb, f - idő tömb, n - egész (tömbök mérete)",
+			"outputs": "A - egész tömb",
+			"code": [
+				"függvény EseményElkülönítés(s : egész rendezett tömb, f : egész tömb, n : egész)",
+				"a <- Létrehoz(egész)[n]",
+				"utolsó <- 0",
+				"ciklus i <- 1-től n-ig",
+				"j <- 1",
+				"ciklus amíg (j <= utolsó) és ~KompatiblisEseményErőforrással(a, s, f, i, j)",
+				"j <- j + 1",
+				"ciklus vége",
+				"ha j <= utolsó akkor",
+				"a[i] <- j",
+				"különben",
+				"utolsó <- utolsó + 1",
+				"a[i] <- utolsó",
+				"elágazás vége",
+				"ciklus vége",
+				"vissza a",
+				"függvény vége"
+			]
+		},
+
+		{
+			"name": "12. Ütemezés késés minimalizálással",
+			"inputs": "d - idő rendezett tömb, t - idő tömb, n - egész (tömbök mérete)",
+			"outputs": "s - idő tömb, f - idő tömb",
+			"code": [
+				"függvény KésésMinimalizálás(d : egész rendezett tömb, t : egész tömb, n : egész)",
+				"s <- Létrehoz(egész)[n]",
+				"f <- Létrehoz(egész)[n]",
+				"utolsó <- 0",
+				"ciklus i <- 1-től n-ig",
+				"s[i] <- utolsó",
+				"f[i] <- s[i] + t[i]",
+				"utolsó <- f[i]",
+				"ciklus vége",
+				"vissza (s, f )",
+				"függvény vége"
+			]
+		}
+	],
+	"8": [
+		{
+			"name": "1. Kupactulajdonság fenntartása",
+			"inputs": "x - T tömb, n - egész (tömb mérete), k - egész (kupac mérete), i - Egész; ahol T összehasonlítható",
+			"outputs": "x - T tömb",
+			"code": [
+				"eljárás Kupacol(címszerint x : T tömb, n : egész, k : egész, i : egész)",
+				"bal <- 2 * i",
+				"jobb <- 2 * i + 1",
+				"max <- 0",
+				"ha bal <= k és x[bal] > x[i] akkor",
+				"max <- bal",
+				"különben",
+				"max <- i",
+				"elágazás vége",
+				"ha jobb <= k és x[jobb] > x[max] akkor",
+				"max <- jobb",
+				"elágazás vége",
+				"ha max <= i akkor",
+				"x[i] <-> x[max]",
+				"Kupacol(x, n, k, max)",
+				"elágazás vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "2. Kupac építése",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T kupac",
+			"code": [
+				"eljárás KupacotÉpít(címszerint x : T tömb, n : egész)",
+				"ciklus i <- Kerekit(n/2)-től 1-ig",
+				"Kupacol(x, n, n, i)",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		},
+
+		{
+			"name": "3. Kupacrendezés",
+			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T összehasonlítható",
+			"outputs": "x - T rendezett tömb",
+			"code": [
+				"eljárás Kupacrendezes(címszerint x : T tömb, n : egész)",
+				"KupacotÉpít(x, n)",
+				"ciklus i <- n-től 2-ig",
+				"x[1] <-> x[i]",
+				"Kupacol(x, n, i - 1, 1)",
+				"ciklus vége",
+				"eljárás vége"
+			]
+		}
+	]
+}

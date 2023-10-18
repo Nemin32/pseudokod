@@ -5,27 +5,22 @@ import { Variables } from "./variables.ts";
 
 type Value = Atom["value"];
 
-class State {
+export class State {
 	constructor(
 		public ipStack: Array<number>,
 		public stack: Array<Value>,
 		public vars: Variables,
-		public idx: number) { }
+		public idx: number,
+		public output: string) { }
 
 	clone(): State {
-		return new State([...this.ipStack], [...this.stack], this.vars.clone(), this.idx)
+		return new State([...this.ipStack], [...this.stack], this.vars.clone(), this.idx, this.output)
 	}
 }
 
 export class VM {
 	jmpTable: Map<string, number> = new Map()
-	states: State[] = [new State([], [], new Variables(), 0)];
-
-	stepBack(): void {
-		if (this.states.length >= 2) {
-			this.states.pop();
-		}
-	}
+	states: State[] = [new State([], [], new Variables(), 0, "")];
 
 	saveState(): void {
 		this.states.push(this.currentState.clone())
@@ -204,7 +199,7 @@ export class VM {
 			} break;
 
 			case OC.PRINT: {
-				console.log(this.pop())
+				this.currentState.output += String(this.pop())
 			} break;
 
 			case OC.PUSH: {
@@ -264,6 +259,13 @@ export class VM {
 
 		this.render(this.previousState, this.currentState)
 		return retVal;
+	}
+
+	stepBack(): void {
+		if (this.states.length >= 2) {
+			this.render(this.currentState, this.previousState)
+			this.states.pop();
+		}
 	}
 
 	run() {

@@ -1,9 +1,10 @@
-#stack span {
+
+.changing span {
 		display: block;
 		border: 1px solid var(--border);
 }
 
-#stack span.new { background: #ddeedd; }
-#stack span.deleted { background: #eedddd; }
-#stack span.same { background: #eeeeee; }
-#stack span.changed { background: #eeeedd; }
+.changing span.new { background: #ddeedd; }
+.changing span.deleted { background: #eedddd; }
+.changing span.same { background: #eeeeee; }
+.changing span.changed { background: #eeeedd; }

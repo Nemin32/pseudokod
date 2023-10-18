@@ -11,7 +11,7 @@ const enum ValueType {
 }
 
 type Boundary = { isFun: boolean, lastIndex: number }
-type VariableBinding = { name: string, pointer: number }
+export type VariableBinding = { name: string, pointer: number }
 type ValueADT = { rc: number, value: Atom["value"] } & (
 	| { type: ValueType.NORMAL }
 	| { type: ValueType.ARRAY, dimensions: number[] }
@@ -26,7 +26,8 @@ export class Variables {
 	) { }
 
 	clone() {
-		return new Variables([...this.bounds], [...this.bindings], [...this.values])
+		//return new Variables([...this.bounds], [...this.bindings], [...this.values])
+		return new Variables(structuredClone(this.bounds), structuredClone(this.bindings), structuredClone(this.values))
 	}
 
 	escope(isFun: boolean) {
@@ -120,6 +121,10 @@ export class Variables {
 
 	getVariable(name: string): Atom["value"] {
 		return this.getBox(this.getAddress(name)).value
+	}
+
+	getVariableOrNull(name: string): Atom["value"] | null {
+		return this.getBoxOrNull(this.getAddress(name))?.value ?? null
 	}
 
 

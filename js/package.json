@@ -14,7 +14,7 @@
   },
   "scripts": {
     "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
-    "build": "yarn esbuild src/controller/vm_controls.ts --bundle --format=esm --target=es2020 --sourcemap --outfile=dist/newglue.js --servedir=dist/",
+    "build": "yarn esbuild src/impl/frontend/main.ts --bundle --format=esm --target=ES2020 --sourcemap --outfile=dist/main.js --servedir=dist --serve",
     "prod": "yarn esbuild src/controller/vm_controls.js --bundle --format=esm --minify --outfile=dist/newglue.js"
   }
 }

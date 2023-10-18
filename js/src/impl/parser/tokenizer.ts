@@ -61,11 +61,6 @@ export class Tokenizer implements ITokenizer {
 		if (this.index >= this.input.length) return null;
 		this.column++;
 
-		if (this.input[this.index] === "\n") {
-			this.column = 0;
-			this.row++;
-		}
-
 		return this.input[this.index++];
 	}
 
@@ -134,6 +129,8 @@ export class Tokenizer implements ITokenizer {
 		const value = tokenFn.call(this);
 		if (!value) return null;
 
+
+
 		return {
 			lexeme: value,
 			position: { row: state.row, column: state.column },
@@ -163,7 +160,7 @@ export class Tokenizer implements ITokenizer {
 
 	whitespace(): ParseResult {
 		return this.mkToken(TT.WHITESPACE, () => {
-			return this.eatWhile(this.isWhitespace);
+			return this.eatWhile(c => c === " " || c === "\t");
 		});
 	}
 
@@ -175,8 +172,12 @@ export class Tokenizer implements ITokenizer {
 	}
 
 	keyword(): ParseResult {
+
+
 		const slkw = this.tryParse(this.singleLetterKeyword);
 		if (slkw) return slkw;
+
+
 
 		const kw = this.eatWhile(c => !["[", "(", ",", ")", "]"].includes(c) && !this.isWhitespace(c));
 		const type = this.getKeywordTokenType(kw);
@@ -184,6 +185,7 @@ export class Tokenizer implements ITokenizer {
 		if (type === null) return null;
 
 		const token = this.mkToken(type, () => kw);
+
 
 		if (!token) return null;
 
@@ -237,6 +239,7 @@ export class Tokenizer implements ITokenizer {
 					// amennyit végül mégse használtunk fel.
 					this.index -= str.length - i;
 					this.column -= str.length - i;
+
 					return sub;
 				}
 			}
@@ -278,7 +281,7 @@ export class Tokenizer implements ITokenizer {
 		//this.newLine();
 
 		const parsers = [
-			//this.newLine,
+			this.newLine,
 			this.whitespace,
 			this.comment,
 			this.keyword,
@@ -323,22 +326,3 @@ export class Tokenizer implements ITokenizer {
 		return this.parseWhileNotEOF();
 	}
 }
-
-/*
-const a = new Tokenizer();
-console.log(a.tokenize(`
-függvény LNKO(m : egész, n : egész)
-	r <- m mod n
-  
-	ciklus amíg r =/= 0
-		m <- n
-		n <- r
-		r <- m mod n  
-	ciklus vége
-
-	vissza n
-függvény vége
-
-kiír LNKO(15, 33)
-`).map(t => ({name: t.lexeme, type: TT[t.type]})));
-*/
