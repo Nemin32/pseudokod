@@ -1,8 +1,9 @@
 import { Atom } from "../../interfaces/astkinds.ts"
+import { Value } from "./vm.ts"
 
 type DeepArray<T> = (T | DeepArray<T>)[]
 
-const enum ValueType {
+export const enum ValueType {
 	// Normal variable, (number, bool, string), no indirection.
 	NORMAL,
 	// Regular array (rows and cols are pre-set length)
@@ -12,11 +13,10 @@ const enum ValueType {
 
 type Boundary = { isFun: boolean, lastIndex: number }
 export type VariableBinding = { name: string, pointer: number }
-type ValueADT = { rc: number, value: Atom["value"] } & (
+export type ValueADT = { rc: number, value: Value } & (
 	| { type: ValueType.NORMAL }
 	| { type: ValueType.ARRAY, dimensions: number[] }
 )
-
 
 export class Variables {
 	constructor(
@@ -26,7 +26,6 @@ export class Variables {
 	) { }
 
 	clone() {
-		//return new Variables([...this.bounds], [...this.bindings], [...this.values])
 		return new Variables(structuredClone(this.bounds), structuredClone(this.bindings), structuredClone(this.values))
 	}
 
@@ -51,7 +50,7 @@ export class Variables {
 
 		this.bindings = this.bindings.slice(0, length)
 
-		this.gc()
+		//this.gc()
 	}
 
 	free(variable: VariableBinding) {
@@ -109,7 +108,7 @@ export class Variables {
 		}
 	}
 
-	setVariable(name: string, value: Atom["value"]) {
+	setVariable(name: string, value: Value) {
 		const variable = this.findBindingOrNull(name);
 
 		if (variable) {
@@ -125,11 +124,11 @@ export class Variables {
 		}
 	}
 
-	getVariable(name: string): Atom["value"] {
+	getVariable(name: string): Value {
 		return this.getBox(this.getAddress(name)).value
 	}
 
-	getVariableOrNull(name: string): Atom["value"] | null {
+	getVariableOrNull(name: string): Value | null {
 		const address = this.getAddressOrNull(name);
 		if (address === null) return null;
 
@@ -138,13 +137,13 @@ export class Variables {
 
 
 	// ARRAY OPS
-	addArray(name: string, array: DeepArray<Atom["value"]>) {
+	addArray(name: string, array: DeepArray<Value>) {
 		this.makeReference(name, this.addArrayRef(array));
 	}
 
-	addArrayRef(array: DeepArray<Atom["value"]>) {
+	addArrayRef(array: DeepArray<Value>) {
 		const dimensions: number[] = this.getDimensions(array)
-		const values = (array.flat(Infinity as 1) as Atom["value"][]);
+		const values = (array.flat(Infinity as 1) as Value[]);
 
 		const base = this.values.length
 		this.values.push({
@@ -167,13 +166,13 @@ export class Variables {
 		this.addArray(name, arr)
 	}
 
-	setArrayElem(name: string, indexes: number[], value: Atom["value"]) {
+	setArrayElem(name: string, indexes: number[], value: Value) {
 		const box = this.getArrayBox(name, indexes)
 		box.value = value
 	}
 
 
-	getArrayElem(name: string, indexes: number[]): Atom["value"] {
+	getArrayElem(name: string, indexes: number[]): Value {
 		const box = this.getArrayBox(name, indexes)
 		return box.value
 	}
@@ -197,7 +196,7 @@ export class Variables {
 		return base + index
 	}
 
-	getArray(name: string): DeepArray<Atom["value"]> {
+	getArray(name: string): DeepArray<Value> {
 		const base = this.getAddress(name)
 		const box = this.getBox(base)
 		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
@@ -206,9 +205,17 @@ export class Variables {
 		return this.values.slice(base, base + length).map(v => v.value)
 	}
 
+	getArrayByAddr(base: number): DeepArray<Value> {
+		const box = this.getBox(base)
+		if (box.type !== ValueType.ARRAY) throw new Error(`${base}: Isn't an array variable!`)
+
+		const length = box.dimensions.reduce((a, b) => a * b, 1)
+		return this.values.slice(base, base + length).map(v => v.value)
+	}
+
 	// HELPERS
 
-	private addBox(value: Atom["value"]): number {
+	private addBox(value: Value): number {
 		this.values.push({
 			rc: 1,
 			type: ValueType.NORMAL,
@@ -251,7 +258,7 @@ export class Variables {
 		return this.bindings[idx];
 	}
 
-	private findBinding(name: string): VariableBinding {
+	findBinding(name: string): VariableBinding {
 		return this.bindings[this.findIndex(name)];
 	}
 
@@ -262,7 +269,7 @@ export class Variables {
 		return box
 	}
 
-	private getBox(pointer: number): ValueADT {
+	getBox(pointer: number): ValueADT {
 		const box = this.values.at(pointer)
 		if (box === undefined) throw new Error(`No box at address ${pointer}!`)
 
@@ -271,8 +278,8 @@ export class Variables {
 
 	// ARRAY HELPERS
 
-	getDimensions(arr: DeepArray<Atom["value"]>): number[] {
-		let curr: Atom["value"] | DeepArray<Atom["value"]> = arr;
+	getDimensions(arr: DeepArray<Value>): number[] {
+		let curr: Value | DeepArray<Value> = arr;
 		let dims = [];
 
 		while (Array.isArray(curr)) {

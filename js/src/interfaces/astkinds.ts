@@ -62,7 +62,7 @@ export enum BinOpType {
 	GE = 8,
 
 	LESS = 9,
-	GREATER = 10,
+	MORE = 10,
 
 	AND = 11,
 	OR = 12,
@@ -79,7 +79,7 @@ export const BinOpTypeMap = new Map([
 	["<=", BinOpType.LE],
 	[">=", BinOpType.GE],
 	["<", BinOpType.LESS],
-	[">", BinOpType.GREATER],
+	[">", BinOpType.MORE],
 	["és", BinOpType.AND],
 	["vagy", BinOpType.OR],
 ]);

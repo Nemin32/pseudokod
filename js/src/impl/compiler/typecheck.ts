@@ -126,7 +126,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				case BinOpType.GE:
 				case BinOpType.LE:
 				case BinOpType.NEQ:
-				case BinOpType.GREATER:
+				case BinOpType.MORE:
 				case BinOpType.LESS:
 					eqOrThrow(lhs, rhs);
 					return [LOGIC, env]

@@ -45,7 +45,7 @@ function optimizeBinOp(value: BinaryOperation): BinaryOperation | Atom {
 				return mkAtom(lhs >= rhs, LOGIC);
 			case BinOpType.LESS:
 				return mkAtom(lhs < rhs, LOGIC);
-			case BinOpType.GREATER:
+			case BinOpType.MORE:
 				return mkAtom(lhs > rhs, LOGIC);
 			case BinOpType.AND:
 				return mkAtom(Boolean(lhs) && Boolean(rhs), LOGIC);

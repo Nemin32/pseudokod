@@ -1,9 +1,10 @@
 import { OpCode as OC } from "../../interfaces/ICompiler.ts";
 import { Atom, BinOpType } from "../../interfaces/astkinds.ts";
 import { Inst } from "../../interfaces/instructions.ts";
-import { Variables } from "./variables.ts";
+import { ValueADT, ValueType, VariableBinding, Variables } from "./variables.ts";
 
-type Value = Atom["value"];
+type Pointer = { pointer: number }
+export type Value = Atom["value"] | Pointer;
 
 export class State {
 	constructor(
@@ -21,6 +22,10 @@ export class State {
 export class VM {
 	jmpTable: Map<string, number> = new Map()
 	states: State[] = [new State([], [], new Variables(), 0, "")];
+
+	isPointer(x: Value | Value[]): x is Pointer {
+		return !Array.isArray(x) && typeof x === "object" && "pointer" in x;
+	}
 
 	saveState(): void {
 		this.states.push(this.currentState.clone())
@@ -54,24 +59,73 @@ export class VM {
 		return null;
 	}
 
-	pop(): Value {
+	pop(): Value | Value[] {
 		const val = this.currentState.stack.pop()
 		if (val === undefined) throw new Error("Stack was empty!");
+
+		if (val === "__mk") {
+			const retval = [] as Value[];
+			const length = this.currentState.stack.pop() as number;
+
+			for (let i = 0; i < length; i++) {
+				const value = this.currentState.stack.pop()
+				if (value === undefined) throw new Error("Stack was empty!");
+				retval.push(value)
+			}
+
+			return retval.reverse()
+		}
+
 		return val;
 	}
 
 	popMany(n: number): Value[] {
-		const values = [];
+		const values: Value[] = [];
 
 		for (let i = 0; i < n; i++) {
-			values.push(this.pop())
+			const value = this.pop()
+			if (Array.isArray(value)) throw new Error("Array in popMany.");
+			values.push(value)
 		}
 
 		return values.reverse()
 	}
 
+	popIndexes(dim: number): number[] {
+		const dimensionsRaw = this.popMany(dim);
+		const dimensions = dimensionsRaw.map(val => this.unwrapValue(val))
+
+		dimensions.forEach(v => {
+			if (typeof v !== "number") throw new Error("Index was not number: " + v)
+		})
+
+		return dimensions as number[];
+	}
+
+	unwrapValue(value: Value | Value[]): Value {
+		if (Array.isArray(value)) {
+			throw new Error("Value was array.")
+		}
+
+		if (this.isPointer(value)) {
+			const box = this.currentState.vars.getBox(value.pointer)
+
+			if (box.type === ValueType.ARRAY) {
+				throw new Error("Box was array.")
+			}
+
+			return box.value;
+		} else {
+			return value
+		}
+	}
+
 	push(val: Value) {
 		this.currentState.stack.push(val)
+	}
+
+	pushPointer(pointer: number) {
+		this.currentState.stack.push({ pointer })
 	}
 
 	jmp(label: string): void {
@@ -83,167 +137,208 @@ export class VM {
 	}
 
 	exec(inst: Inst) {
+		const {
+			vars,
+			ipStack
+		} = this.currentState;
+
 		switch (inst.code) {
 			case OC.ADDRESS: {
-				const { name } = inst
-				const value = this.currentState.vars.getAddress(name)
-
-				if (value === null) throw new Error(`${name} doesn't exist!`)
-				this.push(value)
-			} break;
+				this.pushPointer(vars.findBinding(inst.name).pointer);
+			}; break
 
 			case OC.ARRADDR: {
-				const indexes = this.popMany(inst.dimensions)
-
-				if (!indexes.map(i => typeof i === "number").every(v => v))
-					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
-
-				this.push(this.currentState.vars.getArrayElemAddr(inst.name, indexes as number[]))
-			} break;
-
-			case OC.ARRCMP: {
-				const elems = this.popMany(inst.length)
-				this.currentState.vars.addArray(inst.name, elems)
-			} break;
-
-			case OC.BINOP: {
-				const { type } = inst
-				const second = this.pop()
-				const first = this.pop()
-
-				switch (type) {
-					case BinOpType.ADD: this.push((first as number) + (second as number)); break;
-					case BinOpType.SUB: this.push((first as number) - (second as number)); break;
-					case BinOpType.MUL: this.push((first as number) * (second as number)); break;
-					case BinOpType.DIV: this.push((first as number) / (second as number)); break;
-					case BinOpType.MOD: this.push((first as number) % (second as number)); break;
-
-					case BinOpType.EQ: this.push(first === second); break;
-					case BinOpType.NEQ: this.push(first !== second); break;
-					case BinOpType.LE: this.push(first <= second); break;
-					case BinOpType.GE: this.push(first >= second); break;
-					case BinOpType.LESS: this.push(first < second); break;
-					case BinOpType.GREATER: this.push(first > second); break;
-
-					case BinOpType.AND: this.push(first && second); break;
-					case BinOpType.OR: this.push(first || second); break;
-				}
-			} break;
+				const indexes = this.popIndexes(inst.dimensions);
+				this.pushPointer(vars.getArrayElemAddr(inst.name, indexes))
+			}; break
 
 			case OC.CALL: {
-				const { name } = inst
-				this.currentState.ipStack.push(this.currentState.idx);
-				this.jmp(name)
-			} break;
+				ipStack.push(this.currentState.idx);
+				this.jmp(inst.name);
+			}; break
+
+			// @ts-ignore: Ignores fallthrough.
+			case OC.RETCMP: {
+				this.push(inst.length)
+				this.push("__mk");
+			}
+
+			// Falls through!
+			case OC.RETURN: {
+				vars.lscope(true)
+				const newIp = this.currentState.ipStack.pop();
+				if (!newIp) throw new Error("IP stack is empty.")
+				this.currentState.idx = newIp
+			}; break
+
+			case OC.ARRCMP: {
+				const elems = this.popMany(inst.length).map(v => this.unwrapValue(v));
+				vars.addArray(inst.name, elems)
+			}; break
+
+			case OC.PUSH: {
+				this.push(inst.value);
+			}; break
+
+			case OC.BINOP: {
+				const second = this.unwrapValue(this.pop())
+				const first = this.unwrapValue(this.pop())
+
+				const methods: ReadonlyMap<BinOpType, (a: number, b: number) => Value> = new Map([
+					// Arithmetics
+					[BinOpType.ADD, (a, b) => a + b as Value],
+					[BinOpType.SUB, (a, b) => a - b],
+					[BinOpType.MUL, (a, b) => a * b],
+					[BinOpType.DIV, (a, b) => a / b],
+					[BinOpType.MOD, (a, b) => a % b],
+
+					// Logic
+					[BinOpType.AND, (a, b) => a && b],
+					[BinOpType.OR, (a, b) => a || b],
+
+					// Comparisons
+					[BinOpType.EQ, (a, b) => a === b],
+					[BinOpType.NEQ, (a, b) => a !== b],
+					[BinOpType.GE, (a, b) => a >= b],
+					[BinOpType.LE, (a, b) => a <= b],
+					[BinOpType.LESS, (a, b) => a < b],
+					[BinOpType.MORE, (a, b) => a > b],
+				])
+
+				const method = methods.get(inst.type)
+
+				if (!method) {
+					throw new Error("No such binop: " + inst.type)
+				}
+
+				this.push(method(first as number, second as number))
+			}; break
+
+			case OC.NOT: {
+				const value = this.unwrapValue(this.pop());
+
+				if (typeof value !== "boolean") {
+					throw new Error("FJMP: Value must be bool, but was " + typeof value)
+				}
+
+				this.push(!value);
+			}; break
+
+			case OC.PRINT: {
+				const value = this.pop()
+
+				console.log(this.currentState.vars)
+
+				const printValue = (value: Value | Value[]): string => {
+					if (Array.isArray(value)) {
+						return `[${value.map(v => printValue(v)).join(", ")}]`
+					} else if (this.isPointer(value)) {
+						const box = this.currentState.vars.getBox(value.pointer)
+
+						if (box.type === ValueType.NORMAL) {
+							return printValue(box.value)
+						} else {
+							const rawArray = vars.getArrayByAddr(value.pointer)
+							return printValue(rawArray as Value[])
+						}
+					} else {
+						return String(value)
+					}
+				}
+
+
+				this.currentState.output += printValue(value) + "\n"
+			}; break
+
+			case OC.VOID: {
+				this.pop()
+			}; break
+
+			case OC.GETARR: {
+				const indexes = this.popIndexes(inst.dimensions).map(i => i-1);
+				this.push(vars.getArrayElem(inst.name, indexes))
+			}; break
+
+			case OC.GETVAR: {
+				this.pushPointer(vars.findBinding(inst.name).pointer);
+			}; break
+
+			case OC.SETARR: {
+				const indexes = this.popIndexes(inst.dimensions).map(i => i-1);
+				const value = this.unwrapValue(this.pop())
+
+				vars.setArrayElem(inst.name, indexes, value);
+			}; break
+
+			case OC.SETVAR: {
+				const { name } = inst;
+
+				const value = this.pop();
+
+				if (this.isPointer(value)) {
+					const box = vars.getBox(value.pointer);
+
+					if (box.type === ValueType.NORMAL) {
+						vars.setVariable(name, box.value);
+					} else {
+						const arr = vars.getArrayByAddr(value.pointer)
+						vars.addArray(name, arr)
+					}
+				} else {
+					if (Array.isArray(value)) {
+						vars.addArray(name, value)
+					} else {
+						vars.setVariable(name, value);
+					}
+				}
+			}; break
+
+			case OC.LABEL: {
+			}; break
+
+			case OC.FJMP: {
+				const value = this.unwrapValue(this.pop());
+
+				if (typeof value !== "boolean") {
+					throw new Error("FJMP: Value must be bool, but was " + typeof value)
+				}
+
+				if (value === false) {
+					this.jmp(inst.label)
+				}
+			}; break
+
+			case OC.JMP: {
+				this.jmp(inst.label)
+			}; break
+
+			case OC.ESCOPE: {
+				vars.escope(inst.isFun)
+			}; break
+
+			case OC.LSCOPE: {
+				vars.lscope(false)
+			}; break
+
+			case OC.MKARR: {
+				const dims = this.popIndexes(inst.numDimensions)
+				vars.addEmptyArray(inst.name, dims)
+			}; break
+
+			case OC.MKREF: {
+				const pointer = this.pop()
+
+				if (!this.isPointer(pointer)) {
+					throw new Error("References must be pointer type, but was " + typeof pointer)
+				}
+
+				vars.makeReference(inst.name, pointer.pointer)
+			}; break
 
 			case OC.DEBUG: {
 				this.currentState.idx++;
 				return false;
-			} // break;
-
-			case OC.ESCOPE: {
-				const { isFun } = inst
-				this.currentState.vars.escope(isFun)
-			} break;
-
-			case OC.FJMP: {
-				const { label } = inst
-				if (this.pop() === false) {
-					this.jmp(label)
-				}
-			} break;
-
-			case OC.GETARR: {
-				const indexes = this.popMany(inst.dimensions)
-
-				if (!indexes.map(i => typeof i === "number").every(v => v))
-					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
-
-				this.push(this.currentState.vars.getArrayElem(inst.name, indexes as number[]))
-			} break;
-
-			case OC.GETVAR: {
-				const { name } = inst
-				const value = this.currentState.vars.getVariable(name)
-				if (value === null) throw new Error(`${name} has no value!`);
-				this.push(value)
-			} break;
-
-			case OC.JMP: {
-				const { label } = inst
-				this.jmp(label)
-			} break;
-
-			case OC.LABEL: { } break;
-
-			case OC.LSCOPE: { this.currentState.vars.lscope(false) } break;
-
-			case OC.MKARR: {
-				const indexes = this.popMany(inst.numDimensions)
-
-				if (!indexes.map(i => typeof i === "number").every(v => v))
-					throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
-
-				this.currentState.vars.addEmptyArray(inst.name, indexes as number[])
-			} break;
-
-			case OC.MKREF: {
-				const { name } = inst
-				const pointer = this.pop()
-				if (typeof pointer !== "number") throw new Error(`${name}: Expected address, got ${typeof pointer}`)
-				this.currentState.vars.makeReference(name, pointer);
-			} break;
-
-			case OC.NOT: {
-				this.push(!this.pop())
-			} break;
-
-			case OC.PRINT: {
-				this.currentState.output += String(this.pop())
-			} break;
-
-			case OC.PUSH: {
-				const { value } = inst
-				this.push(value);
-			} break;
-
-			// @ts-ignore Ignores fallthrough.
-			case OC.RETCMP: {
-				const exprs = this.popMany(inst.length)
-				this.push(this.currentState.vars.addArrayRef(exprs));
-				this.push("__mk")
 			}
-
-			/* Falls through! */
-			case OC.RETURN: {
-				this.currentState.vars.lscope(true)
-				const newIp = this.currentState.ipStack.pop()
-				if (!newIp) throw new Error("IP Stack is empty.")
-				this.currentState.idx = newIp
-			} break;
-
-			case OC.SETARR: {
-				const indexes = this.popMany(inst.dimensions)
-				if (!indexes.map(i => typeof i === "number").every(v => v)) throw new Error(`SETARR: Not all indexes are numbers! ([${indexes.join(", ")}])`)
-
-				const value = this.pop()
-				this.currentState.vars.setArrayElem(inst.name, indexes as number[], value)
-			} break;
-
-			case OC.SETVAR: {
-				const { name } = inst
-				const val = this.pop()
-				if (val === "__mk") {
-					const ref = this.pop()
-					if (typeof ref !== "number") throw new Error(`Expected REFERENCE, got ${typeof ref}`)
-					this.currentState.vars.makeReference(name, ref)
-				} else {
-					this.currentState.vars.setVariable(name, val)
-				}
-			} break;
-
-			case OC.VOID: { this.pop() } break;
-
 		}
 
 		this.currentState.idx++;
