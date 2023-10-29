@@ -1,4 +1,4 @@
-import { Atom } from "../../interfaces/astkinds.ts"
+import { Atom } from "../interfaces/astkinds.ts"
 import { Pointer, Value } from "./vm.ts"
 
 type DeepArray<T> = (T | DeepArray<T>)[]

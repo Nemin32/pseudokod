@@ -1,4 +1,4 @@
-import { AtomValue } from "../../interfaces/astkinds.ts";
+import { AtomValue } from "../interfaces/astkinds.ts";
 import { ValueType, VariableBinding } from "../runtime/variables.ts";
 import { State, Value } from "../runtime/vm.ts";
 

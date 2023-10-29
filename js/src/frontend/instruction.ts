@@ -1,5 +1,5 @@
-import { OpCode } from "../../interfaces/ICompiler.ts"
-import { Inst } from "../../interfaces/instructions.ts"
+import { OpCode } from "../interfaces/ICompiler.ts"
+import { Inst } from "../interfaces/instructions.ts"
 
 const setActive = (bc: Inst, tokenSpans: HTMLSpanElement[], codeRoot: HTMLDivElement) => {
 	const prev = codeRoot.querySelectorAll("span.active")

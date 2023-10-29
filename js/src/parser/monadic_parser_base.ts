@@ -1,5 +1,5 @@
-import { IToken, TokenType as TT, TokenType } from "../../interfaces/ITokenizer.ts";
-import { ASTKind } from "../../interfaces/astkinds.ts";
+import { IToken, TokenType as TT, TokenType } from "../interfaces/ITokenizer.ts";
+import { ASTKind } from "../interfaces/astkinds.ts";
 import { Tokenizer } from "./tokenizer.ts";
 
 // Megmutatja, hogy egy adott input hanyadik eleménél járunk.

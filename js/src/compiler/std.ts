@@ -1,5 +1,5 @@
 import { parseFuncDecl } from "../parser/ast_parser.ts"
-import { Type, FunctionType, NUMBER } from "../../interfaces/types.ts"
+import { Type, FunctionType, NUMBER } from "../interfaces/types.ts"
 import { t } from "../parser/monadic_parser_base.ts"
 
 const max = parseFuncDecl.run(t(`

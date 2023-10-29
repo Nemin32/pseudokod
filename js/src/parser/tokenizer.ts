@@ -1,441 +1,332 @@
-export enum TokenType {
-  /* Keywords */
-  AKKOR = 0,
-  AMIG = 1,
-  CIKLUS = 2,
-  CIMSZERINT = 3,
-  DEBUG = 4,
-  ELAGAZAS = 5,
-  FUGGVENY = 6,
-  HA = 7,
-  KIIR = 8,
-  KULONBEN = 9,
-  LETREHOZ = 10,
-  TOMB = 11,
-  VEGE = 12,
-  VISSZA = 13,
-
-  /* Misc. */
-  NEGAL = 14,
-  OPAREN = 15,
-  CPAREN = 16,
-  OBRACKET = 17,
-  CBRACKET = 18,
-  COLON = 19,
-  COMMA = 20,
-  FORSTART = 21,
-  FOREND = 22,
-  NYIL = 23,
-  REFERENCE = 24,
-
-  /* Special */
-  NUMBER = 25,
-  BOOLEAN = 26,
-  STRING = 27,
-  SYMBOL = 28,
-  FUNCNAME = 29,
-  ARITHMOP = 30,
-  COMPOP = 31,
-  LOGICOP = 32,
-  WHITESPACE = 33,
-  TYPE = 34,
-
-  ERROR = 35,
-}
-
-export class PseudoToken {
-  start: number;
-
-  constructor(
-    readonly type: TokenType,
-    readonly lexeme: string,
-    readonly end: number,
-    readonly line: number,
-    readonly column: number,
-  ) {
-    this.start = this.end - lexeme.length;
-  }
-}
-
-abstract class SimpleParser<Token> {
-  constructor(protected input: string) {}
-  index = 0;
-
-  row = 0;
-  column = 0;
-
-  peek(): string | null {
-    //let lookahed = 0;
-
-    //while (this.index+lookahed < this.input.length && this.input[this.index+lookahed] === '\n') lookahed++;
-
-    //if (this.index+lookahed < this.input.length) return this.input[this.index+lookahed];
-    // return null;
-
-    if (this.index >= this.input.length) return null;
-
-    /* if (this.input[this.index] === "\n") {
-      if (this.index+1 < this.input.length) {
-        return null
-      } else {
-        return this.input[this.index+1]
-      }
-    }*/
-
-    return this.input[this.index];
-  }
-
-  eat(): string | null {
-    if (this.index >= this.input.length) return null;
-    this.column++;
-    return this.input[this.index++];
-  }
-
-  tryParse(func: () => Token | null): Token | null {
-    const prevIdx = this.index;
-    const prevCol = this.column;
-    const prevRow = this.row;
-
-    const value = func.bind(this)();
-
-    if (value) {
-      return value;
-    }
-
-    this.index = prevIdx;
-    this.column = prevCol;
-    this.row = prevRow;
-    return null;
-  }
-
-  parse(): Token[] {
-    const tokens: Token[] = [];
-
-    let t;
-    while ((t = this.parseOne()) != null) {
-      tokens.push(t);
-    }
-
-    return tokens;
-  }
-
-  abstract parseOne(): Token | null;
-
-  eatWhile(pred: (c: string) => boolean): string | null {
-    let retVal = "";
-
-    while (true) {
-      const c = this.peek();
-
-      if (c && pred(c)) {
-        retVal += this.eat();
-      } else {
-        break;
-      }
-    }
-
-    if (retVal.length > 0) {
-      return retVal;
-    }
-
-    return null;
-  }
-
-  parseWhile(
-    eatPred: (c: string) => boolean,
-    parser: (str: string, idx: number) => Token | null,
-  ): Token | null {
-    let value = "";
-
-    while (true) {
-      const c = this.peek();
-
-      if (c && eatPred(c)) {
-        value += this.eat();
-
-        const parsed = parser(value, this.index);
-
-        if (parsed) {
-          return parsed;
-        }
-      } else {
-        break;
-      }
-    }
-
-    return null;
-  }
-}
-
-export class TokenizeError extends Error {
-  constructor(
-    public msg: string,
-    public input: string,
-    public index: number,
-    public tokens: PseudoToken[],
-  ) {
-    super(msg);
-  }
-}
-
-export class Tokenizer extends SimpleParser<PseudoToken> {
-  static kwToType: Map<string, TokenType> = new Map([
-    /* Keywords */
-    ["akkor", TokenType.AKKOR],
-    ["amíg", TokenType.AMIG],
-    ["ciklus", TokenType.CIKLUS],
-    ["címszerint", TokenType.CIMSZERINT],
-    ["debug", TokenType.DEBUG],
-    ["elágazás", TokenType.ELAGAZAS],
-    ["függvény", TokenType.FUGGVENY],
-    ["ha", TokenType.HA],
-    ["kiír", TokenType.KIIR],
-    ["különben", TokenType.KULONBEN],
-    ["tömb", TokenType.TOMB],
-    ["vissza", TokenType.VISSZA],
-    ["vége", TokenType.VEGE],
-    ["Létrehoz", TokenType.LETREHOZ],
-
-    /* Misc. */
-    ["~", TokenType.NEGAL],
-    ["(", TokenType.OPAREN],
-    [")", TokenType.CPAREN],
-    ["[", TokenType.OBRACKET],
-    ["]", TokenType.CBRACKET],
-    [":", TokenType.COLON],
-    [",", TokenType.COMMA],
-    ["&", TokenType.REFERENCE],
-
-    ["<-", TokenType.NYIL],
-    ["-tól", TokenType.FORSTART],
-    ["-től", TokenType.FORSTART],
-    ["-ig", TokenType.FOREND],
-  ]);
-
-  static isNum(char: string) {
-    return char >= "0" && char <= "9";
-  }
-
-  static isLetter(char: string) {
-    return char.toLowerCase() !== char.toUpperCase();
-  }
-
-  static isWhitespace(char: string) {
-    return char === " "; //|| char === "\n";
-  }
-
-  override parse(): PseudoToken[] {
-    const tokens = super.parse();
-
-    if (this.index < this.input.length) {
-      const idx = tokens.at(-1)?.end ?? 0;
-      throw new TokenizeError(`Lexing error at ${idx}`, this.input, idx, tokens);
-    }
-
-    return tokens;
-  }
-
-  mkToken(
-    type: TokenType | null,
-    lexeme: string | null,
-    index: number | null = null,
-    line: number | null = null,
-    col: number | null = null,
-  ): PseudoToken | null {
-    if (lexeme === null) return null;
-    if (type === null) return null;
-    return new PseudoToken(type, lexeme, index ?? this.index, line ?? this.row, col ?? this.column);
-  }
-
-  parseOne(): PseudoToken | null {
-    const parsers = [
-      this.parseNewLine,
-      this.parseWhitespace,
-      this.parseForStuff,
-      this.parseArrow,
-      this.parseString,
-      this.parseType,
-      this.parseBool,
-      this.parseKeyword,
-      this.parseCompOp,
-      this.parseArithmOp,
-      this.parseLogicOp,
-      this.parseNumber,
-      this.parseFuncName,
-      this.parseSymbol,
-    ];
-
-    for (const parser of parsers) {
-      const value = this.tryParse(parser);
-      if (value) {
-        return value;
-      }
-    }
-
-    return null;
-  }
-
-  parseWhitespace(): PseudoToken | null {
-    const spaces = this.eatWhile(Tokenizer.isWhitespace);
-    return this.mkToken(TokenType.WHITESPACE, spaces);
-  }
-
-  parseNewLine(): PseudoToken | null {
-    let len = 0;
-
-    if (this.index < this.input.length && this.input[this.index] === "\n") {
-      this.row++;
-      this.column = 0;
-      this.index++;
-      len++;
-    }
-
-    if (len === 0) return null;
-
-    return this.mkToken(TokenType.WHITESPACE, "\n".repeat(len));
-  }
-
-  parseArrow(): PseudoToken | null {
-    if (this.eat() === "<" && this.eat() === "-") {
-      return this.mkToken(TokenType.NYIL, "<-");
-    }
-
-    return null;
-  }
-
-  parseForStuff(): PseudoToken | null {
-    if (this.eat() === "-") {
-      const word = this.eatWhile(Tokenizer.isLetter);
-
-      if (word === "től" || word === "tól") {
-        return this.mkToken(TokenType.FORSTART, `-${word}`);
-      } else if (word === "ig") {
-        return this.mkToken(TokenType.FOREND, `-${word}`);
-      }
-    }
-
-    return null;
-  }
-
-  parseString(): PseudoToken | null {
-    if (this.eat() === '"') {
-      const value = this.eatWhile((c) => c !== '"');
-
-      if (!value) {
-        return null;
-      }
-
-      if (this.eat() === '"') {
-        return new PseudoToken(TokenType.STRING, `"${value}"`, this.index, this.row, this.column);
-      }
-    }
-
-    return null;
-  }
-
-  parseNumber(): PseudoToken | null {
-    const num = this.eatWhile(Tokenizer.isNum);
-    return this.mkToken(TokenType.NUMBER, num);
-  }
-
-  parseSymbol(): PseudoToken | null {
-    const symbol = this.eatWhile(Tokenizer.isLetter);
-    return this.mkToken(TokenType.SYMBOL, symbol);
-  }
-
-  parseType(): PseudoToken | null {
-    return this.parseWhile(
-      (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) =>
-        ["egész", "szöveg"].includes(str)
-          ? new PseudoToken(TokenType.TYPE, str, idx, this.row, this.column)
-          : null,
-    );
-  }
-
-  parseBool(): PseudoToken | null {
-    return this.parseWhile(
-      (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) =>
-        ["igaz", "hamis"].includes(str)
-          ? new PseudoToken(TokenType.BOOLEAN, str, idx, this.row, this.column)
-          : null,
-    );
-  }
-
-  parseFuncName(): PseudoToken | null {
-    const starter = this.eat();
-
-    if (starter && starter >= "A" && starter <= "Z") {
-      const rest = this.eatWhile(Tokenizer.isLetter);
-      return this.mkToken(TokenType.FUNCNAME, rest ? starter + rest : null);
-    }
-
-    return null;
-  }
-
-  parseArithmOp(): PseudoToken | null {
-    return this.parseWhile(
-      (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) =>
-        ["+", "-", "/", "*", "mod"].includes(str)
-          ? new PseudoToken(TokenType.ARITHMOP, str, idx, this.row, this.column)
-          : null,
-    );
-  }
-
-  parseCompOp(): PseudoToken | null {
-    let op = this.eat();
-    if (op === "=") {
-      if (this.peek() === "/") {
-        op += this.eat();
-        op += this.eat();
-        if (op === "=/=") {
-          return this.mkToken(TokenType.COMPOP, op);
-        } else {
-          return null;
-        }
-      } else {
-        return this.mkToken(TokenType.COMPOP, op);
-      }
-    }
-
-    if (op === ">" || op === "<") {
-      if (this.peek() === "=") {
-        op += this.eat();
-      }
-
-      return this.mkToken(TokenType.COMPOP, op);
-    }
-
-    return null;
-  }
-
-  parseLogicOp(): PseudoToken | null {
-    return this.parseWhile(
-      (c) => !Tokenizer.isWhitespace(c),
-      (str, idx) =>
-        ["és", "vagy"].includes(str)
-          ? new PseudoToken(TokenType.LOGICOP, str, idx, this.row, this.column)
-          : null,
-    );
-  }
-
-  parseKeyword(): PseudoToken | null {
-    const skw = this.tryParse(this.parseSingleCharKw);
-    if (skw) return skw;
-
-    const kw = this.eatWhile((c) => Tokenizer.isLetter(c));
-    if (!kw) return null;
-
-    return this.mkToken(Tokenizer.kwToType.get(kw) ?? null, kw);
-  }
-
-  parseSingleCharKw(): PseudoToken | null {
-    const c = this.eat();
-    if (!c) return null;
-
-    const type = Tokenizer.kwToType.get(c) ?? null;
-    return this.mkToken(type, c);
-  }
+import { IToken, ITokenizer, TokenType as TT } from "../interfaces/ITokenizer.ts";
+
+type ParseResult = IToken | null;
+
+const kwToType: ReadonlyMap<string, TT> = new Map([
+	/* Keywords */
+	["akkor", TT.AKKOR],
+	["amíg", TT.AMIG],
+	["ciklus", TT.CIKLUS],
+	["címszerint", TT.CIMSZERINT],
+	["debug", TT.DEBUG],
+	["elágazás", TT.ELAGAZAS],
+	["függvény", TT.FUGGVENY],
+	["eljárás", TT.FUGGVENY],
+	["ha", TT.HA],
+	["kiír", TT.KIIR],
+	["különben", TT.KULONBEN],
+
+	["tömb", TT.TOMB],
+	["halmaz", TT.TOMB],
+	["tábla", TT.TOMB],
+
+	["vissza", TT.VISSZA],
+	["vége", TT.VEGE],
+	["Létrehoz", TT.LETREHOZ],
+	["TáblaLétrehoz", TT.TABLALETREHOZ],
+	["rendezett", TT.RENDEZETT],
+
+	/* Misc. */
+	["~", TT.NEGAL],
+	["(", TT.OPAREN],
+	[")", TT.CPAREN],
+	["[", TT.OBRACKET],
+	["]", TT.CBRACKET],
+	[":", TT.COLON],
+	[",", TT.COMMA],
+	["&", TT.REFERENCE],
+
+	["<-", TT.NYIL],
+	["<->", TT.SWAP],
+	["-tól", TT.FORSTART],
+	["-től", TT.FORSTART],
+	["-ig", TT.FOREND],
+	["//", TT.COMMENT],
+]);
+
+export class Tokenizer implements ITokenizer {
+	input = "";
+	index = 0;
+
+	row = 0;
+	column = 0;
+
+	// Helpers
+	peek(): string | null {
+		if (this.index >= this.input.length) return null;
+		return this.input[this.index];
+	}
+
+	eat(): string | null {
+		if (this.index >= this.input.length) return null;
+		this.column++;
+
+		return this.input[this.index++];
+	}
+
+	eatWhile(fn: (c: string) => boolean): string | null {
+		if (this.peek() === null) return null;
+		let retval = "";
+
+		while (true) {
+			const c = this.eat();
+			if (c == null) return retval;
+
+			if (fn.call(this, c)) {
+				retval += c;
+			} else {
+				this.index--;
+				this.column--;
+				return retval.length === 0 ? null : retval;
+			}
+		}
+	}
+
+	getKeywordTokenType(kw: string | null): TT | null {
+		if (kw == null) return null;
+		return kwToType.get(kw) ?? null;
+	}
+
+	isWhitespace(char: string): boolean {
+		return [" ", "\t", "\n"].includes(char);
+	}
+
+	isNum(char: string): boolean {
+		return char >= "0" && char <= "9";
+	}
+
+	isLetter(char: string): boolean {
+		return char.toLowerCase() !== char.toUpperCase();
+	}
+
+	isLetterOrUnderline(char: string): boolean {
+		return char.toLowerCase() !== char.toUpperCase() || char === "_";
+	}
+
+	tryParse(fn: () => IToken | null): IToken | null {
+		const state = this.saveState();
+
+		const token = fn.call(this);
+		if (token !== null) return token;
+
+		this.index = state.index;
+		this.row = state.row;
+		this.column = state.column;
+
+		return null;
+	}
+
+	saveState() {
+		return {
+			index: this.index,
+			row: this.row,
+			column: this.column,
+		};
+	}
+
+	mkToken(type: TT, tokenFn: () => string | null): ParseResult {
+		const state = this.saveState();
+		const value = tokenFn.call(this);
+		if (!value) return null;
+
+
+
+		return {
+			lexeme: value,
+			position: { row: state.row, column: state.column },
+			length: this.index - state.index,
+			type: type,
+		};
+	}
+
+	// === Parsers === 
+
+	newLine(): ParseResult {
+		return this.mkToken(TT.WHITESPACE, () => {
+			let len = 0;
+
+			while (this.peek() === "\n") {
+				this.eat();
+				this.column = 0;
+				this.row++;
+				len++;
+			}
+
+			if (len === 0) return null;
+
+			return "\n".repeat(len);
+		});
+	}
+
+	whitespace(): ParseResult {
+		return this.mkToken(TT.WHITESPACE, () => {
+			return this.eatWhile(c => c === " " || c === "\t");
+		});
+	}
+
+	singleLetterKeyword(): ParseResult {
+		const char = this.eat();
+		const type = this.getKeywordTokenType(char) ?? null;
+
+		return (type == null) ? type : this.mkToken(type, () => char);
+	}
+
+	keyword(): ParseResult {
+
+
+		const slkw = this.tryParse(this.singleLetterKeyword);
+		if (slkw) return slkw;
+
+
+
+		const kw = this.eatWhile(c => !["[", "(", ",", ")", "]"].includes(c) && !this.isWhitespace(c));
+		const type = this.getKeywordTokenType(kw);
+
+		if (type === null) return null;
+
+		const token = this.mkToken(type, () => kw);
+
+
+		if (!token) return null;
+
+		return token
+	}
+
+	comment(): ParseResult {
+		return this.mkToken(TT.COMMENT, () => {
+			if (this.eat() !== "/" || this.eat() !== "/") return null;
+			const comment = this.eatWhile((c) => c !== "\n");
+			return `//${comment}`;
+		});
+	}
+
+	number(): ParseResult {
+		return this.mkToken(TT.NUMBER, () => {
+			const num = this.eatWhile(this.isNum);
+			return num;
+		});
+	}
+
+	string(): ParseResult {
+		return this.mkToken(TT.STRING, () => {
+			if (this.eat() !== '"') return null;
+			const inner = this.eatWhile((c) => c !== '"');
+			if (this.eat() !== '"') return null;
+
+			return inner;
+		});
+	}
+
+	bool(): ParseResult {
+		return this.mkToken(TT.BOOLEAN, () => {
+			const word = this.eatWhile(this.isLetter)
+			if (!word || !["igaz", "Igaz", "hamis", "Hamis"].includes(word)) return null;
+
+			return word;
+		})
+	}
+
+	binop(): ParseResult {
+		const validBinops = ["<", ">", "=", "<=", ">=", "=/=", "és", "vagy", "+", "-", "/", "*", "mod"];
+
+		return this.mkToken(TT.BINOP, () => {
+			const str = (this.eat() ?? "") + (this.eat() ?? "") + (this.eat() ?? "") + (this.eat() ?? "");
+
+			for (let i = str.length; i > 0; i--) {
+				const sub = str.substring(0, i);
+				if (validBinops.includes(sub)) {
+					// Mivel négy karaktert "ettünk meg", így annyival vissza kell lökni az indexet,
+					// amennyit végül mégse használtunk fel.
+					this.index -= str.length - i;
+					this.column -= str.length - i;
+
+					return sub;
+				}
+			}
+
+			return null;
+		});
+	}
+
+	symbol(): ParseResult {
+		return this.mkToken(TT.SYMBOL, () => {
+			return this.eatWhile(c => this.isLetter(c) || this.isNum(c))
+		})
+	}
+
+	funcName(): ParseResult {
+		return this.mkToken(TT.FUNCNAME, () => {
+			const c = this.eat()
+			if (!c || !this.isLetter(c) || c.toUpperCase() !== c) return null;
+
+			const rest = this.eatWhile(this.isLetterOrUnderline)
+
+			if (rest?.length === 0) return null;
+
+			return c + (rest ?? "");
+		})
+	}
+
+	type(): ParseResult {
+		return this.mkToken(TT.TYPE, () => {
+			const val = this.eatWhile(this.isLetter);
+			if (!val) return null;
+			return ["egész", "szöveg", "logikai"].includes(val) || (val.length === 1 && val >= 'A' && val <= 'Z') ? val : null
+		})
+	}
+
+	// === Driver ===
+
+	parse(): ParseResult {
+		const parsers = [
+			this.newLine,
+			this.whitespace,
+			this.comment,
+			this.keyword,
+			this.binop,
+			this.bool,
+			this.number,
+			this.string,
+			this.type,
+			this.funcName,
+			this.symbol,
+		];
+
+		for (const parser of parsers) {
+			const value = this.tryParse(parser);
+			if (value) {
+				return value;
+			}
+		}
+
+		return null;
+	}
+
+	parseWhileNotEOF(): IToken[] {
+		const retval = [];
+
+		while (true) {
+			const token = this.parse();
+			if (token) {
+				retval.push(token);
+			} else {
+				break;
+			}
+		}
+
+		if (!(this.peek() === null)) {
+			const errTok = this.mkToken(TT.ERROR, () => this.eatWhile(_ => true))
+			if (errTok)
+				retval.push(errTok)
+		}
+
+		return retval;
+	}
+
+	tokenize(input: string): IToken[] {
+		this.input = input;
+		this.index = 0;
+
+		return this.parseWhileNotEOF();
+	}
 }

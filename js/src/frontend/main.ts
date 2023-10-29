@@ -1,4 +1,4 @@
-import { IToken } from "../../interfaces/ITokenizer.ts"
+import { IToken } from "../interfaces/ITokenizer.ts"
 import { Compiler } from "../compiler/compiler.ts"
 import { parseBlock } from "../parser/ast_parser.ts"
 import { VM } from "../runtime/vm.ts"

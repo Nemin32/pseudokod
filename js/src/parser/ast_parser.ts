@@ -1,4 +1,4 @@
-import { IToken } from "../../interfaces/ITokenizer.ts";
+import { IToken } from "../interfaces/ITokenizer.ts";
 import {
 	ASTTag,
 	ArrayComprehension,
@@ -25,8 +25,8 @@ import {
 	Variable,
 	While,
 	stringToBaseType,
-} from "../../interfaces/astkinds.ts";
-import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "../../interfaces/types.ts";
+} from "../interfaces/astkinds.ts";
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "../interfaces/types.ts";
 import { Chain, P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseBaseType: P<SimpleType | GenericType> = Parser.matchT(TT.TYPE).map(t => stringToBaseType(t.lexeme))

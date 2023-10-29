@@ -1,4 +1,4 @@
-import { IToken, TokenType as TT } from "../../interfaces/ITokenizer.ts"
+import { IToken, TokenType as TT } from "../interfaces/ITokenizer.ts"
 import { Tokenizer } from "../parser/tokenizer.ts"
 
 const tokenTypeToClass = (tt: TT): string => {

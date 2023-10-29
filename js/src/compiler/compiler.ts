@@ -1,6 +1,6 @@
-import { OpCode as OC } from "../../interfaces/ICompiler.ts";
-import { ASTKind, ASTTag, ArrayComprehension, ArrayIndex, Assignment, Atom, BinOpType, BinaryOperation, Block, Debug, Expression, For, FunctionCall, FunctionDeclaration, If, NewArray, Not, Parameter, Print, Reference, Return, Statement, Swap, Variable, While } from "../../interfaces/astkinds.ts";
-import { Inst } from "../../interfaces/instructions.ts";
+import { OpCode as OC } from "../interfaces/ICompiler.ts";
+import { ASTKind, ASTTag, ArrayComprehension, ArrayIndex, Assignment, Atom, BinOpType, BinaryOperation, Block, Debug, Expression, For, FunctionCall, FunctionDeclaration, If, NewArray, Not, Parameter, Print, Reference, Return, Statement, Swap, Variable, While } from "../interfaces/astkinds.ts";
+import { Inst } from "../interfaces/instructions.ts";
 
 type DistributiveOmit<T, K extends keyof any> = T extends any
 	? Omit<T, K>

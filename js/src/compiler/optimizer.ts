@@ -10,8 +10,8 @@ import {
 	If,
 	Print,
 	Statement,
-} from "../../interfaces/astkinds.ts";
-import { LOGIC, NUMBER, SimpleType } from "../../interfaces/types.ts";
+} from "../interfaces/astkinds.ts";
+import { LOGIC, NUMBER, SimpleType } from "../interfaces/types.ts";
 
 function optimizeBinOp(value: BinaryOperation): BinaryOperation | Atom {
 	const mkAtom = (aval: Atom["value"], type: SimpleType): Atom => ({

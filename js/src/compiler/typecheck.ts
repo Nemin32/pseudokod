@@ -1,5 +1,5 @@
-import { ASTKind, ASTTag, BinOpType } from "../../interfaces/astkinds.ts";
-import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UnknownType } from "../../interfaces/types.ts";
+import { ASTKind, ASTTag, BinOpType } from "../interfaces/astkinds.ts";
+import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UnknownType } from "../interfaces/types.ts";
 import { TypeMap } from "./typemap.ts";
 
 function compare(t1: Type, t2: Type): boolean {
