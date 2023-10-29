@@ -24,7 +24,7 @@ const lastWord = (input: string) => {
 
 export const formatCode = (input: string[]): string => {
 	return input.map(line => line.trim().trimEnd())
-		.reduce<{ output: string, indent: number }>(({ output: prevOutput, indent: oldIndent }, line) => {
+		.reduce<{ output: string, indent: number, prevIndent: boolean, prevDedent: boolean }>(({ output: prevOutput, indent: oldIndent, prevIndent, prevDedent }, line) => {
 			const shouldIndent = ["eljárás", "függvény", "ciklus", "ha"].includes(firstWord(line))
 			const shouldDedent = lastWord(line) === "vége"
 			const elseKW = firstWord(line) === "különben"
@@ -35,14 +35,23 @@ export const formatCode = (input: string[]): string => {
 				indent -= 2;
 			}
 
-			const output = prevOutput + (shouldIndent ? "\n" : "") + " ".repeat(indent) + line + "\n";
+			const shouldNewline =
+				(
+					(!shouldDedent && prevDedent) ||
+					(shouldIndent && !prevIndent)
+				) && (
+					(!shouldIndent && prevDedent) ||
+					(!shouldDedent && prevIndent)
+				) || ((shouldIndent || shouldDedent) && !(prevDedent || prevIndent))
+
+			const output = prevOutput + (shouldNewline ? "\n" : "") + " ".repeat(indent) + line + "\n";
 
 			if (elseKW || (!shouldDedent && shouldIndent)) {
 				indent += 2;
 			}
 
-			return { output, indent }
-		}, { output: "", indent: 0 }).output
+			return { output, indent, prevIndent: shouldIndent, prevDedent: shouldDedent }
+		}, { output: "", indent: 0, prevIndent: false, prevDedent: false }).output
 }
 
 export const generateSelect = (json: Programs) => {
