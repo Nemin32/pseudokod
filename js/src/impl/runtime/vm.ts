@@ -3,7 +3,7 @@ import { Atom, BinOpType } from "../../interfaces/astkinds.ts";
 import { Inst } from "../../interfaces/instructions.ts";
 import { ValueADT, ValueType, VariableBinding, Variables } from "./variables.ts";
 
-type Pointer = { pointer: number }
+export type Pointer = { pointer: number }
 export type Value = Atom["value"] | Pointer;
 
 export class State {
@@ -22,10 +22,6 @@ export class State {
 export class VM {
 	jmpTable: Map<string, number> = new Map()
 	states: State[] = [new State([], [], new Variables(), 0, "")];
-
-	isPointer(x: Value | Value[]): x is Pointer {
-		return !Array.isArray(x) && typeof x === "object" && "pointer" in x;
-	}
 
 	saveState(): void {
 		this.states.push(this.currentState.clone())
@@ -107,7 +103,7 @@ export class VM {
 			throw new Error("Value was array.")
 		}
 
-		if (this.isPointer(value)) {
+		if (this.currentState.vars.isPointer(value)) {
 			const box = this.currentState.vars.getBox(value.pointer)
 
 			if (box.type === ValueType.ARRAY) {
@@ -227,27 +223,7 @@ export class VM {
 			case OC.PRINT: {
 				const value = this.pop()
 
-				console.log(this.currentState.vars)
-
-				const printValue = (value: Value | Value[]): string => {
-					if (Array.isArray(value)) {
-						return `[${value.map(v => printValue(v)).join(", ")}]`
-					} else if (this.isPointer(value)) {
-						const box = this.currentState.vars.getBox(value.pointer)
-
-						if (box.type === ValueType.NORMAL) {
-							return printValue(box.value)
-						} else {
-							const rawArray = vars.getArrayByAddr(value.pointer)
-							return printValue(rawArray as Value[])
-						}
-					} else {
-						return String(value)
-					}
-				}
-
-
-				this.currentState.output += printValue(value) + "\n"
+				this.currentState.output += vars.valueToString(value) + "\n"
 			}; break
 
 			case OC.VOID: {
@@ -275,7 +251,7 @@ export class VM {
 
 				const value = this.pop();
 
-				if (this.isPointer(value)) {
+				if (vars.isPointer(value)) {
 					const box = vars.getBox(value.pointer);
 
 					if (box.type === ValueType.NORMAL) {
@@ -328,7 +304,7 @@ export class VM {
 			case OC.MKREF: {
 				const pointer = this.pop()
 
-				if (!this.isPointer(pointer)) {
+				if (!vars.isPointer(pointer)) {
 					throw new Error("References must be pointer type, but was " + typeof pointer)
 				}
 

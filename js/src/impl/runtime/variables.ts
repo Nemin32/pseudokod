@@ -1,5 +1,5 @@
 import { Atom } from "../../interfaces/astkinds.ts"
-import { Value } from "./vm.ts"
+import { Pointer, Value } from "./vm.ts"
 
 type DeepArray<T> = (T | DeepArray<T>)[]
 
@@ -135,6 +135,26 @@ export class Variables {
 		return this.getBoxOrNull(address)?.value ?? null
 	}
 
+	valueToString(value: Value | Value[]): string {
+		if (Array.isArray(value)) {
+			return `[${value.map(v => this.valueToString(v)).join(", ")}]`
+		} else if (this.isPointer(value)) {
+			const box = this.getBox(value.pointer)
+
+			if (box.type === ValueType.NORMAL) {
+				return this.valueToString(box.value)
+			} else {
+				const rawArray = this.getArrayByAddr(value.pointer)
+				return this.valueToString(rawArray as Value[])
+			}
+		} else {
+			return String(value)
+		}
+	}
+
+	isPointer(x: Value | Value[]): x is Pointer {
+		return !Array.isArray(x) && typeof x === "object" && "pointer" in x;
+	}
 
 	// ARRAY OPS
 	addArray(name: string, array: DeepArray<Value>) {

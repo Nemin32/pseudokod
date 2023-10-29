@@ -1,6 +1,6 @@
 import { AtomValue } from "../../interfaces/astkinds.ts";
-import { VariableBinding } from "../runtime/variables.ts";
-import { State } from "../runtime/vm.ts";
+import { ValueType, VariableBinding } from "../runtime/variables.ts";
+import { State, Value } from "../runtime/vm.ts";
 
 enum ComparisonResult {
 	SAME,
@@ -24,7 +24,7 @@ const compare = <T>(oldArr: T[], newArr: T[], compFn: (a: T, b: T) => boolean): 
 }
 
 function getDifferences(prev: State, current: State): {
-	stack: Comparison<AtomValue>[],
+	stack: Comparison<Value>[],
 	ipStack: Comparison<number>[],
 	bindings: Comparison<VariableBinding>[]
 } {
@@ -64,8 +64,18 @@ export function render(prev: State, current: State): {
 		}
 	}))
 
+	const stackSpans = stack.map(s => renderSpan(s, ({value}) => {
+		const valueString = current.vars.valueToString(value)
+
+		if (current.vars.isPointer(value)) {
+			return `&${value.pointer} => ${valueString}`
+		} else {
+			return valueString
+		}
+	}))
+
 	return {
-		stackSpans: stack.map(s => renderSpan(s, (c) => String(c.value))),
+		stackSpans,
 		ipStackSpans: ipStack.map(s => renderSpan(s, (c) => String(c.value))),
 		varsSpans,
 	}
