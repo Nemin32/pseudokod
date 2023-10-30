@@ -14,16 +14,17 @@ Régi:
 - [?] Átírható változók (és stack?)
 - [X] IP stack implementálás
 - [X] Tömb grammar átírás
-- [?] Valami szebb color scheme
-- [ ] Expressionök zárójelbe zárása
-- [ ] Algoritmus-választó
+- [X] Valami szebb color scheme
+- [X] Expressionök zárójelbe zárása
+- [X] Algoritmus-választó
 - [ ] Hibák!!! Szemantika, szintaxis, runtime errors - ANTLR
 - [ ] Eljárások?
 - [ ] Set-ek? Más adatstruktúrák?
 - [ ] Tutorial - Popup?
-- [ ] Generikus típusok?
-- [ ] Tesztek - Selenium? Branch teszt?
-- [ ] Jobb syntax highlight?
-- [ ] Időutazás?! (Immutable.js? Mekkora overhead?)
+- [?] Generikus típusok?
+- [?] Tesztek - Selenium? Branch teszt?
+- [X] Jobb syntax highlight?
+- [X] Időutazás?! (Immutable.js? Mekkora overhead?)
 - [ ] Refactoring??
 - [ ] Interpreter???
+- [ ] Opcionális függvény visszatérési érték

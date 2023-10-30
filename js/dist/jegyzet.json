@@ -537,8 +537,7 @@
 			"inputs": "x1 - T rendezett tömb, n1 - egész (tömb mérete), x2 - T rendezett tömb, n2 - Egész (tömb mérete)",
 			"outputs": "y - T rendezett tömb, db - egész",
 			"code": [
-				"függvény MódosítottÖsszefuttatás(x1 : T rendezett tömb, n1 : egész, x2 : T rendezett",
-				"tömb, n2 : egész)",
+				"függvény MódosítottÖsszefuttatás(x1 : T rendezett tömb, n1 : egész, x2 : T rendezett tömb, n2 : egész)",
 				"y <- Létrehoz(T)[n1 + n2]",
 				"n1 <- n1 + 1",
 				"x1[n1] <- végtelen",
@@ -1633,9 +1632,9 @@
 				"eljárás ÖsszefésülőRendezés(címszerint x : T tömb, bal : egész, jobb : egész)",
 				"ha bal < jobb akkor",
 				"center <- Kerekit((bal+jobb)/2)",
-				"ÖsszefésülőRendezés(x, bal, center)",
-				"ÖsszefésülőRendezés(x, center + 1, jobb)",
-				"Összefésül(x, bal, center, jobb)",
+				"ÖsszefésülőRendezés(&x, bal, center)",
+				"ÖsszefésülőRendezés(&x, center + 1, jobb)",
+				"Összefésül(&x, bal, center, jobb)",
 				"elágazás vége",
 				"eljárás vége"
 			]
