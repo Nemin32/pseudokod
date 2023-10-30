@@ -156,11 +156,10 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			const types = ast.expressions.map(e => typeCheck(e, env)[0]);
 			const same = types.every(t => compare(t, types[0]))
 
-			if (same) {
-				return [NONE, env.with(ast.variable.name, new ArrayType(types[0]))]
-			} else {
-				return [NONE, env.with(ast.variable.name, new HeterogenousArrayType(types))]
-			}
+			const varName = ("variable" in ast.variable) ? ast.variable.variable.name : ast.variable.name;
+			const type = same ? new ArrayType(types[0]) : new HeterogenousArrayType(types)
+
+			return [NONE, env.with(varName, type)]
 		}
 
 		case ASTTag.ASSIGN: {

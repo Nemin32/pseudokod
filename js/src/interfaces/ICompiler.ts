@@ -11,6 +11,7 @@ export enum OpCode {
 	RETCMP,
 
 	ARRCMP,
+	COMPRE,
 	PUSH,
 	BINOP,
 	NOT,

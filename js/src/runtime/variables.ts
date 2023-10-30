@@ -158,11 +158,11 @@ export class Variables {
 
 	// ARRAY OPS
 	addArray(name: string, array: DeepArray<Value>) {
-		this.makeReference(name, this.addArrayRef(array));
+		const dimensions: number[] = this.getDimensions(array)
+		this.makeReference(name, this.addArrayRef(array, dimensions));
 	}
 
-	addArrayRef(array: DeepArray<Value>) {
-		const dimensions: number[] = this.getDimensions(array)
+	addArrayRef(array: DeepArray<Value>, dimensions: number[]) {
 		const values = (array.flat(Infinity as 1) as Value[]);
 
 		const base = this.values.length
@@ -183,7 +183,9 @@ export class Variables {
 	addEmptyArray(name: string, dimensions: number[]) {
 		const length = dimensions.reduce((a, b) => a * b, 1)
 		const arr: number[] = Array.from<number>({ length }).fill(0)
-		this.addArray(name, arr)
+		const base = this.addArrayRef(arr, dimensions);
+
+		this.makeReference(name, base);
 	}
 
 	setArrayElem(name: string, indexes: number[], value: Value) {

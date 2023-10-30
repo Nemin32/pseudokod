@@ -120,7 +120,7 @@ export type NewArray = ASTBase<ASTTag.NEWARRAY, {
 }>
 
 export type ArrayComprehension = ASTBase<ASTTag.ARRAYCOMP, {
-	variable: Variable;
+	variable: ArrayIndex | Variable;
 	expressions: Array<Expression>;
 }>
 

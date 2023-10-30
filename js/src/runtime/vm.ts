@@ -167,9 +167,20 @@ export class VM {
 				this.currentState.idx = newIp
 			}; break
 
-			case OC.ARRCMP: {
+			case OC.COMPRE: {
 				const elems = this.popMany(inst.length).map(v => this.unwrapValue(v));
 				vars.addArray(inst.name, elems)
+			}; break
+
+			case OC.ARRCMP: {
+				const indexRoot = this.popIndexes(inst.dimensions).map(i => i-1)
+				const elems = this.popMany(inst.length).map(v => this.unwrapValue(v));
+
+				for (let i = 0; i < elems.length; i++) {
+					const indexes = indexRoot.concat(i);
+					console.log(indexes)
+					vars.setArrayElem(inst.name, indexes, elems[i])
+				}
 			}; break
 
 			case OC.PUSH: {

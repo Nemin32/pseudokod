@@ -53,7 +53,13 @@ export class Compiler {
 
 	visitArrcomp(ast: ArrayComprehension) {
 		ast.expressions.forEach(e => this.visitExpression(e))
-		this.addOp(OC.ARRCMP, { name: ast.variable.name, length: ast.expressions.length }, ast)
+
+		if ("variable" in ast.variable) {
+			ast.variable.index.forEach(e => this.visitExpression(e))
+			this.addOp(OC.ARRCMP, { name: ast.variable.variable.name, dimensions: ast.variable.index.length, length: ast.expressions.length }, ast)
+		} else {
+			this.addOp(OC.COMPRE, { name: ast.variable.name, length: ast.expressions.length }, ast)
+		}
 	}
 
 	visitArrindex(ast: ArrayIndex) {

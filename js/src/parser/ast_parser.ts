@@ -70,19 +70,19 @@ const parseVariable: P<Variable> = Parser.matchT(TT.SYMBOL).map((token) =>
 	mkToken(token, ASTTag.VARIABLE, { name: token.lexeme }),
 );
 
-const parseComprehension: P<ArrayComprehension> = Parser.do()
+const parseArrayIndex: P<ArrayIndex> = Parser.do()
 	.bind("variable", parseVariable)
+	.bind("index", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
+	.result(({ variable, index }) => mkToken(variable.token, ASTTag.ARRINDEX, { variable, index }));
+
+const parseComprehension: P<ArrayComprehension> = Parser.do()
+	.bind("variable", parseArrayIndex.or(parseVariable))
 	.ignoreT(TT.NYIL)
 	.bind("expressions",
 		parseExpression
 			.sepBy(Parser.matchT(TT.COMMA))
 			.parens())
 	.result(({ variable, expressions }) => mkToken(null, ASTTag.ARRAYCOMP, { variable, expressions }));
-
-const parseArrayIndex: P<ArrayIndex> = Parser.do()
-	.bind("variable", parseVariable)
-	.bind("index", parseExpression.sepBy1(Parser.matchT(TT.COMMA)).brackets())
-	.result(({ variable, index }) => mkToken(variable.token, ASTTag.ARRINDEX, { variable, index }));
 
 // New Array
 

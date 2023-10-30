@@ -6,7 +6,8 @@ type ArraySignature = { name: string, dimensions: number }; // Varname, index di
 export type Inst =
 	({ code: OC.ADDRESS, name: string }
 		| { code: OC.ARRADDR } & ArraySignature
-		| { code: OC.ARRCMP, name: string, length: number }
+		| { code: OC.COMPRE, name: string, length: number }
+		| { code: OC.ARRCMP, length: number } & ArraySignature
 		| { code: OC.BINOP, type: BinOpType }
 		| { code: OC.CALL, name: string }
 		| { code: OC.DEBUG, msg: string }
