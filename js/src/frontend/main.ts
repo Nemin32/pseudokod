@@ -1,11 +1,13 @@
 import { IToken } from "../interfaces/ITokenizer.ts"
 import { Compiler } from "../compiler/compiler.ts"
 import { parseBlock } from "../parser/ast_parser.ts"
-import { VM } from "../runtime/vm.ts"
+import { State, VM } from "../runtime/vm.ts"
 import { generateDump } from "./instruction.ts"
 import { formatCode, generateSelect } from "./program_loader.ts"
 import { tokenize } from "./token.ts"
 import { render } from "./vm_render.ts"
+import { typeCheck } from "../compiler/typecheck.ts"
+import { TypeMap } from "../compiler/typemap.ts"
 
 window.addEventListener("load", () => {
 	const editor = document.getElementById("code")! as HTMLTextAreaElement
@@ -14,6 +16,7 @@ window.addEventListener("load", () => {
 	const highlight = document.getElementById("highlight")!
 	const algorithms = document.querySelector("#picker div")!
 
+	const formatButton = document.getElementById("format")!
 	const compButton = document.getElementById("compile")!
 	const runButton = document.getElementById("run")!
 	const stepButton = document.getElementById("step")!
@@ -39,6 +42,24 @@ window.addEventListener("load", () => {
 		highlight.scrollLeft = editor.scrollLeft
 	}
 
+	const formatEditor = () => {
+		editor.value = formatCode(editor.value.split("\n").filter(l => l.trim().length > 0))
+		handleInput()
+	}
+
+	const comparisonFunc = (prev: State, current: State) => {
+		const renderResult = render(prev, current)
+
+		stackDiv.replaceChildren(...renderResult.stackSpans)
+		ipStackDiv.replaceChildren(...renderResult.ipStackSpans)
+		varsDiv.replaceChildren(...renderResult.varsSpans)
+
+		instructionSpans.at(current.idx - 1)?.classList.add("current");
+		instructionSpans.at(prev.idx - 1)?.classList.remove("current");
+
+		output.innerText = current.output;
+	}
+
 	fetch("./jegyzet.json").then(r => r.json()).then(json => {
 		const select = generateSelect(json)
 
@@ -60,30 +81,25 @@ window.addEventListener("load", () => {
 	})
 
 	editor.addEventListener("input", handleInput)
-	handleInput()
+	formatEditor()
+
+	formatButton.addEventListener("click", formatEditor)
 
 	compButton.addEventListener("click", () => {
+		formatEditor()
+
 		if (!tokens) return;
 
 		const block = parseBlock.run(tokens)
 
 		if (block.type === "match") {
-			const comp = new Compiler()
-			comp.visit(block.value)
-			vm = new VM(comp.code, (prev, current) => {
-				const renderResult = render(prev, current)
+			console.log(typeCheck(block.value, new TypeMap([], [])))
 
-				stackDiv.replaceChildren(...renderResult.stackSpans)
-				ipStackDiv.replaceChildren(...renderResult.ipStackSpans)
-				varsDiv.replaceChildren(...renderResult.varsSpans)
+			const compiler = new Compiler()
+			compiler.visit(block.value)
+			vm = new VM(compiler.code, comparisonFunc);
 
-				instructionSpans.at(current.idx - 1)?.classList.add("current");
-				instructionSpans.at(prev.idx - 1)?.classList.remove("current");
-
-				output.innerText = current.output;
-			});
-
-			instructionSpans = generateDump(comp.code, tokenSpans, byteCode);
+			instructionSpans = generateDump(compiler.code, tokenSpans, byteCode);
 
 			byteCode.replaceChildren(...instructionSpans)
 			highlight.replaceChildren(...tokenSpans)
