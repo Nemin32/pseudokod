@@ -202,8 +202,16 @@ export class Tokenizer implements ITokenizer {
 
 	number(): ParseResult {
 		return this.mkToken(TT.NUMBER, () => {
+			let negative = false;
+			if (this.peek() === "-") {
+				negative = true;
+				this.eat()
+			}
+
 			const num = this.eatWhile(this.isNum);
-			return num;
+			if (!num) return null;
+
+			return (negative? "-" : "") + num;
 		});
 	}
 
@@ -282,10 +290,10 @@ export class Tokenizer implements ITokenizer {
 			this.newLine,
 			this.whitespace,
 			this.comment,
+			this.number,
 			this.keyword,
 			this.binop,
 			this.bool,
-			this.number,
 			this.string,
 			this.type,
 			this.funcName,

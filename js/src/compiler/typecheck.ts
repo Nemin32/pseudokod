@@ -157,9 +157,9 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			const same = types.every(t => compare(t, types[0]))
 
 			if (same) {
-				return [new ArrayType(types[0]), env]
+				return [NONE, env.with(ast.variable.name, new ArrayType(types[0]))]
 			} else {
-				return [new HeterogenousArrayType(types), env]
+				return [NONE, env.with(ast.variable.name, new HeterogenousArrayType(types))]
 			}
 		}
 
@@ -251,7 +251,8 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 			if (at.length != ast.arguments.length) throw new Error("len")
 
-			const nEnv = ast.arguments.reduce<TypeMap>((state, arg, idx) => {
+			// Arguments arrive in reverse order, so we need to do a copy and reverse before we can compare the types.
+			const nEnv = [...ast.arguments].reverse().reduce<TypeMap>((state, arg, idx) => {
 				const type = ("lexeme" in arg) ? env.get(arg.lexeme) : typeCheck(arg, env)[0]
 				const name = ("lexeme" in arg) ? arg.lexeme : arg.token!.lexeme;
 				const expected = at[idx];
@@ -259,7 +260,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				if (expected instanceof GenericType) {
 					return state.substitute(expected.name, type).with(name, type)
 				} else {
-					if (!compare(type, expected)) throw new Error("Types not match")
+					if (!compare(type, expected)) throw new Error(`Expected ${show(expected)}, got ${show(type)}.`)
 					return state.with(name, type)
 				}
 			}, env)
@@ -329,102 +330,4 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			return typeCheck(ast.body, env)
 		}
 	}
-
-	// return [new UnknownType(), env]
 }
-
-
-/*
-const block = parseBlock.run(t(`
-függvény Teszt(x : G, y : G)
-vissza (x * y, x, y)
-függvény vége
-
-a <- Teszt(5, 6)
-`))
-
-if (block.type === "match") {
-	console.log(typeCheck(block.value, new TypeMap([], [])))
-}
- */
-
-/*
-
-
-		case "funcdecl": {
-			const nEnv = ast.parameters.reduce<TypeMap>((map, param) => {
-				const name = (typeof param.name === "string")
-					? param.name
-					: param.name.name
-
-				const rawType = typeCheck(param, env)[0]
-				const type = (rawType instanceof ReferenceType)
-					? rawType.t
-					: rawType
-
-				return map.with(name, type)
-			}, env)
-
-			const rType = typeCheck(ast.body, nEnv)[0]
-			const argTypes = ast.parameters.map(p => typeCheck(p, env)[0])
-			return [NONE, env.with(ast.name, new FunctionType(rType, argTypes, ast))]
-		}
-
-		case "funccall": {
-			const func = env.get(ast.name)
-			if (!(func instanceof FunctionType)) throw new Error(`${ast.name} isn't bound to a function! (${show(func)})`)
-
-			if (func.argTypes.length !== ast.arguments.length) {
-				throw new Error(`${ast.name}: Expected ${func.argTypes.length} arguments, but got ${ast.arguments.length}.`)
-			}
-
-			const argToType = (arg: IToken | Expression) => {
-				if ("lexeme" in arg) {
-					const innerFunc = env.get(arg.lexeme)
-					if (!(func instanceof FunctionType)) throw new Error(`${arg.lexeme} isn't bound to a function! (${show(func)})`)
-					return innerFunc
-				} else {
-					return typeCheck(arg, env)[0]
-				}
-			}
-
-			const nEnv = ast.arguments.reduce<TypeMap>((state, arg, idx) => {
-				const func = state.get(ast.name) as FunctionType
-				const argType = argToType(arg);
-				const rawExpected = func.argTypes[idx]
-				const expected = (rawExpected instanceof GenericType)
-					? state.getSubst(rawExpected)
-					: rawExpected
-
-				if (compare(argType, expected)) {
-					return state;
-				} else {
-					if (expected instanceof GenericType) {
-						return state.substitute(expected.name, argType)
-					} else {
-						throw new Error(`Expected ${show(expected)}, got ${show(argType)}.`)
-					}
-				}
-
-			}, env)
-
-
-			// After substituting the generics, we have to recheck that the function declaration is still consistent.
-			// i.e. no 
-			typeCheck(func.decl, nEnv)
-			return [func.rType, nEnv];
-
-
-		} break;
-
-		case "param": {
-			let paramType: Type = ast.type
-			if (ast.isArr) paramType = new ArrayType(paramType);
-
-			if (ast.byRef) {
-				return [new ReferenceType(paramType), env]
-			} else {
-				return [paramType, env]
-			}
-		}
- */
