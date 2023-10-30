@@ -1,3 +1,4 @@
 7.10 - "negész", "n : egész" helyett
 7.7  - a két ciklusban először az i majd a j változó nincs deklarálva
 7.7  - "=" jel használva hozzárendeléshez "<-" helyett
+7.2  - a w tömb nincs átadva paraméterként

@@ -39,6 +39,7 @@
 			"outputs": "y - logikai tömb",
 			"code": [
 				"függvény RelatívPrímVizsgálat(x : egész tömb, n : egész, érték : egész)",
+				"y <- Létrehoz(logikai)[n]",
 				"ciklus i <- 1-től n-ig",
 				"ha LNKO(x[i], érték) = 1 akkor",
 				"y[i] <- igaz",
@@ -182,7 +183,7 @@
 				"idx <- i",
 				"vissza (van, idx)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -203,7 +204,7 @@
 				"idx <- i",
 				"vissza (van, idx)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -368,6 +369,7 @@
 				"függvény Szétválogat(címszerint x : T tömb, n : egész, Pred : logikai)",
 				"bal <- 1",
 				"jobb <- n",
+				"db <- 0",
 				"segéd <- x[1]",
 				"ciklus amíg bal < jobb",
 				"ciklus amíg (bal < jobb) és ~Pred(x[jobb])",
@@ -635,7 +637,7 @@
 				"idx <- i",
 				"vissza (van, idx)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -878,7 +880,7 @@
 			"inputs": "x - T tömb, n - egész (tömb mérete); ahol T kulccsal rendelkezik",
 			"outputs": "y - T rendezett tömb",
 			"code": [
-				"függvény SzétosztóRendezés(x : T tömb, n : egész)",
+				"függvény SzétosztóRendezés(x : T tömb, n : egész, Kulcs : egész)",
 				"y <- Létrehoz(T)[n]",
 				"ciklus i <- 1-től n-ig",
 				"y[Kulcs(x[i])] <- x[i]",
@@ -893,7 +895,7 @@
 			"inputs": "x - T tömb, n - egész (tömb mérete), m - egész; ahol T kulccsal rendelkezik",
 			"outputs": "y - T rendezett tömb",
 			"code": [
-				"függvény SzámlálvaSzétosztóRendezés(x : T tömb, n : egész, m : egész)",
+				"függvény SzámlálvaSzétosztóRendezés(x : T tömb, n : egész, m : egész, Kulcs : egész)",
 				"db <- Létrehoz(egész)[m]",
 				"ciklus i <- 1-től m-ig",
 				"db[i] <- 0",
@@ -1062,10 +1064,10 @@
 				"ha n = 1 akkor",
 				"vissza a",
 				"különben ha n mod 2 = 0 akkor",
-				"segéd <- HatványFelező(a, n/2)",
+				"segéd <- HatványFelező(a, n / 2)",
 				"vissza segéd * segéd",
 				"különben",
-				"segéd <- HatványFelező (a, (n-1)/2)",
+				"segéd <- HatványFelező (a, (n - 1) / 2)",
 				"vissza a * segéd * segéd",
 				"elágazás vége",
 				"függvény vége"
@@ -1157,7 +1159,7 @@
 				"idx <- i",
 				"vissza (van, idx)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -1185,7 +1187,7 @@
 				"idx <- center",
 				"vissza (van, idx)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -1311,7 +1313,7 @@
 				"ciklus vége",
 				"vissza (van, bal, jobb)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -1347,7 +1349,7 @@
 				"ciklus vége",
 				"vissza (van, bal, jobb)",
 				"különben",
-				"vissza van",
+				"vissza (van, 0, 0)",
 				"elágazás vége",
 				"függvény vége"
 			]
@@ -1361,6 +1363,7 @@
 				"függvény MegszámlálásRendezettben(x : T rendezett tömb, n : egész, érték : T)",
 				"bal <- 1",
 				"jobb <- n",
+				"db <- 0",
 				"center <- Kerekit((bal+jobb)/2)",
 				"ciklus amíg (bal <= jobb) és (x[center] =/= érték)",
 				"ha x[center] > érték akkor",
@@ -1677,12 +1680,12 @@
 			"outputs": "x - T rendezett tömb",
 			"code": [
 				"eljárás GyorsRendezés(címszerint x : T tömb, bal : egész, jobb : egész)",
-				"idx <- Szétválogat(x, bal, jobb)",
+				"idx <- Szétválogat(&x, bal, jobb)",
 				"ha idx > bal + 1 akkor",
-				"GyorsRendezés(x, bal, idx - 1)",
+				"GyorsRendezés(&x, bal, idx - 1)",
 				"elágazás vége",
 				"ha idx < jobb - 1 akkor",
-				"GyorsRendezés(x, idx + 1, jobb)",
+				"GyorsRendezés(&x, idx + 1, jobb)",
 				"elágazás vége",
 				"eljárás vége"
 			]
@@ -1727,7 +1730,7 @@
 				"ha bal = jobb akkor",
 				"vissza x[bal]",
 				"különben",
-				"idx <- Szétválogat(x, bal, jobb)",
+				"idx <- Szétválogat(&x, bal, jobb)",
 				"ha k = idx - bal + 1 akkor",
 				"vissza x[idx]",
 				"különben ha k < idx - bal + 1 akkor",
@@ -1773,7 +1776,7 @@
 			"inputs": "F - egész tábla, n - egész, c - egész",
 			"outputs": "S - egész halmaz",
 			"code": [
-				"függvény Kiolvas(f : egész tábla, n : egész, c : egész)",
+				"függvény Kiolvas(f : egész tábla, w : egész tömb, n : egész, c : egész)",
 				"s <- Halmaz()",
 				"i <- n",
 				"x <- c",
@@ -1989,7 +1992,8 @@
 			"outputs": "A - egész halmaz",
 			"code": [
 				"függvény EseményKiválasztás(s : egész tömb, f : egész tömb, n : egész)",
-				"a <- Halmaz(1)",
+				"a <- Halmaz()",
+				"a <- Unio(a, 1)",
 				"utolsó <- 1",
 				"ciklus i <- 2-től n-ig",
 				"ha s[i] >= f[utolsó] akkor",

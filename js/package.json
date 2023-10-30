@@ -13,8 +13,8 @@
     "jest": "^29.5.0"
   },
   "scripts": {
-    "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
     "build": "yarn esbuild src/frontend/main.ts --bundle --format=esm --target=ES2020 --sourcemap --outfile=dist/main.js --servedir=dist --serve",
-    "prod": "yarn esbuild src/controller/vm_controls.js --bundle --format=esm --minify --outfile=dist/newglue.js"
+    "health": "yarn esbuild src/frontend/healthcheck.ts --bundle --format=esm --target=ES2020 --sourcemap --outfile=dist/healthcheck.js",
+    "health_build": "yarn esbuild src/frontend/healthcheck.ts --bundle --format=esm --target=ES2020 --sourcemap --outfile=dist/healthcheck.js --servedir=dist --serve"
   }
 }

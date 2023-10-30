@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcheck</title>
+    <script type="module" src="healthcheck.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            font-size: 16px;
+
+            background-color: #e0e0e0;
+        }
+
+        #counter {
+            text-align: center;
+            font-size: 3rem;
+            margin: 1rem auto;
+            width: fit-content;
+            padding: 1rem;
+
+            background-color: #fff;
+        }
+
+        table {
+            margin: 1rem auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+
+        tr, th, td {
+            border: 1px solid #000
+        }
+
+        td.name {
+            max-width: 30ch;
+            overflow: auto;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        td.check {
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        td.chapter {
+            text-align: center;
+            background-color: #efefef;
+        }
+    </style>
+</head>
+<body>
+    <p id="counter"> -/- pass.</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>TOK</th>
+                <th>AST</th>
+                <th>TCK</th>
+                <th>Error</th>
+            </tr>
+        </thead>
+        <tbody id="algorithms"></tbody>
+    </table>
+</body>
+</html>

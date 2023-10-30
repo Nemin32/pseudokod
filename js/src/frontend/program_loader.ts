@@ -1,4 +1,4 @@
-type Entry = {
+export type Entry = {
 	name: string,
 	inputs: string,
 	outputs: string,
@@ -6,7 +6,7 @@ type Entry = {
 	skip?: boolean
 }
 
-type Programs = Record<string, Entry[]>
+export type Programs = Record<string, Entry[]>
 
 const firstWord = (input: string) => {
 	const spaceIdx = input.indexOf(" ")
