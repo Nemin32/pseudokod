@@ -98,7 +98,8 @@ window.addEventListener("load", () => {
         const rowToHTML = (row: HCResult) => {
             if (row.type === "entry") {
                 return `<tr>
-                    <td class="name">${row.name}</td>
+                    <td class="id">${row.name.split(".")[0]}.</td>
+                    <td class="name">${row.name.split(".")[1]}</td>
                     <td class="check">${row.tokenizes ? "✅" : "❌"}</td>
                     <td class="check">${row.ast ? "✅" : "❌"}</td>
                     <td class="check">${row.typechecks ? "✅" : "❌"}</td>
