@@ -6,14 +6,15 @@ import { parseBlock } from "../parser/ast_parser.ts"
 import { TypeMap } from "../compiler/typemap.ts";
 import { vars } from "../compiler/std.ts";
 
-type HCResult = {type: "chapter", number: number} | {
-    type: "entry",
+type Chapter = {type: "chapter", number: number}
+type Entry = {    type: "entry",
     name: string,
     tokenizes: boolean,
     ast: boolean,
     typechecks: boolean,
     error: string | null
 }
+type HCResult =  Chapter | Entry
 
 window.addEventListener("load", () => {
     const tbody = document.getElementById("algorithms")! as HTMLTableSectionElement;
@@ -110,6 +111,10 @@ window.addEventListener("load", () => {
 
         tbody.innerHTML = results.map(rowToHTML).join("\n")
 
-        counter.innerHTML = `${results.filter(r => r.type === "entry" && r.tokenizes && r.typechecks).length}/${results.filter(r => r.type === "entry").length} pass.`
+        const entries = results.filter(r => r.type === "entry") as Entry[]
+        const passing = entries.filter(r => r.tokenizes && r.typechecks).length
+        const total = entries.length
+
+        counter.innerHTML = `${passing === total ? "🎉" : ""} ${passing}/${total} pass. ${passing === total ? "🎉" : ""}`
     })
 })
