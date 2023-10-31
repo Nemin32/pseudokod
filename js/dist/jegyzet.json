@@ -426,7 +426,7 @@
 			"inputs": "x1 - T tömb, n1 - egész (tömb mérete), x2 - T tömb, n2 - egész (tömb mérete)",
 			"outputs": "van - logikai",
 			"code": [
-				"függvény KözösElemEldöntése(x1 : T tömb, n1 : egész, x2 : T tömb, n2 : T tömb)",
+				"függvény KözösElemEldöntése(x1 : T tömb, n1 : egész, x2 : T tömb, n2 : egész)",
 				"i <- 1",
 				"van <- hamis",
 				"ciklus amíg (i <= n1) és ~van",
@@ -964,7 +964,7 @@
 			"inputs": "N - egész (természetes szám)",
 			"outputs": "N faktoriálisa",
 			"code": [
-				"függvény FaktoriálisRekurzív(n : egész)",
+				"függvény FaktoriálisRekurzív(n : egész): egész",
 				"ha n = 0 akkor",
 				"vissza 1",
 				"különben",
@@ -979,7 +979,7 @@
 			"inputs": "N - egész",
 			"outputs": "N -edik Fibonacci szám",
 			"code": [
-				"függvény FibonacciRekurzív(n : egész)",
+				"függvény FibonacciRekurzív(n : egész): egész",
 				"ha n <= 1 akkor",
 				"vissza 1",
 				"különben",
@@ -1044,7 +1044,7 @@
 			"inputs": "a - szám, n - egész",
 			"outputs": "aN értéke",
 			"code": [
-				"függvény HatványRekurzív(a : egész, n : egész)",
+				"függvény HatványRekurzív(a : egész, n : egész): egész",
 				"ha n = 1 akkor",
 				"vissza a",
 				"különben",
@@ -1059,7 +1059,7 @@
 			"inputs": "a - szám, n - egész",
 			"outputs": "a^n értéke",
 			"code": [
-				"függvény HatványFelező(a : egész, n : egész)",
+				"függvény HatványFelező(a : egész, n : egész): egész",
 				"ha n = 1 akkor",
 				"vissza a",
 				"különben ha n mod 2 = 0 akkor",
@@ -1078,7 +1078,7 @@
 			"inputs": "x - T tömb, jobb - egész",
 			"outputs": "A vizsgált résztömb elemeire nézve a + művelet eredménye.",
 			"code": [
-				"függvény SorozatszámításRekurzív(x : T tömb, jobb : egész)",
+				"függvény SorozatszámításRekurzív(x : T tömb, jobb : egész): egész",
 				"ha jobb = 0 akkor",
 				"vissza érték0",
 				"különben",
@@ -1093,7 +1093,7 @@
 			"inputs": "x - T tömb, bal - egész, n - egész (tömb mérete), P - logikai (tulajdonság)",
 			"outputs": "Az első P tulajdonságú elem indexe, illetve ha nincs P tulajdonságú elem, akkor 0.",
 			"code": [
-				"függvény LineárisKeresésRekurzív(x : T tömb, bal : egész, n : egész, Pred : logikai)",
+				"függvény LineárisKeresésRekurzív(x : T tömb, bal : egész, n : egész, Pred : logikai): egész",
 				"ha bal > n akkor",
 				"vissza 0",
 				"különben ha Pred(x[bal]) akkor",
@@ -1110,7 +1110,7 @@
 			"inputs": "x - T tömb, jobb - egész, P - logikai (tulajdonság)",
 			"outputs": "A vizsgált résztömbben az P tulajdonságú elemek száma.",
 			"code": [
-				"függvény MegszámlálásRekurzív(x : T tömb, jobb : egész, Pred : logikai)",
+				"függvény MegszámlálásRekurzív(x : T tömb, jobb : egész, Pred : logikai): egész",
 				"ha jobb = 0 akkor",
 				"vissza 0",
 				"különben ha Pred(x[jobb]) akkor",
@@ -1127,7 +1127,7 @@
 			"inputs": "x - T tömb, jobb - egész; ahol T összehasonlítható",
 			"outputs": "A vizsgált résztömbben a maximális értékű elem indexe.",
 			"code": [
-				"függvény MaximumkiválasztásRekurzív(x : T tömb, jobb : egész)",
+				"függvény MaximumkiválasztásRekurzív(x : T tömb, jobb : egész): egész",
 				"ha jobb = 1 akkor",
 				"vissza 1",
 				"különben",
@@ -1197,7 +1197,7 @@
 			"inputs": "x - T rendezett tömb, bal - egész, jobb - egész, érték - T; ahol T összehasonlítható",
 			"outputs": "Az érték-kel megegyező elem indexe, illetve ha nincs ilyen, akkor 0.",
 			"code": [
-				"függvény LogaritmikusKeresésRekurzív(x : T rendezett tömb, bal : egész, jobb : egész, érték : T)",
+				"függvény LogaritmikusKeresésRekurzív(x : T rendezett tömb, bal : egész, jobb : egész, érték : T): egész",
 				"ha bal > jobb akkor",
 				"vissza 0",
 				"különben",
@@ -1607,7 +1607,7 @@
 			"inputs": "x - T tömb, bal - egész, jobb - egész; ahol T összehasonlítható",
 			"outputs": "Az x tömb bal és jobb indexei közötti résztömbje maximális elemének indexe.",
 			"code": [
-				"függvény FelezőMaximumkiválasztás(x : T tömb, bal : egész, jobb : egész)",
+				"függvény FelezőMaximumkiválasztás(x : T tömb, bal : egész, jobb : egész): egész",
 				"ha bal = jobb akkor",
 				"vissza bal",
 				"különben",
@@ -1725,7 +1725,7 @@
 			"inputs": "x - T tömb, bal - egész, jobb - egész, k - egész; ahol T összehasonlítható",
 			"outputs": "k-adik legkisebb tömbelem értéke",
 			"code": [
-				"függvény KAdikLegkisebbElem(x : T tömb, bal : egész, jobb : egész, k : egész)",
+				"függvény KAdikLegkisebbElem(x : T tömb, bal : egész, jobb : egész, k : egész): T",
 				"ha bal = jobb akkor",
 				"vissza x[bal]",
 				"különben",

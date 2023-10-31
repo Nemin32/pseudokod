@@ -1,4 +1,4 @@
-import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "./types.ts";
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType, Type } from "./types.ts";
 import { IToken } from "./ITokenizer.ts";
 
 export function stringToBaseType(type: string): SimpleType | GenericType {
@@ -159,17 +159,22 @@ export type FunctionCall = ASTBase<ASTTag.FUNCCALL, {
 	arguments: (Expression | IToken)[];
 }>
 
+export type ASTType = {
+	core_type: SimpleType | GenericType;
+	byRef: boolean;
+	isArr: boolean;
+}
+
 export type FunctionDeclaration = ASTBase<ASTTag.FUNCDECL, {
 	name: string;
 	parameters: Parameter[];
 	body: Block;
+	return_type: ASTType | null
 }>
 
 export type Parameter = ASTBase<ASTTag.PARAMETER, {
 	name: Variable | string; // string = funcname
-	type: SimpleType | GenericType;
-	byRef: boolean;
-	isArr: boolean;
+	type: ASTType
 }>
 
 export type Swap = ASTBase<ASTTag.SWAP, {

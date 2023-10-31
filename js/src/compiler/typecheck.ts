@@ -1,5 +1,5 @@
-import { ASTKind, ASTTag, BinOpType } from "../interfaces/astkinds.ts";
-import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UnknownType } from "../interfaces/types.ts";
+import { ASTKind, ASTTag, ASTType, BinOpType } from "../interfaces/astkinds.ts";
+import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UNKNOWN, UnknownType } from "../interfaces/types.ts";
 import { TypeMap } from "./typemap.ts";
 
 function compare(t1: Type, t2: Type): boolean {
@@ -62,6 +62,14 @@ function show(t: Type): string {
 	if (t instanceof GenericType) return t.name
 
 	throw new Error(`Show: Should not happen.`);
+}
+
+function astTypeToType(type: ASTType): Type {
+	let core: Type = type.core_type
+	if (type.isArr) core = new ArrayType(core);
+	if (type.byRef) core = new ReferenceType(core);
+
+	return core
 }
 
 
@@ -214,6 +222,11 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		}
 
 		case ASTTag.FUNCDECL: {
+			const rType: Type = (() => {
+				if (ast.return_type === null) return UNKNOWN
+				return astTypeToType(ast.return_type)
+			})()
+
 			const types = ast.parameters.map(t => typeCheck(t, env)[0])
 			const nEnv = types.reduce<TypeMap>((state, t, idx) => {
 				const arg = ast.parameters[idx].name
@@ -221,9 +234,12 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				const inner = (t instanceof ReferenceType) ? t.t : t;
 
 				return state.with(name, inner)
-			}, env).with(ast.name, new FunctionType(NUMBER, null, null))
+			}, env).with(ast.name, new FunctionType(rType, null, null))
 
 			const type = typeCheck(ast.body, nEnv)[0]
+			if (!compare(rType, UNKNOWN) && !compare(type, rType)) {
+				throw new Error(`Type signature (${show(rType)}) and calculated return type (${show(type)}) don't match!`)
+			}
 			return [NONE, env.with(ast.name, new FunctionType(type, types, ast))]
 		}
 
@@ -270,9 +286,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 		case ASTTag.PARAMETER: {
 			const isFunc = (typeof ast.name === "string")
-			let type: Type = ast.type
-			if (ast.isArr) type = new ArrayType(type);
-			if (ast.byRef) type = new ReferenceType(type);
+			let type = astTypeToType(ast.type)
 			if (isFunc) type = new FunctionType(type, null, null)
 
 			return [type, env]

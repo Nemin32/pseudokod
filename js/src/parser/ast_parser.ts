@@ -26,7 +26,7 @@ import {
 	While,
 	stringToBaseType,
 } from "../interfaces/astkinds.ts";
-import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "../interfaces/types.ts";
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType, Type } from "../interfaces/types.ts";
 import { Chain, P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseBaseType: P<SimpleType | GenericType> = Parser.matchT(TT.TYPE).map(t => stringToBaseType(t.lexeme))
@@ -238,22 +238,31 @@ const parseParameter: P<Parameter> = Parser.do()
 	.bind("type", parseParamType)
 	.result(({ byRef, name, type }) =>
 		mkToken("token" in name ? name.token : name, ASTTag.PARAMETER, {
-			byRef,
 			name: "token" in name ? name : name.lexeme,
-			type: type.type,
-			isArr: type.isArray !== null
+			type: {
+				core_type: type.type,
+				isArr: type.isArray !== null,
+				byRef,
+			}
 		}),
 	);
+
+const parseReturnType = Parser.matchT(TT.COLON).right(parseParamType) 
 
 export const parseFuncDecl: P<FunctionDeclaration> = Parser.do()
 	.bindT("token", TT.FUGGVENY)
 	.bindT("name", TT.FUNCNAME)
 	.bind("parameters", parseParameter.sepBy(Parser.matchT(TT.COMMA)).parens())
+	.bind("rType", parseReturnType.or(Parser.result(null)))
 	.bind("body", parseBlock)
 	.ignoreT(TT.FUGGVENY)
 	.ignoreT(TT.VEGE)
-	.result(({ token, body, name, parameters }) =>
-		mkToken(token, ASTTag.FUNCDECL, { body, name: name.lexeme, parameters }),
+	.result(({ token, body, name, parameters, rType }) =>
+		mkToken(token, ASTTag.FUNCDECL, { body, name: name.lexeme, parameters, return_type: rType === null ? null : {
+			byRef: false,
+			isArr: rType.isArray !== null,
+			core_type: rType.type,
+		} }),
 	);
 
 //#endregion
