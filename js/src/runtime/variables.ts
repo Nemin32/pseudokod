@@ -53,6 +53,16 @@ export class Variables {
 		//this.gc()
 	}
 
+	get activeScope() {
+		const lastBinding = this.bounds.findLast(b => b.isFun)
+
+		if (lastBinding !== undefined) {
+			return this.bindings.slice(lastBinding.lastIndex)
+		}
+
+		return this.bindings
+	}
+
 	free(variable: VariableBinding) {
 		const box = this.values.at(variable.pointer)
 		if (box === undefined) throw new Error(`${variable.name}: Points at invalid address! (${variable.pointer})`)
@@ -83,7 +93,7 @@ export class Variables {
 	// NORMAL OPS
 
 	makeReference(name: string, pointer: number) {
-		const variable = this.findBindingOrNullGlobal(name);
+		const variable = this.findBindingOrNull(name);
 		const box = this.getBox(pointer)
 
 		if (box.type === ValueType.NORMAL) {

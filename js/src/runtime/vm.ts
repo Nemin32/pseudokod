@@ -150,7 +150,17 @@ export class VM {
 
 			case OC.CALL: {
 				ipStack.push(this.currentState.idx);
-				this.jmp(inst.name);
+
+				const funcName = vars.getVariableOrNull(inst.name)
+				if (funcName != null) {
+					if (typeof funcName === "string") {
+						this.jmp(funcName)
+					} else {
+						throw new Error("Expected function name, got " + typeof funcName + ".")
+					}
+				} else {
+					this.jmp(inst.name);
+				}
 			}; break
 
 			// @ts-ignore: Ignores fallthrough.
@@ -270,6 +280,7 @@ export class VM {
 					} else {
 						const arr = vars.getArrayByAddr(value.pointer)
 						vars.addArray(name, arr)
+						console.log(arr)
 					}
 				} else {
 					if (Array.isArray(value)) {

@@ -27,7 +27,7 @@ export class TypeMap {
 	}
 
 	get(name: string): Type {
-		const val = this.types.find(t => t.name === name);
+		const val = this.types.findLast(t => t.name === name);
 		if (val === undefined) throw new Error(`${name} has no binding.`)
 
 		return this.extract(val.type)

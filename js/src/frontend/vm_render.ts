@@ -30,7 +30,7 @@ function getDifferences(prev: State, current: State): {
 } {
 	const stack = compare(prev.stack, current.stack, (a, b) => a === b)
 	const ipStack = compare(prev.ipStack, current.ipStack, (a, b) => a === b)
-	const bindings = compare(prev.vars.bindings, current.vars.bindings, (a, b) =>
+	const bindings = compare(prev.vars.activeScope, current.vars.activeScope, (a, b) =>
 		a.name === b.name
 		&& a.pointer === b.pointer
 		&& prev.vars.getVariableOrNull(a.name) === current.vars.getVariableOrNull(b.name))

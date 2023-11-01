@@ -14,6 +14,8 @@ window.addEventListener("load", () => {
 	const byteCode = document.querySelector("#instructions div")! as HTMLDivElement
 	const output = document.querySelector("#output")! as HTMLDivElement
 	const highlight = document.getElementById("highlight")!
+	const error = document.getElementById("error")! as HTMLDivElement
+	const errorMsg = document.querySelector("#error p")! as HTMLParagraphElement
 	const algorithms = document.querySelector("#picker div")!
 
 	const formatButton = document.getElementById("format")!
@@ -92,6 +94,8 @@ window.addEventListener("load", () => {
 
 		const block = parseBlock.run(tokens)
 
+		try {
+			error.style.visibility = "hidden";
 		if (block.type === "match") {
 			console.log(typeCheck(block.value, new TypeMap([], [])))
 
@@ -105,6 +109,14 @@ window.addEventListener("load", () => {
 			highlight.replaceChildren(...tokenSpans)
 		} else {
 			throw new Error(block.cause)
+		}
+		} catch(e) {
+			if (e instanceof Error) {
+				error.style.visibility = "visible";
+				errorMsg.innerText = e.message
+			} else {
+				throw e
+			}
 		}
 	})
 

@@ -16,12 +16,11 @@ function compare(t1: Type, t2: Type): boolean {
 
 	if (t1 instanceof FunctionType && t2 instanceof FunctionType) {
 		const rTypeMatches = compare(t1.rType, t2.rType)
-		const bothNull = t1.argTypes === null && t2.argTypes === null
+		const eitherNull = t1.argTypes === null || t2.argTypes === null
 
-		if (bothNull) {
+		if (eitherNull) {
 			return rTypeMatches
 		} else {
-			if (t1.argTypes === null || t2.argTypes === null) return false;
 			return t1.argTypes.every((t, idx) => compare(t, t2.argTypes![idx]));
 		}
 	}

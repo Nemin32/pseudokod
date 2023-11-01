@@ -159,3 +159,26 @@ pre:first-child {
 		border-right: 1px solid var(--border);
 		padding-right: 0.35rem;
 }
+
+#error {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+
+	visibility: hidden;
+	background-color: #dda0a0;
+
+	display: flex;
+	padding: 1rem;
+	gap: 1rem;
+
+	& p {
+		margin: 0;
+	}
+
+	& img {
+		width: 96px;
+		fill: #411;
+	}
+}
