@@ -1,5 +1,5 @@
 import { ArrayType, FunctionType, GenericType, HeterogenousArrayType, NUMBER, ReferenceType, Type, TypeVariants } from "../interfaces/types.ts";
-
+import { TypeCheckError } from "./typecheck.ts";
 
 type Binding = { name: string, type: Type }
 export class TypeMap {
@@ -28,7 +28,7 @@ export class TypeMap {
 
 	get(name: string): Type {
 		const val = this.types.findLast(t => t.name === name);
-		if (val === undefined) throw new Error(`${name} has no binding.`)
+		if (val === undefined) throw new TypeCheckError(`${name} has no binding.`)
 
 		return this.extract(val.type)
 	}

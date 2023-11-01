@@ -6,6 +6,12 @@ import { ValueADT, ValueType, VariableBinding, Variables } from "./variables.ts"
 export type Pointer = { pointer: number }
 export type Value = Atom["value"] | Pointer;
 
+export class VMError extends Error {
+	constructor(public msg: string) {
+		super(msg)
+	}
+}
+
 export class State {
 	constructor(
 		public ipStack: Array<number>,
@@ -42,7 +48,7 @@ export class VM {
 			const inst = this.tape[i]
 			if (inst.code === OC.LABEL) {
 				const name = inst.name
-				if (this.jmpTable.has(name)) throw new Error(`Label "${name}" appears twice in code!`)
+				if (this.jmpTable.has(name)) throw new VMError(`Label "${name}" appears twice in code!`)
 				this.jmpTable.set(name, i)
 			}
 		}
@@ -57,7 +63,7 @@ export class VM {
 
 	pop(): Value | Value[] {
 		const val = this.currentState.stack.pop()
-		if (val === undefined) throw new Error("Stack was empty!");
+		if (val === undefined) throw new VMError("Stack was empty!");
 
 		if (val === "__mk") {
 			const retval = [] as Value[];
@@ -65,7 +71,7 @@ export class VM {
 
 			for (let i = 0; i < length; i++) {
 				const value = this.currentState.stack.pop()
-				if (value === undefined) throw new Error("Stack was empty!");
+				if (value === undefined) throw new VMError("Stack was empty!");
 				retval.push(value)
 			}
 
@@ -80,7 +86,7 @@ export class VM {
 
 		for (let i = 0; i < n; i++) {
 			const value = this.pop()
-			if (Array.isArray(value)) throw new Error("Array in popMany.");
+			if (Array.isArray(value)) throw new VMError("Array in popMany.");
 			values.push(value)
 		}
 
@@ -92,7 +98,7 @@ export class VM {
 		const dimensions = dimensionsRaw.map(val => this.unwrapValue(val))
 
 		dimensions.forEach(v => {
-			if (typeof v !== "number") throw new Error("Index was not number: " + v)
+			if (typeof v !== "number") throw new VMError("Index was not number: " + v)
 		})
 
 		return dimensions as number[];
@@ -100,14 +106,14 @@ export class VM {
 
 	unwrapValue(value: Value | Value[]): Value {
 		if (Array.isArray(value)) {
-			throw new Error("Value was array.")
+			throw new VMError("Value was array.")
 		}
 
 		if (this.currentState.vars.isPointer(value)) {
 			const box = this.currentState.vars.getBox(value.pointer)
 
 			if (box.type === ValueType.ARRAY) {
-				throw new Error("Box was array.")
+				throw new VMError("Box was array.")
 			}
 
 			return box.value;
@@ -127,7 +133,7 @@ export class VM {
 	jmp(label: string): void {
 		const addr = this.jmpTable.get(label)
 		if (addr === undefined)
-			throw new Error(`Can't find label "${label}"!`)
+			throw new VMError(`Can't find label "${label}"!`)
 
 		this.currentState.idx = addr - 1;
 	}
@@ -156,7 +162,7 @@ export class VM {
 					if (typeof funcName === "string") {
 						this.jmp(funcName)
 					} else {
-						throw new Error("Expected function name, got " + typeof funcName + ".")
+						throw new VMError("Expected function name, got " + typeof funcName + ".")
 					}
 				} else {
 					this.jmp(inst.name);
@@ -173,7 +179,7 @@ export class VM {
 			case OC.RETURN: {
 				vars.lscope(true)
 				const newIp = this.currentState.ipStack.pop();
-				if (!newIp) throw new Error("IP stack is empty.")
+				if (!newIp) throw new VMError("IP stack is empty.")
 				this.currentState.idx = newIp
 			}; break
 
@@ -225,7 +231,7 @@ export class VM {
 				const method = methods.get(inst.type)
 
 				if (!method) {
-					throw new Error("No such binop: " + inst.type)
+					throw new VMError("No such binop: " + inst.type)
 				}
 
 				this.push(method(first as number, second as number))
@@ -235,7 +241,7 @@ export class VM {
 				const value = this.unwrapValue(this.pop());
 
 				if (typeof value !== "boolean") {
-					throw new Error("FJMP: Value must be bool, but was " + typeof value)
+					throw new VMError("FJMP: Value must be bool, but was " + typeof value)
 				}
 
 				this.push(!value);
@@ -298,7 +304,7 @@ export class VM {
 				const value = this.unwrapValue(this.pop());
 
 				if (typeof value !== "boolean") {
-					throw new Error("FJMP: Value must be bool, but was " + typeof value)
+					throw new VMError("FJMP: Value must be bool, but was " + typeof value)
 				}
 
 				if (value === false) {
@@ -327,7 +333,7 @@ export class VM {
 				const pointer = this.pop()
 
 				if (!vars.isPointer(pointer)) {
-					throw new Error("References must be pointer type, but was " + typeof pointer)
+					throw new VMError("References must be pointer type, but was " + typeof pointer)
 				}
 
 				vars.makeReference(inst.name, pointer.pointer)

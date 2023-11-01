@@ -1,6 +1,13 @@
+import { IToken } from "../interfaces/ITokenizer.ts";
 import { ASTKind, ASTTag, ASTType, BinOpType } from "../interfaces/astkinds.ts";
-import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeCheckError, TypeVariants, UNKNOWN, UnknownType } from "../interfaces/types.ts";
+import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeVariants, UNKNOWN, UnknownType } from "../interfaces/types.ts";
 import { TypeMap } from "./typemap.ts";
+
+export class TypeCheckError extends Error {
+	constructor(public msg: string, public token?: IToken | null) {
+		super(msg)
+	}
+}
 
 function compare(t1: Type, t2: Type): boolean {
 	if (t1 instanceof NoneType && t2 instanceof NoneType) return true;
@@ -60,7 +67,7 @@ function show(t: Type): string {
 	if (t instanceof FunctionType) return t.argTypes ? `FN(${t.argTypes.map(t => show(t))}) => ${show(t.rType)}` : `FN(?) => ${show(t.rType)}`
 	if (t instanceof GenericType) return t.name
 
-	throw new Error(`Show: Should not happen.`);
+	throw new TypeCheckError(`Show: Should not happen.`);
 }
 
 function astTypeToType(type: ASTType): Type {
@@ -96,14 +103,14 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				return [new UnknownType(), env]
 			}
 
-			throw new Error(`Expected ${ast.variable.name} to be T ARRAY, got ${show(variable)}.`)
+			throw new TypeCheckError(`Expected ${ast.variable.name} to be T ARRAY, got ${show(variable)}.`)
 		}
 
 		case ASTTag.ATOM: {
 			if (typeof ast.value === "number") return [NUMBER, env];
 			if (typeof ast.value === "boolean") return [LOGIC, env];
 			if (typeof ast.value === "string") return [STRING, env];
-			throw new Error(`Expected number|string|boolean, got ${typeof ast.value}`);
+			throw new TypeCheckError(`Expected number|string|boolean, got ${typeof ast.value}`);
 		}
 
 		case ASTTag.BINOP: {
@@ -114,7 +121,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				const t2 = typeCheck(a2, env)[0];
 
 				if (!compare(t1, t2)) {
-					throw new Error(`Expected both sides to be ${show(t1)}, but right side was ${show(t2)}`)
+					throw new TypeCheckError(`Expected both sides to be ${show(t1)}, but right side was ${show(t2)}`)
 				}
 			}
 
@@ -176,7 +183,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				const variable = env.get(ast.variable.variable.name)
 				if (variable.kind === TypeVariants.ARRAY) {
 					if (!compare(variable.t, valueType)) {
-						throw new Error(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
+						throw new TypeCheckError(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
 					}
 
 					ast.variable.index.forEach(e => ensure(e, NUMBER))
@@ -185,7 +192,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 					ast.variable.index.forEach(e => ensure(e, NUMBER))
 					return [NONE, env]
 				} else {
-					throw new Error(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
+					throw new TypeCheckError(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
 				}
 			} else {
 				return [NONE, env.with(ast.variable.name, typeCheck(ast.value, env)[0])]
@@ -237,14 +244,14 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 			const type = typeCheck(ast.body, nEnv)[0]
 			if (!compare(rType, UNKNOWN) && !compare(type, rType)) {
-				throw new Error(`Type signature (${show(rType)}) and calculated return type (${show(type)}) don't match!`)
+				throw new TypeCheckError(`Type signature (${show(rType)}) and calculated return type (${show(type)}) don't match!`)
 			}
 			return [NONE, env.with(ast.name, new FunctionType(type, types, ast))]
 		}
 
 		case ASTTag.FUNCCALL: {
 			const func = env.get(ast.name);
-			if (!(func instanceof FunctionType)) throw new Error("nonfunc");
+			if (!(func instanceof FunctionType)) throw new TypeCheckError("nonfunc");
 
 			// argTypes is null if we don't yet know how many / what type of args we have.
 			// For instance:
@@ -260,10 +267,10 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			}
 
 			if (func.decl === null) {
-				throw new Error("Nodef")
+				throw new TypeCheckError("Nodef")
 			}
 
-			if (at.length != ast.arguments.length) throw new Error("len")
+			if (at.length != ast.arguments.length) throw new TypeCheckError("len")
 
 			// Arguments arrive in reverse order, so we need to do a copy and reverse before we can compare the types.
 			const nEnv = [...ast.arguments].reverse().reduce<TypeMap>((state, arg, idx) => {
@@ -274,7 +281,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				if (expected instanceof GenericType) {
 					return state.substitute(expected.name, type).with(name, type)
 				} else {
-					if (!compare(type, expected)) throw new Error(`Expected ${show(expected)}, got ${show(type)}.`)
+					if (!compare(type, expected)) throw new TypeCheckError(`Expected ${show(expected)}, got ${show(type)}.`)
 					return state.with(name, type)
 				}
 			}, env)
@@ -299,12 +306,12 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			const elifTypes = ast.elif_path.map(p => (ensure(p.pred, LOGIC), typeCheck(p.branch, env)[0]))
 
 			if (elseType && !compare(mainType, elseType)) {
-				throw new Error(`If has type ${show(mainType)}, but else has ${show(elseType)}.`)
+				throw new TypeCheckError(`If has type ${show(mainType)}, but else has ${show(elseType)}.`)
 			}
 
 			elifTypes.forEach((t, idx) => {
 				if (!compare(mainType, t)) {
-					throw new Error(`If has type ${show(mainType)}, but the ${idx + 1}th else if has ${show(t)}.`)
+					throw new TypeCheckError(`If has type ${show(mainType)}, but the ${idx + 1}th else if has ${show(t)}.`)
 				}
 			})
 

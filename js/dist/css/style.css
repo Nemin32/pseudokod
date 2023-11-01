@@ -173,6 +173,11 @@ pre:first-child {
 	padding: 1rem;
 	gap: 1rem;
 
+	& #errorType {
+		font-size: 1.2rem;
+		margin-bottom: 0.5rem;
+	}
+
 	& p {
 		margin: 0;
 	}

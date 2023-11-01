@@ -18,6 +18,12 @@ export type ValueADT = { rc: number, value: Value } & (
 	| { type: ValueType.ARRAY, dimensions: number[] }
 )
 
+export class VariableError extends Error {
+	constructor(msg: string) {
+		super(msg)
+	}
+}
+
 export class Variables {
 	constructor(
 		public bounds: Boundary[] = [],
@@ -36,14 +42,14 @@ export class Variables {
 	lscope(untilFun: boolean) {
 		if (untilFun) {
 			const lastFun = this.bounds.findLastIndex(b => b.isFun)
-			if (lastFun === -1) throw new Error("Attempting to leave function while not being in one.")
+			if (lastFun === -1) throw new VariableError("Attempting to leave function while not being in one.")
 
 			// slice is non-end-inclusive so + 1
 			this.bounds = this.bounds.slice(0, lastFun + 1)
 		}
 
 		const length = this.bounds.pop()?.lastIndex
-		if (length === undefined || length === -1) throw new Error("Trying to leave scope without being in one.")
+		if (length === undefined || length === -1) throw new VariableError("Trying to leave scope without being in one.")
 
 		const varsLeavingScope = this.bindings.slice(length);
 		varsLeavingScope.forEach(v => this.free(v))
@@ -65,7 +71,7 @@ export class Variables {
 
 	free(variable: VariableBinding) {
 		const box = this.values.at(variable.pointer)
-		if (box === undefined) throw new Error(`${variable.name}: Points at invalid address! (${variable.pointer})`)
+		if (box === undefined) throw new VariableError(`${variable.name}: Points at invalid address! (${variable.pointer})`)
 
 		if (box.type === ValueType.NORMAL) {
 			box.rc--;
@@ -221,7 +227,7 @@ export class Variables {
 	getArrayElemAddr(name: string, indexes: number[]): number {
 		const base = this.getAddress(name)
 		const box = this.getBox(base)
-		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
+		if (box.type !== ValueType.ARRAY) throw new VariableError(`${name}: Isn't an array variable!`)
 
 		const index = this.calculateIndex(box, indexes)
 
@@ -231,7 +237,7 @@ export class Variables {
 	getArray(name: string): DeepArray<Value> {
 		const base = this.getAddress(name)
 		const box = this.getBox(base)
-		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
+		if (box.type !== ValueType.ARRAY) throw new VariableError(`${name}: Isn't an array variable!`)
 
 		const length = box.dimensions.reduce((a, b) => a * b, 1)
 		return this.values.slice(base, base + length).map(v => v.value)
@@ -239,7 +245,7 @@ export class Variables {
 
 	getArrayByAddr(base: number): DeepArray<Value> {
 		const box = this.getBox(base)
-		if (box.type !== ValueType.ARRAY) throw new Error(`${base}: Isn't an array variable!`)
+		if (box.type !== ValueType.ARRAY) throw new VariableError(`${base}: Isn't an array variable!`)
 
 		const length = box.dimensions.reduce((a, b) => a * b, 1)
 		return this.values.slice(base, base + length).map(v => v.value)
@@ -268,7 +274,7 @@ export class Variables {
 		// If there are no function boundary, findLastIndex will return -1, so we just default to the outermost scope, hence the max(0).
 		const lastFunBound = Math.max(this.bounds.findLastIndex(b => b.isFun), 0)
 		const lastIndex = this.bounds.at(lastFunBound)?.lastIndex
-		if (lastIndex === undefined) throw new Error("No scope.")
+		if (lastIndex === undefined) throw new VariableError("No scope.")
 
 		const vars = this.bindings.slice(lastIndex)
 		const idx = vars.findLastIndex(v => v.name === name);
@@ -279,7 +285,7 @@ export class Variables {
 
 	private findIndex(name: string): number {
 		const idx = this.findIndexOrNull(name)
-		if (idx === null) throw new Error(`${name}: No such variable!`)
+		if (idx === null) throw new VariableError(`${name}: No such variable!`)
 
 		return idx;
 	}
@@ -303,7 +309,7 @@ export class Variables {
 
 	getBox(pointer: number): ValueADT {
 		const box = this.values.at(pointer)
-		if (box === undefined) throw new Error(`No box at address ${pointer}!`)
+		if (box === undefined) throw new VariableError(`No box at address ${pointer}!`)
 
 		return box
 	}
@@ -323,7 +329,7 @@ export class Variables {
 	}
 
 	calculateIndex(box: ValueADT, indexes: number[]): number {
-		if (box.type === ValueType.NORMAL) throw new Error(`Box isn't an array variable!`)
+		if (box.type === ValueType.NORMAL) throw new VariableError(`Box isn't an array variable!`)
 
 		// Drops the first element and adds 1 at the end.
 		// Suppose we have a 4x5x6 array and we want to get [3,2,4]
@@ -342,7 +348,7 @@ export class Variables {
 	getArrayBox(name: string, indexes: number[]): ValueADT {
 		const base = this.getAddress(name)
 		const box = this.getBox(base)
-		if (box.type !== ValueType.ARRAY) throw new Error(`${name}: Isn't an array variable!`)
+		if (box.type !== ValueType.ARRAY) throw new VariableError(`${name}: Isn't an array variable!`)
 
 		const index = this.calculateIndex(box, indexes)
 

@@ -1,5 +1,6 @@
 import { GenericType, LOGIC, NUMBER, STRING, SimpleType, Type } from "./types.ts";
 import { IToken } from "./ITokenizer.ts";
+import { TypeCheckError } from "../compiler/typecheck.ts";
 
 export function stringToBaseType(type: string): SimpleType | GenericType {
 	switch (type) {
@@ -11,7 +12,7 @@ export function stringToBaseType(type: string): SimpleType | GenericType {
 	// For stuff like Function(x : T)
 	if (type.length === 1 && type >= 'A' && type <= 'Z') return new GenericType(type)
 
-	throw new Error(`Expected type, got ${type}.`)
+	throw new TypeCheckError(`Expected type, got ${type}.`)
 }
 
 export enum ASTTag {

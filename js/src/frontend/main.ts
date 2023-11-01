@@ -1,22 +1,26 @@
 import { IToken } from "../interfaces/ITokenizer.ts"
 import { Compiler } from "../compiler/compiler.ts"
 import { parseBlock } from "../parser/ast_parser.ts"
-import { State, VM } from "../runtime/vm.ts"
+import { State, VM, VMError } from "../runtime/vm.ts"
 import { generateDump } from "./instruction.ts"
 import { formatCode, generateSelect } from "./program_loader.ts"
 import { tokenize } from "./token.ts"
 import { render } from "./vm_render.ts"
-import { typeCheck } from "../compiler/typecheck.ts"
+import { TypeCheckError, typeCheck } from "../compiler/typecheck.ts"
 import { TypeMap } from "../compiler/typemap.ts"
+import { ParsingError } from "../parser/monadic_parser_base.ts"
+import { VariableError } from "../runtime/variables.ts"
 
 window.addEventListener("load", () => {
 	const editor = document.getElementById("code")! as HTMLTextAreaElement
 	const byteCode = document.querySelector("#instructions div")! as HTMLDivElement
 	const output = document.querySelector("#output")! as HTMLDivElement
 	const highlight = document.getElementById("highlight")!
-	const error = document.getElementById("error")! as HTMLDivElement
-	const errorMsg = document.querySelector("#error p")! as HTMLParagraphElement
 	const algorithms = document.querySelector("#picker div")!
+
+	const error = document.getElementById("error")! as HTMLDivElement
+	const errorType = document.querySelector("#errorType")! as HTMLParagraphElement
+	const errorMsg = document.querySelector("#errorMsg")! as HTMLParagraphElement
 
 	const formatButton = document.getElementById("format")!
 	const compButton = document.getElementById("compile")!
@@ -96,24 +100,37 @@ window.addEventListener("load", () => {
 
 		try {
 			error.style.visibility = "hidden";
-		if (block.type === "match") {
-			console.log(typeCheck(block.value, new TypeMap([], [])))
+			if (block.type === "match") {
+				console.log(typeCheck(block.value, new TypeMap([], [])))
 
-			const compiler = new Compiler()
-			compiler.visit(block.value)
-			vm = new VM(compiler.code, comparisonFunc);
+				const compiler = new Compiler()
+				compiler.visit(block.value)
+				vm = new VM(compiler.code, comparisonFunc);
 
-			instructionSpans = generateDump(compiler.code, tokenSpans, byteCode);
+				instructionSpans = generateDump(compiler.code, tokenSpans, byteCode);
 
-			byteCode.replaceChildren(...instructionSpans)
-			highlight.replaceChildren(...tokenSpans)
-		} else {
-			throw new Error(block.cause)
-		}
-		} catch(e) {
+				byteCode.replaceChildren(...instructionSpans)
+				highlight.replaceChildren(...tokenSpans)
+			} else {
+				throw new ParsingError(block)
+			}
+		} catch (e) {
 			if (e instanceof Error) {
-				error.style.visibility = "visible";
-				errorMsg.innerText = e.message
+			error.style.visibility = "visible";
+			errorMsg.innerText = e.message
+
+			if (e instanceof TypeCheckError) {
+				errorType.innerText = "Typecheck Error:";
+			} else if (e instanceof VariableError) {
+				errorType.innerText = "Variable Error:";
+			} else if (e instanceof ParsingError) {
+				errorType.innerText = "Parsing Error:";
+			} else if (e instanceof VMError) {
+				errorType.innerText = "VM Error:";
+			} else {
+				errorType.innerText = "Other Error:";
+			}
+
 			} else {
 				throw e
 			}

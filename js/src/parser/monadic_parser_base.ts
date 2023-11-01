@@ -16,7 +16,7 @@ type Match<Output> = {
 
 // Ha a keresés sikertelen, akkor eltároljuk annak okát és a hibás keresés helyét.
 // Pl.: {input: "asd", index: 0}, keresés c => c == 'b' esetén: {type: "error", location: {input: "asd", index: 0}, cause: "Wanted 'b', found 'a'"}
-type ParsingError = {
+type ParsingFail = {
 	type: "error";
 	location: Input;
 	cause: string;
@@ -24,7 +24,7 @@ type ParsingError = {
 };
 
 // Egy keresés eredménye vagy találat vagy hiba.
-type Result<Output> = Match<Output> | ParsingError;
+type Result<Output> = Match<Output> | ParsingFail;
 
 // Bináris műveleteknél használt "lánc". Egy bináris művelet a kövektező alakokat veheti fel:
 // - SZÁM (L)
@@ -36,6 +36,12 @@ export type Chain<L, O, R> = L | {
 	op: O;
 	right: R;
 };
+
+export class ParsingError extends Error {
+	constructor(public cause: ParsingFail) {
+		super(cause.cause)
+	}
+}
 
 /** Parser capable of parsing arbitrary values from a stream of IToken-s.
  * @template Output Output: The type of a successful match.

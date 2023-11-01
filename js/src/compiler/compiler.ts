@@ -271,7 +271,7 @@ export class Compiler {
 
 	visitParam(ast: Parameter) {
 		const name = (typeof (ast.name) === "string") ? ast.name : ast.name.name;
-		const op = ast.byRef ? OC.MKREF : OC.SETVAR;
+		const op = ast.type.byRef ? OC.MKREF : OC.SETVAR;
 		return this.addOp(op, { name }, ast)
 	}
 

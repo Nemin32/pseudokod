@@ -19,12 +19,6 @@ export enum BaseType {
 	LOGIC = 2,
 }
 
-export class TypeCheckError extends Error {
-	constructor(message: string, readonly token: IToken | null) {
-		super(message);
-	}
-}
-
 export class SimpleType {
 	readonly kind = TypeVariants.SIMPLE;
 	constructor(readonly t: BaseType) { }
