@@ -101,7 +101,7 @@ window.addEventListener("load", () => {
 		try {
 			error.style.visibility = "hidden";
 			if (block.type === "match") {
-				console.log(typeCheck(block.value, new TypeMap([], [])))
+				typeCheck(block.value, new TypeMap([], []))
 
 				const compiler = new Compiler()
 				compiler.visit(block.value)

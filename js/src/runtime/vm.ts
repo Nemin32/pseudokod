@@ -101,7 +101,7 @@ export class VM {
 			if (typeof v !== "number") throw new VMError("Index was not number: " + v)
 		})
 
-		return dimensions as number[];
+		return (dimensions as number[]).map(i => i - 1);
 	}
 
 	unwrapValue(value: Value | Value[]): Value {
@@ -189,12 +189,11 @@ export class VM {
 			}; break
 
 			case OC.ARRCMP: {
-				const indexRoot = this.popIndexes(inst.dimensions).map(i => i-1)
+				const indexRoot = this.popIndexes(inst.dimensions)
 				const elems = this.popMany(inst.length).map(v => this.unwrapValue(v));
 
 				for (let i = 0; i < elems.length; i++) {
 					const indexes = indexRoot.concat(i);
-					console.log(indexes)
 					vars.setArrayElem(inst.name, indexes, elems[i])
 				}
 			}; break
@@ -212,7 +211,7 @@ export class VM {
 					[BinOpType.ADD, (a, b) => a + b as Value],
 					[BinOpType.SUB, (a, b) => a - b],
 					[BinOpType.MUL, (a, b) => a * b],
-					[BinOpType.DIV, (a, b) => a / b],
+					[BinOpType.DIV, (a, b) => Math.floor(a / b)],
 					[BinOpType.MOD, (a, b) => a % b],
 
 					// Logic
@@ -258,7 +257,7 @@ export class VM {
 			}; break
 
 			case OC.GETARR: {
-				const indexes = this.popIndexes(inst.dimensions).map(i => i-1);
+				const indexes = this.popIndexes(inst.dimensions)
 				this.push(vars.getArrayElem(inst.name, indexes))
 			}; break
 
@@ -267,7 +266,7 @@ export class VM {
 			}; break
 
 			case OC.SETARR: {
-				const indexes = this.popIndexes(inst.dimensions).map(i => i-1);
+				const indexes = this.popIndexes(inst.dimensions)
 				const value = this.unwrapValue(this.pop())
 
 				vars.setArrayElem(inst.name, indexes, value);
@@ -325,8 +324,11 @@ export class VM {
 			}; break
 
 			case OC.MKARR: {
-				const dims = this.popIndexes(inst.numDimensions)
-				vars.addEmptyArray(inst.name, dims)
+				const dims = this.popMany(inst.numDimensions).map(v => this.unwrapValue(v))
+				dims.forEach(d => {
+					if (typeof d !== "number") throw new Error("MKARR: Expeccted dimension to be number, but was " + typeof d)
+				})
+				vars.addEmptyArray(inst.name, dims as number[])
 			}; break
 
 			case OC.MKREF: {
@@ -355,6 +357,10 @@ export class VM {
 
 		this.saveState()
 		const retVal = this.exec(inst)
+
+		if (this.currentState.ipStack.length > 20) {
+			throw new VMError("Too much recursion.")
+		}
 
 		this.render(this.previousState, this.currentState)
 		return retVal;

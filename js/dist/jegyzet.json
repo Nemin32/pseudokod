@@ -2068,7 +2068,7 @@
 				"ha jobb <= k és x[jobb] > x[max] akkor",
 				"max <- jobb",
 				"elágazás vége",
-				"ha max <= i akkor",
+				"ha max =/= i akkor",
 				"x[i] <-> x[max]",
 				"Kupacol(x, n, k, max)",
 				"elágazás vége",
@@ -2082,8 +2082,10 @@
 			"outputs": "x - T kupac",
 			"code": [
 				"eljárás KupacotÉpít(címszerint x : T tömb, n : egész)",
-				"ciklus i <- Kerekit(n/2)-től 1-ig",
-				"Kupacol(x, n, n, i)",
+				"i <- n/2",
+				"ciklus amíg i >= 0",
+				"Kupacol(&x, n, n, i)",
+				"i <- i - 1",
 				"ciklus vége",
 				"eljárás vége"
 			]
@@ -2095,10 +2097,10 @@
 			"outputs": "x - T rendezett tömb",
 			"code": [
 				"eljárás Kupacrendezes(címszerint x : T tömb, n : egész)",
-				"KupacotÉpít(x, n)",
+				"KupacotÉpít(&x, n)",
 				"ciklus i <- n-től 2-ig",
 				"x[1] <-> x[i]",
-				"Kupacol(x, n, i - 1, 1)",
+				"Kupacol(&x, n, i - 1, 1)",
 				"ciklus vége",
 				"eljárás vége"
 			]

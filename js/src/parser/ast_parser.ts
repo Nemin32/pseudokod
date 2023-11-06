@@ -179,10 +179,11 @@ const chainToExpr = (chain: Expression | Chain<Expression, IToken, Expression>):
 	});
 };
 
-const parseArithmOp: P<Expression> = Parser.chain(primary, addOp).map(chainToExpr);
-const parseMulOp: P<Expression> = Parser.chain(parseArithmOp, mulOp).map(chainToExpr);
-const parseCompOp: P<Expression> = Parser.chain(parseMulOp, compOp).map(chainToExpr);
-export const parseBinOp: P<Expression> = Parser.chain(parseCompOp, logicOp).map(chainToExpr);
+// The highest precedence operator is actually the *lowest* in the list.
+const parseMulOp: P<Expression> = Parser.chain(primary, mulOp).map(chainToExpr);
+const parseAddOp: P<Expression> = Parser.chain(parseMulOp, addOp).map(chainToExpr);
+const parseCompOp: P<Expression> = Parser.chain(parseAddOp, compOp).map(chainToExpr);
+const parseBinOp: P<Expression> = Parser.chain(parseCompOp, logicOp).map(chainToExpr)
 
 //#endregion
 
