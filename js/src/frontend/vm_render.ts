@@ -1,5 +1,5 @@
 import { AtomValue } from "../interfaces/astkinds.ts";
-import { ValueType, VariableBinding } from "../runtime/variables.ts";
+import { ValueADT, ValueType, VariableBinding } from "../runtime/variables.ts";
 import { State, Value } from "../runtime/vm.ts";
 
 enum ComparisonResult {
@@ -26,7 +26,8 @@ const compare = <T>(oldArr: T[], newArr: T[], compFn: (a: T, b: T) => boolean): 
 function getDifferences(prev: State, current: State): {
 	stack: Comparison<Value>[],
 	ipStack: Comparison<number>[],
-	bindings: Comparison<VariableBinding>[]
+	bindings: Comparison<VariableBinding>[],
+	memory: Comparison<ValueADT>[]
 } {
 	const stack = compare(prev.stack, current.stack, (a, b) => a === b)
 	const ipStack = compare(prev.ipStack, current.ipStack, (a, b) => a === b)
@@ -35,7 +36,9 @@ function getDifferences(prev: State, current: State): {
 		&& a.pointer === b.pointer
 		&& prev.vars.getVariableOrNull(a.name) === current.vars.getVariableOrNull(b.name))
 
-	return { stack, ipStack, bindings }
+	const memory = compare(prev.vars.values, current.vars.values, (a,b) => a.type === b.type && a.value === b.value)
+
+	return { stack, ipStack, bindings, memory }
 }
 
 function renderSpan<T>(comp: Comparison<T>, getter: (c: Comparison<T>) => string): HTMLSpanElement {
@@ -49,8 +52,9 @@ export function render(prev: State, current: State): {
 	stackSpans: HTMLSpanElement[],
 	ipStackSpans: HTMLSpanElement[],
 	varsSpans: HTMLSpanElement[],
+	memorySpans: HTMLSpanElement[]
 } {
-	const { stack, ipStack, bindings } = getDifferences(prev, current);
+	const { stack, ipStack, bindings, memory } = getDifferences(prev, current);
 
 	const varsSpans = bindings.map(s => renderSpan(s, (s) => {
 		if (s.state === ComparisonResult.DELETED) {
@@ -74,9 +78,18 @@ export function render(prev: State, current: State): {
 		}
 	}))
 
+	const memorySpans = memory.map((s, i) => renderSpan(s, (s) => {
+		const content = (current.vars.isPointer(s.value.value))
+			? `&${s.value.value.pointer}`
+			: String(s.value.value)
+
+		return `${String(i).padStart(3)}: ${content.padStart(3)}`
+	}))
+
 	return {
 		stackSpans,
 		ipStackSpans: ipStack.map(s => renderSpan(s, (c) => String(c.value))),
 		varsSpans,
+		memorySpans
 	}
 }

@@ -1,5 +1,5 @@
 import { Atom } from "../interfaces/astkinds.ts"
-import { Pointer, Value } from "./vm.ts"
+import { Pointer, State, Value } from "./vm.ts"
 
 type DeepArray<T> = (T | DeepArray<T>)[]
 
@@ -13,7 +13,7 @@ export const enum ValueType {
 
 type Boundary = { isFun: boolean, lastIndex: number }
 export type VariableBinding = { name: string, pointer: number }
-export type ValueADT = { rc: number, value: Value } & (
+export type ValueADT = { marked: boolean, value: Value } & (
 	| { type: ValueType.NORMAL }
 	| { type: ValueType.ARRAY, dimensions: number[] }
 )
@@ -28,7 +28,7 @@ export class Variables {
 	constructor(
 		public bounds: Boundary[] = [],
 		public bindings: VariableBinding[] = [],
-		public values: ValueADT[] = []
+		public values: ValueADT[] = [],
 	) { }
 
 	clone() {
@@ -39,7 +39,7 @@ export class Variables {
 		this.bounds.push({ isFun, lastIndex: this.bindings.length })
 	}
 
-	lscope(untilFun: boolean) {
+	lscope(untilFun: boolean, stack: State["stack"]) {
 		if (untilFun) {
 			const lastFun = this.bounds.findLastIndex(b => b.isFun)
 			if (lastFun === -1) throw new VariableError("Attempting to leave function while not being in one.")
@@ -51,12 +51,18 @@ export class Variables {
 		const length = this.bounds.pop()?.lastIndex
 		if (length === undefined || length === -1) throw new VariableError("Trying to leave scope without being in one.")
 
-		const varsLeavingScope = this.bindings.slice(length);
-		varsLeavingScope.forEach(v => this.free(v))
+		this.mark()
 
+		const varsLeavingScope = this.bindings.slice(length);
 		this.bindings = this.bindings.slice(0, length)
 
-		//this.gc()
+		stack.forEach(e => {
+			if (this.isPointer(e)) {
+				this.setMark(e.pointer)
+			}
+		})
+
+		this.sweep()
 	}
 
 	get activeScope() {
@@ -69,23 +75,34 @@ export class Variables {
 		return this.bindings
 	}
 
-	free(variable: VariableBinding) {
-		const box = this.values.at(variable.pointer)
-		if (box === undefined) throw new VariableError(`${variable.name}: Points at invalid address! (${variable.pointer})`)
+	setMark(address: number) {
+		const value = this.getBox(address);
 
-		if (box.type === ValueType.NORMAL) {
-			box.rc--;
-		} else {
-			const length = box.dimensions.reduce((a, b) => a * b, 1)
+		if (value.type === ValueType.ARRAY) {
+			const length = value.dimensions.reduce((a,b) => a*b)
 
 			for (let i = 0; i < length; i++) {
-				this.values[variable.pointer + i].rc--;
+				const box = this.getBox(address + i)
+				box.marked = true;
+			}
+
+		} else {
+			value.marked = true;
+
+			if (this.isPointer(value.value)) {
+				this.setMark(value.value.pointer)
 			}
 		}
 	}
 
-	gc() {
-		this.values = this.values.filter(v => v.rc > 0)
+	mark() {
+		this.values.forEach(v => v.marked = false)
+		this.bindings.forEach(binding => {
+			this.setMark(binding.pointer)
+		})
+	}
+	sweep() {
+		this.values = this.values.filter(v => v.marked)
 	}
 
 	getAddressOrNull(name: string): number | null {
@@ -102,19 +119,8 @@ export class Variables {
 		const variable = this.findBindingOrNull(name);
 		const box = this.getBox(pointer)
 
-		if (box.type === ValueType.NORMAL) {
-			box.rc++;
-		} else {
-			const length = box.dimensions.reduce((a, b) => a * b, 1)
-			for (let i = 0; i < length; i++) {
-				this.getBox(pointer + i).rc++;
-			}
-		};
-
-
 		if (variable) {
 			const prevBox = this.getBox(variable.pointer)
-			prevBox.rc--;
 			variable.pointer = pointer;
 		} else {
 			this.bindings.push({
@@ -184,13 +190,13 @@ export class Variables {
 		const base = this.values.length
 		this.values.push({
 			dimensions,
-			rc: 0,
+			marked: true,
 			type: ValueType.ARRAY,
 			value: values[0]
 		})
 
 
-		const rest: ValueADT[] = values.slice(1).map(value => ({ rc: 1, value, type: ValueType.NORMAL }))
+		const rest: ValueADT[] = values.slice(1).map(value => ({ marked: true, value, type: ValueType.NORMAL }))
 		this.values = this.values.concat(rest)
 
 		return base;
@@ -219,9 +225,9 @@ export class Variables {
 		const base = this.getAddressOrNull(name)
 		if (base === null) return false;
 
-		const box = this.getBox(base)
+		const box = this.getBoxOrNull(base)
 
-		return box.type === ValueType.ARRAY;
+		return box !== null && box.type === ValueType.ARRAY;
 	}
 
 	getArrayElemAddr(name: string, indexes: number[]): number {
@@ -255,7 +261,7 @@ export class Variables {
 
 	private addBox(value: Value): number {
 		this.values.push({
-			rc: 1,
+			marked: true,
 			type: ValueType.NORMAL,
 			value
 		})

@@ -177,7 +177,7 @@ export class VM {
 
 			// Falls through!
 			case OC.RETURN: {
-				vars.lscope(true)
+				vars.lscope(true, this.currentState.stack)
 				const newIp = this.currentState.ipStack.pop();
 				if (!newIp) throw new VMError("IP stack is empty.")
 				this.currentState.idx = newIp
@@ -320,7 +320,7 @@ export class VM {
 			}; break
 
 			case OC.LSCOPE: {
-				vars.lscope(false)
+				vars.lscope(false, this.currentState.stack)
 			}; break
 
 			case OC.MKARR: {

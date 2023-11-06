@@ -31,6 +31,7 @@ window.addEventListener("load", () => {
 	const stackDiv = document.querySelector("#stack div")! as HTMLDivElement
 	const ipStackDiv = document.querySelector("#ipStack div")! as HTMLDivElement
 	const varsDiv = document.querySelector("#variables div")! as HTMLDivElement
+	const memDiv = document.querySelector("#memory div")! as HTMLDivElement
 
 	let tokens: IToken[] | null = null;
 	let tokenSpans: HTMLSpanElement[] = [];
@@ -59,6 +60,7 @@ window.addEventListener("load", () => {
 		stackDiv.replaceChildren(...renderResult.stackSpans)
 		ipStackDiv.replaceChildren(...renderResult.ipStackSpans)
 		varsDiv.replaceChildren(...renderResult.varsSpans)
+		memDiv.replaceChildren(...renderResult.memorySpans)
 
 		instructionSpans.at(current.idx - 1)?.classList.add("current");
 		instructionSpans.at(prev.idx - 1)?.classList.remove("current");
