@@ -5,6 +5,10 @@ type Binding = { name: string, type: Type }
 export class TypeMap {
 	constructor(readonly types: Binding[], readonly substitutions: Binding[]) { }
 
+	clone(): MutableTypeMap {
+		return new MutableTypeMap(structuredClone(this.types), structuredClone(this.substitutions));
+	}
+
 	with(name: string, type: Type): TypeMap {
 		return new TypeMap([...this.types, { name, type }], this.substitutions);
 	}
@@ -31,5 +35,17 @@ export class TypeMap {
 		if (val === undefined) throw new TypeCheckError(`${name} has no binding.`)
 
 		return this.extract(val.type)
+	}
+}
+
+export class MutableTypeMap extends TypeMap {
+	mutableWith(name: string, type: Type): MutableTypeMap {
+		this.types.push({name, type});
+		return this;
+	}
+
+	mutableSubstitute(name: string, type: Type) {
+		this.substitutions.push({name, type});
+		return this;
 	}
 }

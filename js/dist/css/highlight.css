@@ -42,25 +42,13 @@
 
 #highlight span.active {background: var(--active);}
 
-/*
-#highlight .keyword {color: #117711;}
-#highlight .normal {color: #222;}
-#highlight .nyil { color: #669; }
-#highlight .funcname {color: #666622;}
-#highlight .print {color: #662222;}
-#highlight .parens {color: #888;}
-#highlight .binop {color: #662266;}
-#highlight .type {color: #a50;}
-*/
-
-
 #highlight .keyword { color: #42a; }
 #highlight .statement { color: #a48; }
 #highlight .debug { color: #c11; }
 #highlight .type { color: #550; }
 #highlight .nyil { color: #666; }
 #highlight .number { color: #808; }
-#highlight .bool { color: #fdf; }
+#highlight .bool { color: #2c692c; }
 #highlight .string { color: #dfd; }
 #highlight .funcname { color: #260; }
 #highlight .comment { color: #242; }

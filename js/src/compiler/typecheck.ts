@@ -1,7 +1,7 @@
 import { IToken } from "../interfaces/ITokenizer.ts";
 import { ASTKind, ASTTag, ASTType, BinOpType } from "../interfaces/astkinds.ts";
-import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeVariants, UNKNOWN, UnknownType } from "../interfaces/types.ts";
-import { TypeMap } from "./typemap.ts";
+import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeVariants as TV, UNKNOWN, UnknownType } from "../interfaces/types.ts";
+import { MutableTypeMap, TypeMap } from "./typemap.ts";
 
 export class TypeCheckError extends Error {
 	constructor(public msg: string, public token?: IToken | null) {
@@ -9,65 +9,95 @@ export class TypeCheckError extends Error {
 	}
 }
 
-function compare(t1: Type, t2: Type): boolean {
-	if (t1 instanceof NoneType && t2 instanceof NoneType) return true;
-	if (t1 instanceof UnknownType && t2 instanceof UnknownType) return true;
+function compare(rt1: Type, rt2: Type, env: MutableTypeMap): boolean {
+	const t1 = env.extract(rt1);
+	const t2 = env.extract(rt2);
 
-	if (t1 instanceof SimpleType && t2 instanceof SimpleType) return t1.t === t2.t;
-	if (t1 instanceof ArrayType && t2 instanceof ArrayType) return compare(t1.t, t2.t);
-	if (t1 instanceof ReferenceType && t2 instanceof ReferenceType) return compare(t1.t, t2.t);
-
-	if (t1 instanceof HeterogenousArrayType && t2 instanceof HeterogenousArrayType) {
-		return t1.ts.every((t, idx) => compare(t, t2.ts[idx]));
+	if (t1.kind === TV.GENERIC && t2.kind === TV.GENERIC) {
+		return t1.name === t2.name
 	}
 
-	if (t1 instanceof FunctionType && t2 instanceof FunctionType) {
-		const rTypeMatches = compare(t1.rType, t2.rType)
+	// Binding generics to concrete types.
+	if (t1.kind === TV.GENERIC) {
+
+		if (t2.kind !== TV.GENERIC) {
+			env.mutableSubstitute(t1.name, t2)
+			return true
+		} else {
+			return compare(t1, t2, env);
+		}
+	}
+
+	if (t2.kind === TV.GENERIC) {
+		env.mutableSubstitute(t2.name, t1)
+		return true;
+	}
+
+	// If neither are generic, we do a normal comparison.
+	if (t1.kind !== t2.kind) return false;
+
+	if (t1.kind === TV.NONE || t1.kind === TV.UNKNOWN) return true;
+
+	if (t1.kind === TV.SIMPLE && t2.kind === TV.SIMPLE) return t1.t === t2.t;
+	if (t1.kind === TV.ARRAY && t2.kind === TV.ARRAY) return compare(t1.t, t2.t, env);
+	if (t1.kind === TV.REFERENCE && t2.kind === TV.REFERENCE) return compare(t1.t, t2.t, env);
+
+	if (t1.kind === TV.HETEROGENOUS && t2.kind === TV.HETEROGENOUS) {
+		return t1.ts.every((t, idx) => compare(t, t2.ts[idx], env));
+	}
+
+	if (t1.kind === TV.FUNCTION && t2.kind === TV.FUNCTION) {
+		const rTypeMatches = compare(t1.rType, t2.rType, env)
 		const eitherNull = t1.argTypes === null || t2.argTypes === null
 
 		if (eitherNull) {
 			return rTypeMatches
 		} else {
-			return t1.argTypes.every((t, idx) => compare(t, t2.argTypes![idx]));
+			return t1.argTypes.every((t, idx) => compare(t, t2.argTypes![idx], env));
 		}
 	}
 
-	if (t1 instanceof GenericType && t2 instanceof GenericType) {
-		return t1.name === t2.name
-	}
-
-	return false;
+	return false
 }
 
 function show(t: Type): string {
-	if (t instanceof SimpleType) {
-		switch (t.t) {
-			case BaseType.NUMBER:
-				return "NUMBER";
-			case BaseType.STRING:
-				return "STRING";
-			case BaseType.LOGIC:
-				return "LOGIC";
+	switch (t.kind) {
+		case TV.SIMPLE: {
+			switch (t.t) {
+				case BaseType.NUMBER:
+					return "NUMBER";
+				case BaseType.STRING:
+					return "STRING";
+				case BaseType.LOGIC:
+					return "LOGIC";
+			}
 		}
+
+		case TV.ARRAY:
+			return `${show(t.t)} ARRAY`;
+			
+		case TV.REFERENCE:
+			return `${show(t.t)} REFERENCE`;
+
+		case TV.HETEROGENOUS: 
+			return `[${t.ts.map((type) => show(type))}]`;
+
+		case TV.FUNCTION: 
+			return t.argTypes ? `FN(${t.argTypes.map(t => show(t))}) => ${show(t.rType)}` : `FN(?) => ${show(t.rType)}`
+
+		case TV.GENERIC: 
+			return t.name
+
+		case TV.NONE: 
+			return "NONE";
+
+		case TV.UNKNOWN: 
+			return "UNKNOWN";
+
+		default:
+			console.log(t)
+			throw new TypeCheckError(`Show: Should not happen.`);
 	}
-
-	if (t instanceof ArrayType) {
-		return `${show(t.t)} ARRAY`;
-	}
-
-	if (t instanceof ReferenceType) {
-		return `${show(t.t)} REFERENCE`;
-	}
-
-	if (t instanceof NoneType) return "NONE";
-	if (t instanceof UnknownType) return "UNKNOWN";
-
-	if (t instanceof HeterogenousArrayType) return `[${t.ts.map((type) => show(type))}]`;
-
-	if (t instanceof FunctionType) return t.argTypes ? `FN(${t.argTypes.map(t => show(t))}) => ${show(t.rType)}` : `FN(?) => ${show(t.rType)}`
-	if (t instanceof GenericType) return t.name
-
-	throw new TypeCheckError(`Show: Should not happen.`);
 }
 
 function astTypeToType(type: ASTType): Type {
@@ -80,27 +110,25 @@ function astTypeToType(type: ASTType): Type {
 
 
 export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
-	function ensure(ast: ASTKind, expected: Type): Type {
+	function ensure(ast: ASTKind, expected: Type, env: MutableTypeMap): [Type, MutableTypeMap] {
 		const actual = typeCheck(ast, env)[0];
 
-		// TEMP FIXME
-		if (actual instanceof GenericType) return actual;
+		if (!compare(actual, expected, env))
+			throw new TypeCheckError(`${ast.token?.lexeme}: Expected ${show(expected)}, got ${show(actual)}`, ast.token);
 
-		if (!compare(actual, expected))
-			throw new TypeCheckError(`Expected ${show(expected)}, got ${show(actual)}`, ast.token);
-
-		return actual;
+		return [actual, env];
 	}
 
 	switch (ast.tag) {
 		case ASTTag.ARRINDEX: {
-			ast.index.forEach(e => ensure(e, NUMBER))
+			const nEnv = env.clone()
+			ast.index.forEach(e => ensure(e, NUMBER, nEnv))
 			const variable = env.get(ast.variable.name)
 
-			if (variable.kind === TypeVariants.ARRAY) {
-				return [variable.t, env]
-			} else if (variable.kind === TypeVariants.HETEROGENOUS) {
-				return [new UnknownType(), env]
+			if (variable.kind === TV.ARRAY) {
+				return [variable.t, nEnv]
+			} else if (variable.kind === TV.HETEROGENOUS) {
+				return [new UnknownType(), nEnv]
 			}
 
 			throw new TypeCheckError(`Expected ${ast.variable.name} to be T ARRAY, got ${show(variable)}.`)
@@ -116,13 +144,15 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		case ASTTag.BINOP: {
 			const { lhs, rhs } = ast;
 
+			const nEnv = env.clone()
 			function eqOrThrow(a1: ASTKind, a2: ASTKind) {
-				const t1 = typeCheck(a1, env)[0];
-				const t2 = typeCheck(a2, env)[0];
+				const t1 = typeCheck(a1, nEnv)[0];
+				const t2 = typeCheck(a2, nEnv)[0];
 
-				if (!compare(t1, t2)) {
+				if (!compare(t1, t2, nEnv)) {
 					throw new TypeCheckError(`Expected both sides to be ${show(t1)}, but right side was ${show(t2)}`)
 				}
+
 			}
 
 			switch (ast.op) {
@@ -132,8 +162,8 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				case BinOpType.MUL:
 				case BinOpType.DIV:
 				case BinOpType.MOD:
-					ensure(lhs, NUMBER) && ensure(rhs, NUMBER)
-					return [NUMBER, env]
+					ensure(lhs, NUMBER, nEnv) && ensure(rhs, NUMBER, nEnv)
+					return [NUMBER, nEnv]
 
 				// Comparison
 				case BinOpType.EQ:
@@ -143,19 +173,20 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				case BinOpType.MORE:
 				case BinOpType.LESS:
 					eqOrThrow(lhs, rhs);
-					return [LOGIC, env]
+					return [LOGIC, nEnv]
 
 				// Logic
 				case BinOpType.AND:
 				case BinOpType.OR:
-					ensure(lhs, LOGIC) && ensure(rhs, LOGIC)
-					return [LOGIC, env]
+					ensure(lhs, LOGIC, nEnv) && ensure(rhs, LOGIC, nEnv)
+					return [LOGIC, nEnv]
 			}
 		}
 
 		case ASTTag.NOT: {
-			ensure(ast.expr, LOGIC)
-			return [LOGIC, env]
+			const nEnv = env.clone()
+			ensure(ast.expr, LOGIC, nEnv)
+			return [LOGIC, nEnv]
 		}
 
 		case ASTTag.REFERENCE: {
@@ -167,35 +198,37 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		}
 
 		case ASTTag.ARRAYCOMP: {
+			const nEnv = env.clone()
 			const types = ast.expressions.map(e => typeCheck(e, env)[0]);
-			const same = types.every(t => compare(t, types[0]))
+			const same = types.every(t => compare(t, types[0], nEnv))
 
 			const varName = ("variable" in ast.variable) ? ast.variable.variable.name : ast.variable.name;
 			const type = same ? new ArrayType(types[0]) : new HeterogenousArrayType(types)
 
-			return [NONE, env.with(varName, type)]
+			return [NONE, nEnv.with(varName, type)]
 		}
 
 		case ASTTag.ASSIGN: {
-			const valueType = typeCheck(ast.value, env)[0]
+			const nEnv = env.clone()
+			const valueType = typeCheck(ast.value, nEnv)[0]
 
 			if (ast.variable.tag === ASTTag.ARRINDEX) {
-				const variable = env.get(ast.variable.variable.name)
-				if (variable.kind === TypeVariants.ARRAY) {
-					if (!compare(variable.t, valueType)) {
+				const variable = nEnv.get(ast.variable.variable.name)
+				if (variable.kind === TV.ARRAY) {
+					if (!compare(variable.t, valueType, nEnv)) {
 						throw new TypeCheckError(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
 					}
 
-					ast.variable.index.forEach(e => ensure(e, NUMBER))
-					return [NONE, env]
-				} else if (variable.kind === TypeVariants.HETEROGENOUS) {
-					ast.variable.index.forEach(e => ensure(e, NUMBER))
-					return [NONE, env]
+					ast.variable.index.forEach(e => ensure(e, NUMBER, nEnv))
+					return [NONE, nEnv]
+				} else if (variable.kind === TV.HETEROGENOUS) {
+					ast.variable.index.forEach(e => ensure(e, NUMBER, nEnv))
+					return [NONE, nEnv]
 				} else {
 					throw new TypeCheckError(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
 				}
 			} else {
-				return [NONE, env.with(ast.variable.name, typeCheck(ast.value, env)[0])]
+				return [NONE, nEnv.with(ast.variable.name, typeCheck(ast.value, nEnv)[0])]
 			}
 		}
 
@@ -208,12 +241,13 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 					return { types: wantToPush(statement) ? state.types.concat(step[0]) : state.types, env: step[1] }
 				}, { types: [], env })
 
-			const types = state.types.filter(t => !compare(t, NONE))
-			if (types.length === 0) return [NONE, state.env]
-			if (types.length === 1) return [types[0], state.env]
+			const nEnv = state.env.clone()
 
+			const types = state.types.filter(t => !compare(t, NONE, nEnv))
+			if (types.length === 0) return [NONE, nEnv]
+			if (types.length === 1) return [types[0], nEnv]
 
-			return [new HeterogenousArrayType(types), state.env]
+			return [new HeterogenousArrayType(types), nEnv]
 		}
 
 		case ASTTag.DEBUG: {
@@ -221,10 +255,11 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		}
 
 		case ASTTag.FOR: {
-			ensure(ast.from, NUMBER)
-			ensure(ast.to, NUMBER)
+			const nEnv = env.clone()
+			ensure(ast.from, NUMBER, nEnv)
+			ensure(ast.to, NUMBER, nEnv)
 
-			return typeCheck(ast.body, env.with(ast.variable.name, NUMBER))
+			return typeCheck(ast.body, nEnv.with(ast.variable.name, NUMBER))
 		}
 
 		case ASTTag.FUNCDECL: {
@@ -234,7 +269,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			})()
 
 			const types = ast.parameters.map(t => typeCheck(t, env)[0])
-			const nEnv = types.reduce<TypeMap>((state, t, idx) => {
+			const fTypeEnv = types.reduce<TypeMap>((state, t, idx) => {
 				const arg = ast.parameters[idx].name
 				const name = (typeof arg === "string") ? arg : arg.name
 				const inner = (t instanceof ReferenceType) ? t.t : t;
@@ -242,8 +277,9 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				return state.with(name, inner)
 			}, env).with(ast.name, new FunctionType(rType, null, null))
 
+			const nEnv = fTypeEnv.clone()
 			const type = typeCheck(ast.body, nEnv)[0]
-			if (!compare(rType, UNKNOWN) && !compare(type, rType)) {
+			if (!compare(rType, UNKNOWN, nEnv) && !compare(type, rType, nEnv)) {
 				throw new TypeCheckError(`Type signature (${show(rType)}) and calculated return type (${show(type)}) don't match!`)
 			}
 			return [NONE, env.with(ast.name, new FunctionType(type, types, ast))]
@@ -273,21 +309,18 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			if (at.length != ast.arguments.length) throw new TypeCheckError("len")
 
 			// Arguments arrive in reverse order, so we need to do a copy and reverse before we can compare the types.
-			const nEnv = [...ast.arguments].reverse().reduce<TypeMap>((state, arg, idx) => {
+			const nEnv = ast.arguments.toReversed().reduce<TypeMap>((state, arg, idx) => {
 				const type = ("lexeme" in arg) ? env.get(arg.lexeme) : typeCheck(arg, env)[0]
 				const name = ("lexeme" in arg) ? arg.lexeme : arg.token!.lexeme;
 				const expected = at[idx];
 
-				if (expected instanceof GenericType) {
-					return state.substitute(expected.name, type).with(name, type)
-				} else {
-					if (!compare(type, expected)) throw new TypeCheckError(`Expected ${show(expected)}, got ${show(type)}.`)
-					return state.with(name, type)
-				}
+				const mstate = state.clone()
+				if (!compare(type, expected, mstate)) throw new TypeCheckError(`${name}: Expected ${show(mstate.extract(expected))}, got ${show(type)}.`)
+				return mstate.with(name, type)
 			}, env)
 
 			typeCheck(func.decl, nEnv)
-			return [func.rType, env]
+			return [func.rType, nEnv]
 		}
 
 		case ASTTag.PARAMETER: {
@@ -299,29 +332,31 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 		}
 
 		case ASTTag.IF: {
-			ensure(ast.main_path.pred, LOGIC)
+			const nEnv = env.clone()
+			ensure(ast.main_path.pred, LOGIC, nEnv)
 			const mainType = typeCheck(ast.main_path.branch, env)[0]
 
 			const elseType = ast.false_path ? typeCheck(ast.false_path, env)[0] : null
-			const elifTypes = ast.elif_path.map(p => (ensure(p.pred, LOGIC), typeCheck(p.branch, env)[0]))
+			const elifTypes = ast.elif_path.map(p => (ensure(p.pred, LOGIC, nEnv), typeCheck(p.branch, env)[0]))
 
-			if (elseType && !compare(mainType, elseType)) {
+			if (elseType && !compare(mainType, elseType, nEnv)) {
 				throw new TypeCheckError(`If has type ${show(mainType)}, but else has ${show(elseType)}.`)
 			}
 
 			elifTypes.forEach((t, idx) => {
-				if (!compare(mainType, t)) {
+				if (!compare(mainType, t, nEnv)) {
 					throw new TypeCheckError(`If has type ${show(mainType)}, but the ${idx + 1}th else if has ${show(t)}.`)
 				}
 			})
 
-			return [mainType, env]
+			return [mainType, nEnv]
 		}
 
 		case ASTTag.NEWARRAY: {
-			ast.dimensions.forEach(e => ensure(e, NUMBER))
+			const nEnv = env.clone()
+			ast.dimensions.forEach(e => ensure(e, NUMBER, nEnv))
 
-			return [NONE, env.with(ast.variable.name, new ArrayType(ast.type))]
+			return [NONE, nEnv.with(ast.variable.name, new ArrayType(ast.type))]
 		}
 
 		case ASTTag.PRINT: {
@@ -339,14 +374,16 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 		case ASTTag.SWAP: {
 			const t2 = typeCheck(ast.var2, env)[0]
-			ensure(ast.var1, t2)
+			const nEnv = env.clone()
+			ensure(ast.var1, t2, nEnv)
 
-			return [NONE, env]
+			return [NONE, nEnv]
 		}
 
 		case ASTTag.WHILE: {
-			ensure(ast.predicate, LOGIC)
-			return typeCheck(ast.body, env)
+			const nEnv = env.clone()
+			ensure(ast.predicate, LOGIC, nEnv)
+			return typeCheck(ast.body, nEnv)
 		}
 	}
 }
