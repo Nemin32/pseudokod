@@ -13,6 +13,9 @@ function compare(rt1: Type, rt2: Type, env: MutableTypeMap): boolean {
 	const t1 = env.extract(rt1);
 	const t2 = env.extract(rt2);
 
+	if (t1.kind === TV.GENERIC && t2.kind === TV.NONE) return false;
+	if (t2.kind === TV.GENERIC && t1.kind === TV.NONE) return false;
+
 	if (t1.kind === TV.GENERIC && t2.kind === TV.GENERIC) {
 		return t1.name === t2.name
 	}
@@ -36,7 +39,8 @@ function compare(rt1: Type, rt2: Type, env: MutableTypeMap): boolean {
 	// If neither are generic, we do a normal comparison.
 	if (t1.kind !== t2.kind) return false;
 
-	if (t1.kind === TV.NONE || t1.kind === TV.UNKNOWN) return true;
+	if (t1.kind === TV.NONE && t2.kind === TV.NONE) return true;
+	if (t1.kind === TV.UNKNOWN && t2.kind === TV.UNKNOWN) return true;
 
 	if (t1.kind === TV.SIMPLE && t2.kind === TV.SIMPLE) return t1.t === t2.t;
 	if (t1.kind === TV.ARRAY && t2.kind === TV.ARRAY) return compare(t1.t, t2.t, env);
@@ -212,9 +216,18 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 			const nEnv = env.clone()
 			const valueType = typeCheck(ast.value, nEnv)[0]
 
+			if (compare(valueType, NONE, nEnv)) {
+				throw new TypeCheckError(`${ast.variable.token?.lexeme}: Assignment right hand side can't be NONE.`);
+			}
+
 			if (ast.variable.tag === ASTTag.ARRINDEX) {
 				const variable = nEnv.get(ast.variable.variable.name)
+
 				if (variable.kind === TV.ARRAY) {
+					if (!compare(variable.t, valueType, nEnv)) {
+						throw new TypeCheckError(`Previous (${show(variable.t)}) and current (${show(valueType)}) don't match.`)
+					}
+
 					if (!compare(variable.t, valueType, nEnv)) {
 						throw new TypeCheckError(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
 					}
@@ -228,6 +241,14 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 					throw new TypeCheckError(`Expected ${show(valueType)} ARRAY, got ${show(variable)}`)
 				}
 			} else {
+				const currentType = nEnv.maybeGet(ast.variable.name);
+
+				if (currentType !== null) {
+					if (!compare(currentType, valueType, nEnv)) {
+						throw new TypeCheckError(`Previous (${show(currentType)}) and current (${show(valueType)}) don't match.`)
+					}
+				}
+
 				return [NONE, nEnv.with(ast.variable.name, typeCheck(ast.value, nEnv)[0])]
 			}
 		}

@@ -30,6 +30,13 @@ export class TypeMap {
 		}
 	}
 
+	maybeGet(name: string): Type | null {
+		const val = this.types.findLast(t => t.name === name);
+		if (val === undefined) return null
+
+		return this.extract(val.type)
+	}
+
 	get(name: string): Type {
 		const val = this.types.findLast(t => t.name === name);
 		if (val === undefined) throw new TypeCheckError(`${name} has no binding.`)
