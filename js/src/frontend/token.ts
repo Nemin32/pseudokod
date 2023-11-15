@@ -80,7 +80,7 @@ const tokenToHTML = (tok: IToken) => {
 export const tokenize = (input: string): [HTMLSpanElement[], IToken[]] => {
 	const tok = new Tokenizer()
 	const tokensRaw = tok.tokenize(input)
-	const tokens = tokensRaw.filter(t => t.type !== TT.WHITESPACE)
+	const tokens = tokensRaw.filter(t => !(t.type === TT.WHITESPACE || t.type === TT.COMMENT))
 
 	const spans = tokensRaw.map(tokenToHTML)
 

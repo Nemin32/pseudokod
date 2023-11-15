@@ -195,7 +195,7 @@ export class Tokenizer implements ITokenizer {
 	comment(): ParseResult {
 		return this.mkToken(TT.COMMENT, () => {
 			if (this.eat() !== "/" || this.eat() !== "/") return null;
-			const comment = this.eatWhile((c) => c !== "\n");
+			const comment = this.eatWhile((c) => c !== "\n") || "";
 			return `//${comment}`;
 		});
 	}
