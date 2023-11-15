@@ -112,9 +112,9 @@ export class VM {
 		if (this.currentState.vars.isPointer(value)) {
 			const box = this.currentState.vars.getBox(value.pointer)
 
-			if (box.type === ValueType.ARRAY) {
+			/*if (box.type === ValueType.ARRAY) {
 				throw new VMError("Box was array.")
-			}
+			}*/
 
 			return box.value;
 		} else {
@@ -256,14 +256,19 @@ export class VM {
 				this.pop()
 			}; break
 
+			/*
 			case OC.GETARR: {
-				const indexes = this.popIndexes(inst.dimensions)
-				this.push(vars.getArrayElem(inst.name, indexes))
+				//const indexes = this.popIndexes(inst.dimensions)
+				//this.push(vars.getArrayElem(inst.name, indexes))
+
+				const indexes = this.popIndexes(inst.dimensions);
+				this.pushPointer(vars.getArrayElemAddr(inst.name, indexes))
 			}; break
 
 			case OC.GETVAR: {
 				this.pushPointer(vars.findBinding(inst.name).pointer);
 			}; break
+			*/
 
 			case OC.SETARR: {
 				const indexes = this.popIndexes(inst.dimensions)

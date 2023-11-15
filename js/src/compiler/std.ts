@@ -53,6 +53,6 @@ export const vars: { name: string, type: Type }[] = [
 	{ name: "KezdetiTávolság", type: new FunctionType(NUMBER, [NUMBER], dummy) },
 	{ name: "KövetkezőTávolság", type: new FunctionType(NUMBER, [NUMBER], dummy) },
 
-	{ name: "Kupacol", type: new FunctionType(GENARRAY, [GENARRAY, NUMBER, NUMBER, NUMBER], dummy) },
-	{ name: "KupacotÉpít", type: new FunctionType(GENARRAY, [GENARRAY, NUMBER], dummy) },
+	{ name: "Kupacol", type: new FunctionType(NONE, [new ReferenceType(GENARRAY), NUMBER, NUMBER, NUMBER], dummy) },
+	{ name: "KupacotÉpít", type: new FunctionType(NONE, [new ReferenceType(GENARRAY), NUMBER], dummy) },
 ]

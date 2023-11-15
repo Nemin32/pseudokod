@@ -34,7 +34,7 @@ export class Compiler {
 	}
 
 	visitVariable(ast: Variable) {
-		this.addOp(OC.GETVAR, { name: ast.name }, ast)
+		this.addOp(OC.ADDRESS, { name: ast.name }, ast)
 	}
 
 	visitReference(ast: Reference) {
@@ -64,7 +64,7 @@ export class Compiler {
 
 	visitArrindex(ast: ArrayIndex) {
 		ast.index.forEach(e => this.visitExpression(e))
-		this.addOp(OC.GETARR, { name: ast.variable.name, dimensions: ast.index.length }, ast)
+		this.addOp(OC.ARRADDR, { name: ast.variable.name, dimensions: ast.index.length }, ast)
 	}
 
 	visitFunccall(ast: FunctionCall) {
@@ -186,14 +186,14 @@ export class Compiler {
 		this.addOp(OC.SETVAR, { name: ast.variable.name }, ast)
 		// i <= to
 		this.addOp(OC.LABEL, { name: predLabel }, ast)
-		this.addOp(OC.GETVAR, { name: ast.variable.name }, ast)
+		this.addOp(OC.ADDRESS, { name: ast.variable.name }, ast)
 		this.visitExpression(ast.to)
 		this.addOp(OC.BINOP, { type: BinOpType.LE }, ast)
 		this.addOp(OC.FJMP, { label: endLabel }, ast)
 		// { ... }
 		this.visitBlock(ast.body)
 		// i = i + 1
-		this.addOp(OC.GETVAR, { name: ast.variable.name }, ast)
+		this.addOp(OC.ADDRESS, { name: ast.variable.name }, ast)
 		this.addOp(OC.PUSH, { value: 1 }, ast)
 		this.addOp(OC.BINOP, { type: BinOpType.ADD }, ast)
 		this.addOp(OC.SETVAR, { name: ast.variable.name }, ast)
@@ -245,7 +245,7 @@ export class Compiler {
 		this.setVariable(ast.var1);
 
 		// to <- temp
-		this.addOp(OC.GETVAR, { name: "temp" }, ast);
+		this.addOp(OC.ADDRESS, { name: "temp" }, ast);
 		this.setVariable(ast.var2);
 
 		this.addOp(OC.LSCOPE, {}, ast)

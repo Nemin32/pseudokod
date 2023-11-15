@@ -13,8 +13,8 @@ export type Inst =
 		| { code: OC.DEBUG, msg: string }
 		| { code: OC.ESCOPE, isFun: boolean }
 		| { code: OC.FJMP, label: string }
-		| { code: OC.GETARR } & ArraySignature
-		| { code: OC.GETVAR, name: string }
+		//| { code: OC.GETARR } & ArraySignature
+		//| { code: OC.GETVAR, name: string }
 		| { code: OC.JMP, label: string }
 		| { code: OC.LABEL, name: string }
 		| { code: OC.LSCOPE }
