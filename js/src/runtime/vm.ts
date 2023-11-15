@@ -356,7 +356,7 @@ export class VM {
 		return true;
 	}
 
-	step() {
+	private singleStep() {
 		const inst = this.fetch()
 		if (!inst) return false;
 
@@ -367,8 +367,12 @@ export class VM {
 			throw new VMError("Too much recursion.")
 		}
 
-		this.render(this.previousState, this.currentState)
 		return retVal;
+	}
+
+	step(): void {
+		this.singleStep()
+		this.render(this.previousState, this.currentState)
 	}
 
 	stepBack(): void {
@@ -381,7 +385,8 @@ export class VM {
 	run() {
 		let running = true;
 		while (running) {
-			running = this.step();
+			running = this.singleStep();
 		}
+		this.render(this.previousState, this.currentState)
 	}
 }

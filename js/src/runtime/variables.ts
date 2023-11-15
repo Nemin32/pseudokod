@@ -51,10 +51,9 @@ export class Variables {
 		const length = this.bounds.pop()?.lastIndex
 		if (length === undefined || length === -1) throw new VariableError("Trying to leave scope without being in one.")
 
-		this.mark()
-
-		const varsLeavingScope = this.bindings.slice(length);
 		this.bindings = this.bindings.slice(0, length)
+
+		this.mark()
 
 		stack.forEach(e => {
 			if (this.isPointer(e)) {
