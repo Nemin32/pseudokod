@@ -28,7 +28,7 @@ export class Variables {
 	constructor(
 		public bounds: Boundary[] = [],
 		public bindings: VariableBinding[] = [],
-		public values: ValueADT[] = [],
+		public values: (ValueADT | null)[] = [],
 	) { }
 
 	clone() {
@@ -56,6 +56,7 @@ export class Variables {
 		this.mark()
 
 		stack.forEach(e => {
+			console.log(e)
 			if (this.isPointer(e)) {
 				this.setMark(e.pointer)
 			}
@@ -95,13 +96,17 @@ export class Variables {
 	}
 
 	mark() {
-		this.values.forEach(v => v.marked = false)
+		this.values.forEach(v => v ? v.marked = false : {})
 		this.bindings.forEach(binding => {
 			this.setMark(binding.pointer)
 		})
 	}
+
 	sweep() {
-		this.values = this.values.filter(v => v.marked)
+		this.values = this.values.map(v => v?.marked ? v : null)
+		const lastIndex = Math.max(this.values.findLastIndex(e => e !== null) + 1, 0)
+
+		this.values = this.values.slice(0, lastIndex)
 	}
 
 	getAddressOrNull(name: string): number | null {
@@ -245,7 +250,16 @@ export class Variables {
 		if (box.type !== ValueType.ARRAY) throw new VariableError(`${name}: Isn't an array variable!`)
 
 		const length = box.dimensions.reduce((a, b) => a * b, 1)
-		return this.values.slice(base, base + length).map(v => v.value)
+
+		const array = this.values.slice(base, base + length).map(v => v?.value)
+
+		array.forEach(elem => {
+			if (elem === null) {
+				throw new VariableError(`${name}: The array at ${base} has null values.`)
+			}
+		})
+
+		return array as Value[]
 	}
 
 	getArrayByAddr(base: number): DeepArray<Value> {
@@ -253,7 +267,16 @@ export class Variables {
 		if (box.type !== ValueType.ARRAY) throw new VariableError(`${base}: Isn't an array variable!`)
 
 		const length = box.dimensions.reduce((a, b) => a * b, 1)
-		return this.values.slice(base, base + length).map(v => v.value)
+
+		const array = this.values.slice(base, base + length).map(v => v?.value)
+
+		array.forEach(elem => {
+			if (elem === null) {
+				throw new VariableError(`The array at ${base} has null values.`)
+			}
+		})
+
+		return array as Value[]
 	}
 
 	// HELPERS
@@ -314,7 +337,8 @@ export class Variables {
 
 	getBox(pointer: number): ValueADT {
 		const box = this.values.at(pointer)
-		if (box === undefined) throw new VariableError(`No box at address ${pointer}!`)
+		console.log(this.values)
+		if (box === undefined || box === null) throw new VariableError(`No box at address ${pointer}!`)
 
 		return box
 	}

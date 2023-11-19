@@ -195,7 +195,6 @@ export type Expression =
 export type Statement =
 	| ArrayComprehension
 	| Assignment
-	| Block
 	| Debug
 	| For
 	| FunctionCall
@@ -207,4 +206,4 @@ export type Statement =
 	| Swap
 	| While;
 
-export type ASTKind = Expression | Statement | Parameter;
+export type ASTKind = Expression | Statement | Block | Parameter;

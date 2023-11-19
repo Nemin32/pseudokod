@@ -42,7 +42,10 @@ export const formatCode = (input: string[]): string => {
 				) && (
 					(!shouldIndent && prevDedent) ||
 					(!shouldDedent && prevIndent)
-				) || ((shouldIndent || shouldDedent) && !(prevDedent || prevIndent))
+				) || (
+					(shouldIndent || shouldDedent) && 
+					!(prevDedent || prevIndent)
+				)
 
 			const output = prevOutput + (shouldNewline ? "\n" : "") + " ".repeat(indent) + line + "\n";
 

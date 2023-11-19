@@ -83,7 +83,7 @@ function optimizeStatement(statement: Statement): Statement | Block | null {
 	return statement;
 }
 
-function optimizeStatements(stmts: Statement[]): Statement[] {
+function optimizeStatements(stmts: Statement[]): (Statement | Block)[] {
 	return stmts.map((s) => optimizeStatement(s)).filter((e) => e !== null) as Exclude<
 		ReturnType<typeof optimizeStatement>,
 		null
@@ -143,6 +143,6 @@ export function optimizeBlock(block: Block): Block {
 	return {
 		tag: ASTTag.BLOCK,
 		token: block.token,
-		statements: optimizeStatements(block.statements),
+		statements: optimizeStatements(block.statements) as Statement[],
 	};
 }

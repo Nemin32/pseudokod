@@ -27,7 +27,7 @@ function getDifferences(prev: State, current: State): {
 	stack: Comparison<Value>[],
 	ipStack: Comparison<number>[],
 	bindings: Comparison<VariableBinding>[],
-	memory: Comparison<ValueADT>[]
+	memory: Comparison<ValueADT | null>[]
 } {
 	const stack = compare(prev.stack, current.stack, (a, b) => a === b)
 	const ipStack = compare(prev.ipStack, current.ipStack, (a, b) => a === b)
@@ -36,7 +36,20 @@ function getDifferences(prev: State, current: State): {
 		&& a.pointer === b.pointer
 		&& prev.vars.getVariableOrNull(a.name) === current.vars.getVariableOrNull(b.name))
 
-	const memory = compare(prev.vars.values, current.vars.values, (a,b) => a.type === b.type && a.value === b.value)
+
+	const isSame = (a: ValueADT | null, b: ValueADT | null): boolean => {
+		if (a === null) {
+			return a === b
+		} else {
+			if (b === null) {
+				return false;
+			}
+
+			return a.type === b.type && a.value === b.value
+		}
+	}
+
+	const memory = compare(prev.vars.values, current.vars.values, isSame)
 
 	return { stack, ipStack, bindings, memory }
 }
@@ -79,6 +92,10 @@ export function render(prev: State, current: State): {
 	}))
 
 	const memorySpans = memory.map((s, i) => renderSpan(s, (s) => {
+		if (s.value === null) {
+			return `${String(i).padStart(3)}: NULL`
+		}
+
 		const content = (current.vars.isPointer(s.value.value))
 			? `&${s.value.value.pointer}`
 			: String(s.value.value)

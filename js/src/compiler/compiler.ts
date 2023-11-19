@@ -253,7 +253,7 @@ export class Compiler {
 
 	visitStatement(ast: Statement) {
 		switch (ast.tag) {
-			case ASTTag.BLOCK: return this.visitBlock(ast)
+			// case ASTTag.BLOCK: return this.visitBlock(ast)
 			case ASTTag.IF: return this.visitIf(ast)
 			case ASTTag.ASSIGN: return this.visitAssign(ast)
 			case ASTTag.WHILE: return this.visitWhile(ast)
