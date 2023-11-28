@@ -1,4 +1,3 @@
-import { Atom } from "../interfaces/astkinds.ts"
 import { Pointer, State, Value } from "./vm.ts"
 
 export type DeepArray<T> = (T | DeepArray<T>)[]
@@ -120,10 +119,8 @@ export class Variables {
 
 	makeReference(name: string, pointer: number) {
 		const variable = this.findBindingOrNull(name);
-		const box = this.getBox(pointer)
 
 		if (variable) {
-			const prevBox = this.getBox(variable.pointer)
 			variable.pointer = pointer;
 		} else {
 			this.bindings.push({
@@ -345,7 +342,7 @@ export class Variables {
 
 	getDimensions(arr: DeepArray<Value>): number[] {
 		let curr: Value | DeepArray<Value> = arr;
-		let dims = [];
+		const dims = [];
 
 		while (Array.isArray(curr)) {
 			dims.push(curr.length)

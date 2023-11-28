@@ -25,7 +25,7 @@ function pseudoToJS(value: Value, vars: Variables) {
 }
 
 function provisionVM(code: Inst[], input: JSValue): VM {
-    const vm = new VM(code, (a,b) => {})
+    const vm = new VM(code, () => {})
 
     vm.currentState.vars.escope(false)
     if (Array.isArray(input)) {

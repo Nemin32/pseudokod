@@ -34,8 +34,6 @@ window.addEventListener("load", () => {
             for (let idx = 0; idx < collection.length; idx++) {
                 const entry = collection[idx];
                 const tokens = tokenize(entry.code.join("\n"))[1]
-
-                const index = Number(elem) * 100 + idx
                 const name = entry.name
 
                 if (tokens.at(-1)?.type == TokenType.ERROR) {

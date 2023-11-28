@@ -26,7 +26,7 @@ import {
 	While,
 	stringToBaseType,
 } from "../interfaces/astkinds.ts";
-import { GenericType, LOGIC, NUMBER, STRING, SimpleType, Type } from "../interfaces/types.ts";
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "../interfaces/types.ts";
 import { Chain, P, Parser, TT, mkToken } from "./monadic_parser_base.ts";
 
 const parseBaseType: P<SimpleType | GenericType> = Parser.matchT(TT.TYPE).map(t => stringToBaseType(t.lexeme))
@@ -223,7 +223,7 @@ const parseFor: P<For> = Parser.do()
 //#region Function Declaration
 
 const parseByRef = Parser.matchT(TT.CIMSZERINT)
-	.map((_) => true)
+	.map(() => true)
 	.or(Parser.result(false));
 
 const parseParamType = Parser.do()

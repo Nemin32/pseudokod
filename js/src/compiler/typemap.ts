@@ -1,4 +1,4 @@
-import { ArrayType, FunctionType, GenericType, HeterogenousArrayType, NUMBER, ReferenceType, Type, TypeVariants } from "../interfaces/types.ts";
+import { ArrayType, FunctionType, HeterogenousArrayType, ReferenceType, Type, TypeVariants } from "../interfaces/types.ts";
 import { TypeCheckError } from "./typecheck.ts";
 
 type Binding = { name: string, type: Type }

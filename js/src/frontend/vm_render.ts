@@ -1,5 +1,4 @@
-import { AtomValue } from "../interfaces/astkinds.ts";
-import { ValueADT, ValueType, VariableBinding } from "../runtime/variables.ts";
+import { ValueADT, VariableBinding } from "../runtime/variables.ts";
 import { State, Value } from "../runtime/vm.ts";
 
 enum ComparisonResult {

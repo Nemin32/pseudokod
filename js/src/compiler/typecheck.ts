@@ -1,6 +1,6 @@
 import { IToken } from "../interfaces/ITokenizer.ts";
 import { ASTKind, ASTTag, ASTType, BinOpType } from "../interfaces/astkinds.ts";
-import { ArrayType, BaseType, FunctionType, GenericType, HeterogenousArrayType, LOGIC, NONE, NUMBER, NoneType, ReferenceType, STRING, SimpleType, Type, TypeVariants as TV, UNKNOWN, UnknownType } from "../interfaces/types.ts";
+import { ArrayType, BaseType, FunctionType, HeterogenousArrayType, LOGIC, NONE, NUMBER, ReferenceType, STRING, Type, TypeVariants as TV, UNKNOWN, UnknownType } from "../interfaces/types.ts";
 import { MutableTypeMap, TypeMap } from "./typemap.ts";
 
 export class TypeCheckError extends Error {
@@ -76,6 +76,7 @@ function show(t: Type): string {
 					return "LOGIC";
 			}
 		}
+		break;
 
 		case TV.ARRAY:
 			return `${show(t.t)} ARRAY`;
@@ -147,17 +148,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 
 		case ASTTag.BINOP: {
 			const { lhs, rhs } = ast;
-
 			const nEnv = env.clone()
-			function eqOrThrow(a1: ASTKind, a2: ASTKind) {
-				const t1 = typeCheck(a1, nEnv)[0];
-				const t2 = typeCheck(a2, nEnv)[0];
-
-				if (!compare(t1, t2, nEnv)) {
-					throw new TypeCheckError(`Expected both sides to be ${show(t1)}, but right side was ${show(t2)}`)
-				}
-
-			}
 
 			switch (ast.op) {
 				// Arithmetics
@@ -176,7 +167,14 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 				case BinOpType.NEQ:
 				case BinOpType.MORE:
 				case BinOpType.LESS:
-					eqOrThrow(lhs, rhs);
+					{
+						const t1 = typeCheck(rhs, nEnv)[0];
+						const t2 = typeCheck(lhs, nEnv)[0];
+
+						if (!compare(t1, t2, nEnv)) {
+							throw new TypeCheckError(`Expected both sides to be ${show(t1)}, but right side was ${show(t2)}`)
+						}
+					}
 					return [LOGIC, nEnv]
 
 				// Logic
@@ -186,6 +184,7 @@ export function typeCheck(ast: ASTKind, env: TypeMap): [Type, TypeMap] {
 					return [LOGIC, nEnv]
 			}
 		}
+		break;
 
 		case ASTTag.NOT: {
 			const nEnv = env.clone()

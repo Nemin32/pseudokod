@@ -1,4 +1,3 @@
-import { IToken } from "./ITokenizer.ts";
 import { FunctionDeclaration } from "./astkinds.ts";
 
 export enum TypeVariants {

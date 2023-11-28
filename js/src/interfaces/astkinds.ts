@@ -1,4 +1,4 @@
-import { GenericType, LOGIC, NUMBER, STRING, SimpleType, Type } from "./types.ts";
+import { GenericType, LOGIC, NUMBER, STRING, SimpleType } from "./types.ts";
 import { IToken } from "./ITokenizer.ts";
 import { TypeCheckError } from "../compiler/typecheck.ts";
 

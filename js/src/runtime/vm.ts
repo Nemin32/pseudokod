@@ -1,7 +1,7 @@
 import { OpCode as OC } from "../interfaces/ICompiler.ts";
 import { Atom, BinOpType } from "../interfaces/astkinds.ts";
 import { Inst } from "../interfaces/instructions.ts";
-import { ValueADT, ValueType, VariableBinding, Variables } from "./variables.ts";
+import { ValueType, Variables } from "./variables.ts";
 
 export type Pointer = { pointer: number }
 export type Value = Atom["value"] | Pointer;
@@ -147,12 +147,12 @@ export class VM {
 		switch (inst.code) {
 			case OC.ADDRESS: {
 				this.pushPointer(vars.findBinding(inst.name).pointer);
-			}; break
+			} break
 
 			case OC.ARRADDR: {
 				const indexes = this.popIndexes(inst.dimensions);
 				this.pushPointer(vars.getArrayElemAddr(inst.name, indexes))
-			}; break
+			} break
 
 			case OC.CALL: {
 				ipStack.push(this.currentState.idx);
@@ -167,9 +167,9 @@ export class VM {
 				} else {
 					this.jmp(inst.name);
 				}
-			}; break
+			} break
 
-			// @ts-ignore: Ignores fallthrough.
+			// @ts-expect-error: Ignores fallthrough.
 			case OC.RETCMP: {
 				this.push(inst.length)
 				this.push("__mk");
@@ -181,12 +181,12 @@ export class VM {
 				const newIp = this.currentState.ipStack.pop();
 				if (!newIp) throw new VMError("IP stack is empty.")
 				this.currentState.idx = newIp
-			}; break
+			} break
 
 			case OC.COMPRE: {
 				const elems = this.popMany(inst.length).map(v => this.unwrapValue(v));
 				vars.addArray(inst.name, elems)
-			}; break
+			} break
 
 			case OC.ARRCMP: {
 				const indexRoot = this.popIndexes(inst.dimensions)
@@ -196,7 +196,7 @@ export class VM {
 					const indexes = indexRoot.concat(i);
 					vars.setArrayElem(inst.name, indexes, elems[i])
 				}
-			}; break
+			} break
 
 			case OC.PUSH: {
 				if (typeof inst.value === "string") {
@@ -205,7 +205,7 @@ export class VM {
 				} else {
 					this.push(inst.value);
 				}
-			}; break
+			} break
 
 			case OC.BINOP: {
 				const second = this.unwrapValue(this.pop())
@@ -239,7 +239,7 @@ export class VM {
 				}
 
 				this.push(method(first as number, second as number))
-			}; break
+			} break
 
 			case OC.NOT: {
 				const value = this.unwrapValue(this.pop());
@@ -249,17 +249,17 @@ export class VM {
 				}
 
 				this.push(!value);
-			}; break
+			} break
 
 			case OC.PRINT: {
 				const value = this.pop()
 
 				this.currentState.output += vars.valueToString(value) + "\n"
-			}; break
+			} break
 
 			case OC.VOID: {
 				this.pop()
-			}; break
+			} break
 
 			/*
 			case OC.GETARR: {
@@ -280,7 +280,7 @@ export class VM {
 				const value = this.unwrapValue(this.pop())
 
 				vars.setArrayElem(inst.name, indexes, value);
-			}; break
+			} break
 
 			case OC.SETVAR: {
 				const { name } = inst;
@@ -303,10 +303,9 @@ export class VM {
 						vars.setVariable(name, value);
 					}
 				}
-			}; break
+			} break
 
-			case OC.LABEL: {
-			}; break
+			case OC.LABEL: break
 
 			case OC.FJMP: {
 				const value = this.unwrapValue(this.pop());
@@ -318,19 +317,19 @@ export class VM {
 				if (value === false) {
 					this.jmp(inst.label)
 				}
-			}; break
+			} break
 
 			case OC.JMP: {
 				this.jmp(inst.label)
-			}; break
+			} break
 
 			case OC.ESCOPE: {
 				vars.escope(inst.isFun)
-			}; break
+			} break
 
 			case OC.LSCOPE: {
 				vars.lscope(false, this.currentState.stack)
-			}; break
+			} break
 
 			case OC.MKARR: {
 				const dims = this.popMany(inst.numDimensions).map(v => this.unwrapValue(v))
@@ -338,7 +337,7 @@ export class VM {
 					if (typeof d !== "number") throw new Error("MKARR: Expeccted dimension to be number, but was " + typeof d)
 				})
 				vars.addEmptyArray(inst.name, dims as number[])
-			}; break
+			} break
 
 			case OC.MKREF: {
 				const pointer = this.pop()
@@ -348,7 +347,7 @@ export class VM {
 				}
 
 				vars.makeReference(inst.name, pointer.pointer)
-			}; break
+			} break
 
 			case OC.DEBUG: {
 				this.currentState.idx++;

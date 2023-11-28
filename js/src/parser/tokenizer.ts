@@ -68,18 +68,20 @@ export class Tokenizer implements ITokenizer {
 		if (this.peek() === null) return null;
 		let retval = "";
 
-		while (true) {
-			const c = this.eat();
-			if (c == null) return retval;
-
+		let c = this.eat()
+		while (c !== null) {
 			if (fn.call(this, c)) {
 				retval += c;
 			} else {
 				this.index--;
 				this.column--;
-				return retval.length === 0 ? null : retval;
+				break;
 			}
+
+			c = this.eat()
 		}
+
+		return retval.length === 0 ? null : retval;
 	}
 
 	getKeywordTokenType(kw: string | null): TT | null {
@@ -313,17 +315,14 @@ export class Tokenizer implements ITokenizer {
 	parseWhileNotEOF(): IToken[] {
 		const retval = [];
 
-		while (true) {
-			const token = this.parse();
-			if (token) {
-				retval.push(token);
-			} else {
-				break;
-			}
+		let token = this.parse();
+		while (token) {
+			retval.push(token);
+			token = this.parse();
 		}
 
 		if (!(this.peek() === null)) {
-			const errTok = this.mkToken(TT.ERROR, () => this.eatWhile(_ => true))
+			const errTok = this.mkToken(TT.ERROR, () => this.eatWhile(() => true))
 			if (errTok)
 				retval.push(errTok)
 		}

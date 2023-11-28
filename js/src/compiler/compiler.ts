@@ -2,6 +2,7 @@ import { OpCode as OC } from "../interfaces/ICompiler.ts";
 import { ASTKind, ASTTag, ArrayComprehension, ArrayIndex, Assignment, Atom, BinOpType, BinaryOperation, Block, Debug, Expression, For, FunctionCall, FunctionDeclaration, If, NewArray, Not, Parameter, Print, Reference, Return, Statement, Swap, Variable, While } from "../interfaces/astkinds.ts";
 import { Inst } from "../interfaces/instructions.ts";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DistributiveOmit<T, K extends keyof any> = T extends any
 	? Omit<T, K>
 	: never;
@@ -126,7 +127,7 @@ export class Compiler {
 	}
 
 	visitIf(ast: If) {
-		let counter = this.counter++;
+		const counter = this.counter++;
 		let branch_count = 0;
 		const endLabel = `if_${counter}_end`;
 

@@ -124,7 +124,7 @@ export class Parser<Output> {
 
 	static sat(
 		predicate: (val: IToken) => boolean,
-		failMsg = (val: IToken, input: Input) => "Parsing error.",
+		failMsg: (val: IToken, input: Input) => string = () => "Parsing error.",
 	): Parser<IToken> {
 		return Parser.item().bind((elem: IToken, inp) =>
 			predicate(elem) ? Parser.result<IToken>(elem) : Parser.fail(failMsg(elem, inp)),
@@ -148,7 +148,7 @@ export class Parser<Output> {
 	static sepBy1<O>(parser: Parser<O>, separator: Parser<unknown>): Parser<O[]> {
 		return parser
 			.bind((first) =>
-				Parser.many(separator.bind((_) => parser.bind((val) => Parser.result(val)))).bind((rest) =>
+				Parser.many(separator.bind(() => parser.bind((val) => Parser.result(val)))).bind((rest) =>
 					this.result([first, ...rest]),
 				),
 			)
@@ -221,7 +221,7 @@ export class Parser<Output> {
 		input: Parser<Input>,
 		map: ReadonlyMap<Input, Parser<Output>>,
 	): Parser<Output> {
-		return input.bind((elem, _) => {
+		return input.bind((elem) => {
 			const parser = map.get(elem);
 
 			if (!parser) return Parser.fail(`No parser for ${elem}!`);
@@ -245,11 +245,11 @@ export class Parser<Output> {
 	}
 
 	left(other: Parser<unknown>): Parser<Output> {
-		return this.bind((value) => other.map((_) => value));
+		return this.bind((value) => other.map(() => value));
 	}
 
 	right<Other>(other: Parser<Other>): Parser<Other> {
-		return this.bind((_) => other.map((oValue) => oValue));
+		return this.bind(() => other.map((oValue) => oValue));
 	}
 
 	maybe(): Parser<Output | null> {
@@ -290,7 +290,7 @@ export class Parser<Output> {
 	}
 }
 
-class Do<Bindings extends Record<string, unknown> = {}> {
+class Do<Bindings extends Record<string, unknown> = Record<string, never>> {
 	constructor(private bindList: Array<{ name: string | null; parser: Parser<unknown> }>) { }
 
 	bind<N extends string, T>(name: N, parser: Parser<T>): Do<Bindings & Record<N, T>> {
