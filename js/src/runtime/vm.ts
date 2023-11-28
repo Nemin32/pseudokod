@@ -199,7 +199,12 @@ export class VM {
 			}; break
 
 			case OC.PUSH: {
-				this.push(inst.value);
+				if (typeof inst.value === "string") {
+					// We store the ""-s with strings to use in syntax highlighting, but here we need to strip them.
+					this.push(inst.value.replaceAll('"', ""));
+				} else {
+					this.push(inst.value);
+				}
 			}; break
 
 			case OC.BINOP: {
@@ -290,7 +295,6 @@ export class VM {
 					} else {
 						const arr = vars.getArrayByAddr(value.pointer)
 						vars.addArray(name, arr)
-						console.log(arr)
 					}
 				} else {
 					if (Array.isArray(value)) {

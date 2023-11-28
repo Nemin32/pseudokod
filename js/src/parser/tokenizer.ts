@@ -221,7 +221,7 @@ export class Tokenizer implements ITokenizer {
 			const inner = this.eatWhile((c) => c !== '"');
 			if (this.eat() !== '"') return null;
 
-			return inner;
+			return `"${inner}"`;
 		});
 	}
 

@@ -1,7 +1,7 @@
 import { Atom } from "../interfaces/astkinds.ts"
 import { Pointer, State, Value } from "./vm.ts"
 
-type DeepArray<T> = (T | DeepArray<T>)[]
+export type DeepArray<T> = (T | DeepArray<T>)[]
 
 export const enum ValueType {
 	// Normal variable, (number, bool, string), no indirection.
@@ -56,7 +56,6 @@ export class Variables {
 		this.mark()
 
 		stack.forEach(e => {
-			console.log(e)
 			if (this.isPointer(e)) {
 				this.setMark(e.pointer)
 			}
@@ -244,7 +243,7 @@ export class Variables {
 		return base + index
 	}
 
-	getArray(name: string): DeepArray<Value> {
+	getArray(name: string): Value[] {
 		const base = this.getAddress(name)
 		const box = this.getBox(base)
 		if (box.type !== ValueType.ARRAY) throw new VariableError(`${name}: Isn't an array variable!`)
@@ -262,7 +261,7 @@ export class Variables {
 		return array as Value[]
 	}
 
-	getArrayByAddr(base: number): DeepArray<Value> {
+	getArrayByAddr(base: number): Value[] {
 		const box = this.getBox(base)
 		if (box.type !== ValueType.ARRAY) throw new VariableError(`${base}: Isn't an array variable!`)
 
@@ -337,7 +336,6 @@ export class Variables {
 
 	getBox(pointer: number): ValueADT {
 		const box = this.values.at(pointer)
-		console.log(this.values)
 		if (box === undefined || box === null) throw new VariableError(`No box at address ${pointer}!`)
 
 		return box
