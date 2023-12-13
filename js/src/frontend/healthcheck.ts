@@ -101,10 +101,10 @@ window.addEventListener("load", () => {
                     <td class="check">${row.tokenizes ? "✅" : "❌"}</td>
                     <td class="check">${row.ast ? "✅" : "❌"}</td>
                     <td class="check">${row.typechecks ? "✅" : "❌"}</td>
-                    <td>${row.error ? row.error : ""}</td>
                 </tr>`
+                // <td>${row.error ? row.error : ""}</td>
             } else {
-                return `<tr><td class="chapter" colspan=5>${row.number}. Chapter</td></tr>`;
+                return `<tr class="chapter"><td class="chapter" colspan=5>${row.number}. Chapter</td></tr>`;
             }
         }
 

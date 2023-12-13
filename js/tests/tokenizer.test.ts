@@ -46,7 +46,7 @@ await Deno.readTextFile('../../programs/jegyzet.json').then(data => {
 	const json: Programs = JSON.parse(data)
 
 	Deno.test("Sanity", () => {
-		let tokens = t([
+		const tokens = t([
 			"függvény BejárásiÚtKiolvas(f : egész tömb, m : egész, n : egész)",
 			"p <- Létrehoz(egész)[m + n - 1]",
 			"i <- m",
@@ -76,7 +76,7 @@ await Deno.readTextFile('../../programs/jegyzet.json').then(data => {
 			"függvény vége"
 		].join("\n"))
 
-		let parse = parseBlock.run(tokens)
+		const parse = parseBlock.run(tokens)
 
 		if (parse.type === "error") {
 			console.log(tokens.map((t, i) => ([i, t.lexeme, TT[t.type]])))
